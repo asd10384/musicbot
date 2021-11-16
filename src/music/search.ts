@@ -42,6 +42,7 @@ export default async function search(message: M, text: string): Promise<ytsr.Ite
             player: `<@${message.author.id}>`
           });
         });
+        await guildDB.save();
         setmsg(message);
         return null;
       } else {
