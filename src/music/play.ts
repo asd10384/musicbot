@@ -9,6 +9,7 @@ import getchannel from "./getchannel";
 import MDB from "../database/Mongodb";
 import setmsg from "./msg";
 import stop from "./stop";
+import { TextChannel } from "discord.js";
 
 export default async function play(message: M | PM, getsearch?: ytsr.Video) {
   let guildDB = await MDB.get.guild(message);
@@ -57,12 +58,27 @@ export default async function play(message: M | PM, getsearch?: ytsr.Video) {
       // 봇 음성채널에서 퇴장
       stop(message);
     });
+    let guildid = guildDB.channelId;
     subscription?.connection.on('error', (err) => {
       if (client.debug) console.log('connection오류:', err);
+      (message.guild?.channels.cache.get(guildid) as TextChannel).send({ embeds: [
+        mkembed({
+          title: `오류발생`,
+          description: '영상을 재생할수 없습니다.\n다시 시도해주세요.',
+          color: 'DARK_RED'
+        })
+      ] }).then(m => client.msgdelete(m, 3000, true));
       play(message, undefined);
     });
     subscription?.player.on('error', (err) => {
       if (client.debug) console.log('Player오류:', err);
+      (message.guild?.channels.cache.get(guildid) as TextChannel).send({ embeds: [
+        mkembed({
+          title: `오류발생`,
+          description: '영상을 재생할수 없습니다.\n다시 시도해주세요.',
+          color: 'DARK_RED'
+        })
+      ] }).then(m => client.msgdelete(m, 3000, true));
       play(message, undefined);
     });
   } else {
