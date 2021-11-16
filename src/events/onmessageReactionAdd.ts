@@ -1,7 +1,7 @@
 import { MessageReaction, PartialMessageReaction, PartialUser, User } from 'discord.js';
 import shuffle from '../music/shuffle';
 import MDB from "../database/Mongodb";
-import play from "../music/play";
+import { play, pause } from "../music/play";
 import stop from "../music/stop";
 import setmsg from '../music/msg';
 
@@ -18,9 +18,9 @@ export default async function onmessageReactionAdd (reaction: MessageReaction | 
   const name = reaction.emoji.name;
 
   if (reaction.message.channelId === guildDB.channelId) {
-    // if (name === '⏯️') {
-
-    // }
+    if (name === '⏯️') {
+      if (guildDB.playing) pause(reaction.message);
+    }
     if (name === '⏹️') {
       await stop(reaction.message);
     }

@@ -4,14 +4,16 @@ import mkembed from "../function/mkembed";
 import { nowplay } from "../database/obj/guild";
 import ytsr from "ytsr";
 import ytdl from "ytdl-core";
-import { AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState, getVoiceConnection, joinVoiceChannel, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState, getVoiceConnection, joinVoiceChannel, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
 import getchannel from "./getchannel";
 import MDB from "../database/Mongodb";
 import setmsg from "./msg";
 import stop from "./stop";
 import { TextChannel } from "discord.js";
 
-export default async function play(message: M | PM, getsearch?: ytsr.Video) {
+const mapPlayer: Map<string, AudioPlayer> = new Map();
+
+export async function play(message: M | PM, getsearch?: ytsr.Video) {
   let guildDB = await MDB.get.guild(message);
   if (!guildDB) return;
   let voicechannel = getchannel(message);
@@ -40,16 +42,19 @@ export default async function play(message: M | PM, getsearch?: ytsr.Video) {
       channelId: voicechannel.id
     });
     const Player = createAudioPlayer();
-    const resource = createAudioResource(ytdl(data.url, { filter: "audioonly", quality: 'highestaudio' }), { inlineVolume: false, inputType: StreamType.Arbitrary });
+    const resource = createAudioResource(ytdl(data.url, { filter: "audioonly", quality: 'highestaudio' }), { inlineVolume: false });
     // resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 10 : 0.7);
     guildDB.playing = true;
     await guildDB.save();
+    const channelid = guildDB.channelId;
+    const guildid = message.guildId!;
     Player.play(resource);
     const subscription = connection.subscribe(Player);
     setmsg(message);
-    // connection.on(VoiceConnectionStatus.Ready, () => {
-    //   // 봇 음성채널에 접속
-    // });
+    connection.on(VoiceConnectionStatus.Ready, () => {
+      // 봇 음성채널에 접속
+      mapPlayer.set(guildid, Player);
+    });
     subscription?.player.on(AudioPlayerStatus.Idle, () => {
       // 봇 노래 재생 끝났을때
       play(message, undefined);
@@ -58,10 +63,9 @@ export default async function play(message: M | PM, getsearch?: ytsr.Video) {
       // 봇 음성채널에서 퇴장
       stop(message);
     });
-    let guildid = guildDB.channelId;
     subscription?.connection.on('error', (err) => {
       if (client.debug) console.log('connection오류:', err);
-      (message.guild?.channels.cache.get(guildid) as TextChannel).send({ embeds: [
+      (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
         mkembed({
           title: `오류발생`,
           description: '영상을 재생할수 없습니다.\n다시 시도해주세요.',
@@ -72,7 +76,7 @@ export default async function play(message: M | PM, getsearch?: ytsr.Video) {
     });
     subscription?.player.on('error', (err) => {
       if (client.debug) console.log('Player오류:', err);
-      (message.guild?.channels.cache.get(guildid) as TextChannel).send({ embeds: [
+      (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
         mkembed({
           title: `오류발생`,
           description: '영상을 재생할수 없습니다.\n다시 시도해주세요.',
@@ -89,5 +93,18 @@ export default async function play(message: M | PM, getsearch?: ytsr.Video) {
         color: 'DARK_RED'
       })
     ] }).then(m => client.msgdelete(m, 0.5));
+  }
+}
+
+export function pause(message: M | PM) {
+  const Player = mapPlayer.get(message.guildId!);
+  if (Player) {
+    if (Player.state.status === AudioPlayerStatus.Playing) {
+      Player.pause();
+      setmsg(message, true);
+    } else {
+      Player.unpause();
+      setmsg(message);
+    }
   }
 }
