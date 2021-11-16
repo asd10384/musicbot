@@ -3,7 +3,7 @@ import mkembed from "../function/mkembed.js";
 import { I, M } from "../aliases/discord.js";
 import search from "./search.js";
 import MDB from "../database/Mongodb";
-import play from "./play";
+import { play } from "./play";
 import queue from "./queue";
 
 export default async function music(message: M, text: string) {
