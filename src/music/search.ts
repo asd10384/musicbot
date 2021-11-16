@@ -27,27 +27,44 @@ export default async function search(message: M, text: string): Promise<ytsr.Ite
       limit: (guildDB.options.listlimit) ? guildDB.options.listlimit+1 : 301
     });
     if (list && list.items && list.items.length > 0) {
-      let output = list.items.shift();
-      let queuelist: nowplay[] = [];
-      list.items.forEach((data) => {
-        queuelist.push({
-          title: data.title,
-          duration: data.duration!,
-          author: data.author.name,
-          url: data.shortUrl,
-          image: (data.thumbnails[0].url) ? data.thumbnails[0].url : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
-          player: `<@${message.author.id}>`
+      if (guildDB.playing) {
+        let queuelist: nowplay[] = [];
+        guildDB.queue = guildDB.queue.concat(queuelist);
+        await guildDB.save();
+        list.items.forEach((data) => {
+          queuelist.push({
+            title: data.title,
+            duration: data.duration!,
+            author: data.author.name,
+            url: data.shortUrl,
+            image: (data.thumbnails[0].url) ? data.thumbnails[0].url : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+            player: `<@${message.author.id}>`
+          });
         });
-      });
-      guildDB.queue = guildDB.queue.concat(queuelist);
-      await guildDB.save();
-      if (!output) return undefined;
-      let getyt = await ytsr(output.shortUrl, {
-        gl: 'KO',
-        hl: 'KR',
-        limit: 1
-      });
-      return getyt.items[0];
+        return undefined;
+      } else {
+        let output = list.items.shift();
+        let queuelist: nowplay[] = [];
+        list.items.forEach((data) => {
+          queuelist.push({
+            title: data.title,
+            duration: data.duration!,
+            author: data.author.name,
+            url: data.shortUrl,
+            image: (data.thumbnails[0].url) ? data.thumbnails[0].url : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+            player: `<@${message.author.id}>`
+          });
+        });
+        guildDB.queue = guildDB.queue.concat(queuelist);
+        await guildDB.save();
+        if (!output) return undefined;
+        let getyt = await ytsr(output.shortUrl, {
+          gl: 'KO',
+          hl: 'KR',
+          limit: 1
+        });
+        return getyt.items[0];
+      }
     }
   } else {
     let list = await ytsr(text, {
