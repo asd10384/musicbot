@@ -24,7 +24,7 @@ function setlist(guildDB: guild_type) {
   if (queue.length > 0) {
     for (let i=0; i<queue.length; i++) {
       let data = queue[i];
-      let text = `\n${i+1}. ${data.author} - ${data.title} [${data.duration}]${(guildDB.options.player) ? ` ~ ${data.player}` : ''}`;
+      let text = `\n${i+1}. ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title} [${data.duration}]${(guildDB.options.player) ? ` ~ ${data.player}` : ''}`;
       if (length+text.length > 2000) {
         output += `\n+ ${queue.length-list.length}곡`;
         break;
@@ -43,7 +43,7 @@ function setembed(guildDB: guild_type) {
   let data = guildDB.nowplay;
   var title = '';
   if (guildDB.playing) {
-    title = `**[${data.duration}] - ${data.author} - ${data.title}**`;
+    title = `**[${data.duration}] - ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title}**`;
   } else {
     title = `**현재 노래가 재생되지 않았습니다**.`;
     data.image = 'https://cdn.hydra.bot/hydra_no_music.png';

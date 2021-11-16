@@ -51,7 +51,8 @@ async function guild_get(msg: M | I | VoiceState | PartialMessage) {
         options: {
           volume: 70,
           player: true,
-          listlimit: 300
+          listlimit: 300,
+          author: false
         }
       };
       const guildDB: guild_type = new guild_model(data);

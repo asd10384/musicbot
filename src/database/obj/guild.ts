@@ -24,7 +24,8 @@ export interface guild_type extends Document {
   options: {
     volume: number,
     player: boolean,
-    listlimit: number
+    listlimit: number,
+    author: boolean
   }
 }
 
@@ -48,7 +49,8 @@ const GuildSchema: Schema = new Schema({
   options: {
     volume: { type: Number },
     player: { type: Boolean },
-    listlimit: { type: Number }
+    listlimit: { type: Number },
+    author: { type: Boolean }
   }
 });
 
