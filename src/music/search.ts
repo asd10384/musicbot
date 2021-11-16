@@ -7,7 +7,7 @@ import { M } from "../aliases/discord.js";
 export default async function search(message: M, text: string): Promise<ytsr.Item | undefined> {
   let url = checkurl(text);
   if (url.video) {
-    let yid = url.video[1];
+    let yid = url.video[1].replace(/\&.+/g,'');
     let list = await ytsr(`https://www.youtube.com/watch?v=${yid}`, {
       gl: 'KO',
       hl: 'KR',
@@ -22,7 +22,7 @@ export default async function search(message: M, text: string): Promise<ytsr.Ite
     let guildDB = await MDB.get.guild(message);
     if (!guildDB) return undefined;
 
-    let yid = url.list[1];
+    let yid = url.list[1].replace(/\&.+/g,'');
     let list = await ytpl(yid, {
       limit: (guildDB.options.listlimit) ? guildDB.options.listlimit+1 : 301
     });
