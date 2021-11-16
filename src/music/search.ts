@@ -3,8 +3,9 @@ import ytpl from "ytpl";
 import MDB from "../database/Mongodb";
 import { nowplay } from "../database/obj/guild";
 import { M } from "../aliases/discord.js";
+import setmsg from "./msg";
 
-export default async function search(message: M, text: string): Promise<ytsr.Item | undefined> {
+export default async function search(message: M, text: string): Promise<ytsr.Item | undefined | null> {
   let url = checkurl(text);
   if (url.video) {
     let yid = url.video[1].replace(/\&.+/g,'');
@@ -41,7 +42,8 @@ export default async function search(message: M, text: string): Promise<ytsr.Ite
             player: `<@${message.author.id}>`
           });
         });
-        return undefined;
+        setmsg(message);
+        return null;
       } else {
         let output = list.items.shift();
         let queuelist: nowplay[] = [];

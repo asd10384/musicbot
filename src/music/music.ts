@@ -39,6 +39,7 @@ export default async function music(message: M, text: string) {
       }).then(m => client.msgdelete(m, 0.5));
     }
   } else {
+    if (getsearch === null) return;
     return message.channel?.send({
       embeds: [
         mkembed({
