@@ -4,7 +4,7 @@ import mkembed from "../function/mkembed";
 import { nowplay } from "../database/obj/guild";
 import ytsr from "ytsr";
 import ytdl from "ytdl-core";
-import { AudioPlayerStatus, createAudioPlayer, createAudioResource, getVoiceConnection, joinVoiceChannel, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState, getVoiceConnection, joinVoiceChannel, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
 import getchannel from "./getchannel";
 import MDB from "../database/Mongodb";
 import setmsg from "./msg";
@@ -40,12 +40,13 @@ export default async function play(message: M | PM, getsearch?: ytsr.Video) {
       channelId: voicechannel.id
     });
     const Player = createAudioPlayer();
-    const subscription = connection.subscribe(Player);
-    const resource = createAudioResource(ytdl(data.url/*, { quality: 'highestaudio' }*/));
+    const resource = createAudioResource(ytdl(data.url, { filter: "audioonly", quality: 'highestaudio' }), { inlineVolume: false, inputType: StreamType.Arbitrary });
     // resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 10 : 0.7);
     guildDB.playing = true;
     await guildDB.save();
-    subscription?.player.play(resource);
+    Player.play(resource);
+    const subscription = connection.subscribe(Player);
+    entersState(Player, AudioPlayerStatus.Playing, 5_000);
     setmsg(message);
     // connection.on(VoiceConnectionStatus.Ready, () => {
     //   // 봇 음성채널에 접속
