@@ -57,7 +57,6 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
     });
     subscription?.player.on(AudioPlayerStatus.Idle, (P) => {
       // 봇 노래 재생 끝났을때
-      if (P.status === AudioPlayerStatus.Playing) return;
       play(message, undefined);
     });
     subscription?.connection.on(VoiceConnectionStatus.Disconnected, () => {
