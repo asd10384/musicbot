@@ -51,6 +51,7 @@ function setembed(guildDB: guild_type) {
   let em = mkembed({
     title: title,
     image: data.image,
+    url: data.url,
     color: 'ORANGE'
   });
   if (guildDB.playing && guildDB.options.player) em.setDescription(`노래 요청자: ${data.player}`);
