@@ -46,7 +46,6 @@ export default async function play(message: M | PM, getsearch?: ytsr.Video) {
     await guildDB.save();
     Player.play(resource);
     const subscription = connection.subscribe(Player);
-    entersState(Player, AudioPlayerStatus.Playing, 5_000);
     setmsg(message);
     // connection.on(VoiceConnectionStatus.Ready, () => {
     //   // 봇 음성채널에 접속
