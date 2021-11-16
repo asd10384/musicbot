@@ -5,11 +5,11 @@ import MDB from "../database/Mongodb";
 import { TextChannel } from "discord.js";
 import mkembed from "../function/mkembed";
 
-export default async function setmsg(message: M | PM) {
+export default async function setmsg(message: M | PM, pause?: boolean) {
   MDB.get.guild(message).then((guildDB) => {
     if (guildDB) {
       let text = setlist(guildDB);
-      let embed = setembed(guildDB);
+      let embed = setembed(guildDB, pause);
       let channel = message.guild?.channels.cache.get(guildDB.channelId);
       (channel as TextChannel).messages.cache.get(guildDB.msgId)?.edit({ content: text, embeds: [embed] });
     }
@@ -39,7 +39,7 @@ function setlist(guildDB: guild_type) {
   return output;
 }
 
-function setembed(guildDB: guild_type) {
+function setembed(guildDB: guild_type, pause?: boolean) {
   let data = guildDB.nowplay;
   var title = '';
   if (guildDB.playing) {
@@ -55,6 +55,6 @@ function setembed(guildDB: guild_type) {
     color: client.embedcolor
   });
   if (guildDB.playing && guildDB.options.player) em.setDescription(`노래 요청자: ${data.player}`);
-  if (guildDB.playing) em.setFooter(`${guildDB.queue.length}개의 노래가 대기열에 있습니다. | Volume: ${guildDB.options.volume}%`);
+  if (guildDB.playing) em.setFooter(`${guildDB.queue.length}개의 노래가 대기열에 있습니다. | Volume: ${guildDB.options.volume}%${(pause) ? ` | 노래가 일시중지 되었습니다.` : ''}`);
   return em;
 }
