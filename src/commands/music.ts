@@ -69,7 +69,7 @@ export default class MusicCommand implements Command {
             title: `**현재 노래가 재생되지 않았습니다**`,
             image: `https://cdn.hydra.bot/hydra_no_music.png`,
             footer: { text: `PREFIX: ${client.prefix}` },
-            color: 'ORANGE'
+            color: client.embedcolor
           })
         ]
       });
@@ -106,7 +106,7 @@ export default class MusicCommand implements Command {
               title: `**현재 노래가 재생되지 않았습니다**`,
               image: `https://cdn.hydra.bot/hydra_no_music.png`,
               footer: { text: `PREFIX: ${client.prefix}` },
-              color: 'ORANGE'
+              color: client.embedcolor
             })
           ]
         });

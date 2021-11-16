@@ -27,13 +27,13 @@ export default class HelpCommand implements Command {
     const slashcmdembed = mkembed({
       title: `\` slash (/) \` 명령어`,
       description: `명령어\n명령어 설명`,
-      color: 'ORANGE'
+      color: client.embedcolor
     });
     const msgcmdembed = mkembed({
       title: `\` 기본 (${client.prefix}) \` 명령어`,
       description: `명령어 [같은 명령어]\n명령어 설명`,
       footer: { text: `PREFIX: ${client.prefix}` },
-      color: 'ORANGE'
+      color: client.embedcolor
     });
     let cmdlist: { label: string, description: string, value: string }[] = [];
     slash.commands.forEach((cmd) => {
@@ -49,7 +49,7 @@ export default class HelpCommand implements Command {
       title: '\` 명령어 상세보기 \`',
       description: `명령어의 자세한 내용은\n아래의 선택박스에서 선택해\n확인할수있습니다.`,
       footer: { text: '여러번 가능' },
-      color: 'ORANGE'
+      color: client.embedcolor
     });
     const row = new MessageActionRow().addComponents(
       new MessageSelectMenu()

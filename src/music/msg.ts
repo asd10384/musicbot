@@ -52,7 +52,7 @@ function setembed(guildDB: guild_type) {
     title: title,
     image: data.image,
     url: data.url,
-    color: 'ORANGE'
+    color: client.embedcolor
   });
   if (guildDB.playing && guildDB.options.player) em.setDescription(`노래 요청자: ${data.player}`);
   if (guildDB.playing) em.setFooter(`${guildDB.queue.length}개의 노래가 대기열에 있습니다. | Volume: ${guildDB.options.volume}%`);

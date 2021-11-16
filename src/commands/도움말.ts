@@ -34,7 +34,7 @@ export default class 도움말Command implements Command {
     if (commandName) {
       const slashcommand = slash.commands.get(commandName);
       const msgcommand = msg.commands.get(commandName);
-      let embed = mkembed({ color: 'ORANGE' });
+      let embed = mkembed({ color: client.embedcolor });
       if (slashcommand) {
         embed.setTitle(`\` /${commandName} \` 명령어`)
           .setDescription(`이름: ${commandName}\n설명: ${slashcommand.metadata.description}`)
@@ -54,13 +54,13 @@ export default class 도움말Command implements Command {
     let slashcmdembed = mkembed({
       title: `\` slash (/) \` 명령어`,
       description: `명령어\n명령어 설명`,
-      color: 'ORANGE'
+      color: client.embedcolor
     });
     let msgcmdembed = mkembed({
       title: `\` 기본 (${client.prefix}) \` 명령어`,
       description: `명령어 [같은 명령어]\n명령어 설명`,
       footer: { text: `PREFIX: ${client.prefix}` },
-      color: 'ORANGE'
+      color: client.embedcolor
     });
     slash.commands.forEach((cmd) => {
       if (cmd.metadata.name === this.metadata.name) return;

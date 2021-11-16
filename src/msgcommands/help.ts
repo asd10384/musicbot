@@ -28,7 +28,7 @@ export default class HelpCommand implements Command {
     if (args[0]) {
       const slashcommand = slash.commands.get(args[0]);
       const msgcommand = msg.commands.get(args[0]) || msg.commands.find((cmd) => cmd.metadata.aliases && cmd.metadata.aliases.includes(args[0]));
-      let embed = mkembed({ color: 'ORANGE' });
+      let embed = mkembed({ color: client.embedcolor });
       if (slashcommand) {
         embed.setTitle(`\` /${args[0]} \` 명령어`)
           .setDescription(`이름: ${args[0]}\n설명: ${slashcommand.metadata.description}\n옵션: ${slashcommand.metadata.options}`)
@@ -49,13 +49,13 @@ export default class HelpCommand implements Command {
       author: { name: message.guild?.name!, iconURL: message.guild?.iconURL()! },
       title: `\` slash (/) \` 명령어`,
       description: `명령어\n명령어 설명`,
-      color: 'ORANGE'
+      color: client.embedcolor
     });
     let msgcmdembed = mkembed({
       title: `\` 기본 (${client.prefix}) \` 명령어`,
       description: `명령어 [같은 명령어]\n명령어 설명`,
       footer: { text: `PREFIX: ${client.prefix}` },
-      color: 'ORANGE'
+      color: client.embedcolor
     });
     slash.commands.forEach((cmd) => {
       slashcmdembed.addField(`**/${cmd.metadata.name}**`, `${cmd.metadata.description}`, true);

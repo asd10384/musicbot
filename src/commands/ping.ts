@@ -33,7 +33,7 @@ export default class PingCommand implements Command {
         mkembed({
           title: `Pong!`,
           description: `**${client.ws.ping}ms**`,
-          color: 'ORANGE'
+          color: client.embedcolor
         })
       ], components: [actionRow]
     });

@@ -54,7 +54,7 @@ export default class 역할Command implements Command {
           mkembed({
             title: `\` 역할 목록 \``,
             description: (text && text !== '') ? text : '등록된 역할 없음',
-            color: 'ORANGE'
+            color: client.embedcolor
           })
         ]
       }).then(m => client.msgdelete(m, 2.5));
@@ -81,7 +81,7 @@ export default class 역할Command implements Command {
                 title: `\` 역할 추가 \``,
                 description: `<@&${role.id}> 역할 추가 완료.`,
                 footer: { text: `목록: ${client.prefix}역할 목록` },
-                color: 'ORANGE'
+                color: client.embedcolor
               })
             ]
           }).then(m => client.msgdelete(m, 1.8));
@@ -115,7 +115,7 @@ export default class 역할Command implements Command {
                 title: `\` 역할 제거 \``,
                 description: `<@&${role.id}> 역할 제거 완료.`,
                 footer: { text: `목록: ${client.prefix}역할 목록` },
-                color: 'ORANGE'
+                color: client.embedcolor
               })
             ]
           }).then(m => client.msgdelete(m, 1.8));
@@ -156,7 +156,7 @@ export default class 역할Command implements Command {
             ${client.prefix}역할 제거 @역할
              : 특정 명령어 사용가능한 역할 제거
           `,
-          color: 'ORANGE'
+          color: client.embedcolor
         })
       ]
     }).then(m => client.msgdelete(m, 4));

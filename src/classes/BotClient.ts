@@ -1,4 +1,4 @@
-import { Client, ClientEvents, Message } from 'discord.js';
+import { Client, ClientEvents, ColorResolvable, Message } from 'discord.js';
 import { config } from 'dotenv';
 import _ from '../consts';
 
@@ -19,6 +19,7 @@ export default class BotClient extends Client {
   ttsfilepath: string;
   ttstimer: Map<string, { start: boolean, time: number }>;
   ttstimertime: number;
+  embedcolor: ColorResolvable;
   /**
    * 클라이언트 생성
    * 
@@ -47,6 +48,7 @@ export default class BotClient extends Client {
     };
     this.ttstimer = new Map<string, { start: boolean, time: number }>();
     this.ttstimertime = (60) * 45; //분
+    this.embedcolor = "ORANGE";
   }
 
   /**

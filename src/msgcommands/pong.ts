@@ -31,7 +31,7 @@ export default class PongCommand implements Command {
           title: `Ping!`,
           description: `**${client.ws.ping}ms**`,
           footer: { text: `이 메세지는 곧 삭제됩니다.` },
-          color: 'ORANGE'
+          color: client.embedcolor
         })
       ]
     }).then(m => client.msgdelete(m, 1.5));

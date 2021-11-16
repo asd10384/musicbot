@@ -30,7 +30,7 @@ export default class ExampleCommand implements Command {
           title: `example`,
           description: `example`,
           footer: { text: `example` },
-          color: 'ORANGE'
+          color: client.embedcolor
         })
       ]
     });

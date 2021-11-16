@@ -67,7 +67,7 @@ export default class 역할Command implements Command {
           mkembed({
             title: `\` 역할 목록 \``,
             description: (text && text !== '') ? text : '등록된 역할 없음',
-            color: 'ORANGE'
+            color: client.embedcolor
           })
         ]
       });
@@ -93,7 +93,7 @@ export default class 역할Command implements Command {
               title: `\` 역할 추가 \``,
               description: `<@&${role!.id}> 역할 추가 완료`,
               footer: { text: `목록: /역할 목록` },
-              color: 'ORANGE'
+              color: client.embedcolor
             })
           ]
         });
@@ -113,7 +113,7 @@ export default class 역할Command implements Command {
               title: `\` 역할 제거 \``,
               description: `<@&${role!.id}> 역할 제거 완료`,
               footer: { text: `목록: /역할 목록` },
-              color: 'ORANGE'
+              color: client.embedcolor
             })
           ]
         });
