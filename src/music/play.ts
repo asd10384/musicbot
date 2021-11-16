@@ -40,27 +40,29 @@ export default async function play(message: M | PM, getsearch?: ytsr.Video) {
     });
     const Player = createAudioPlayer();
     const subscription = connection.subscribe(Player);
-    const resource = createAudioResource(ytdl(data.url, { quality: 'highestaudio' }), { inlineVolume: true });
+    const resource = createAudioResource(ytdl(data.url/*, { quality: 'highestaudio' }*/));
     // resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 10 : 0.7);
     guildDB.playing = true;
     await guildDB.save();
-    Player.play(resource);
+    subscription?.player.play(resource);
     setmsg(message);
     // connection.on(VoiceConnectionStatus.Ready, () => {
     //   // 봇 음성채널에 접속
     // });
-    Player.on(AudioPlayerStatus.Idle, () => {
+    subscription?.player.on(AudioPlayerStatus.Idle, () => {
       // 봇 노래 재생 끝났을때
       play(message, undefined);
     });
-    connection.on(VoiceConnectionStatus.Disconnected, () => {
+    subscription?.connection.on(VoiceConnectionStatus.Disconnected, () => {
       // 봇 음성채널에서 퇴장
       stop(message);
     });
-    connection.on('error', () => {
+    subscription?.connection.on('error', (err) => {
+      if (client.debug) console.log('connection오류:', err);
       play(message, undefined);
     });
-    Player.on('error', () => {
+    subscription?.player.on('error', (err) => {
+      if (client.debug) console.log('Player오류:', err);
       play(message, undefined);
     });
   } else {
