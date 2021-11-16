@@ -1,0 +1,38 @@
+import { client } from "..";
+import { check_permission as ckper, embed_permission as emper } from "../function/permission";
+import { SlashCommand as Command } from "../interfaces/Command";
+import { I, D } from "../aliases/discord.js";
+import { MessageActionRow, MessageButton } from "discord.js";
+import mkembed from "../function/mkembed";
+import MDB from "../database/Mongodb";
+
+/**
+ * DB
+ * let guildDB = await MDB.get.guild(interaction);
+ * 
+ * check permission(role)
+ * if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
+ */
+
+/** 예시 명령어 */
+export default class ExampleCommand implements Command {
+  /** 해당 명령어 설명 */
+  metadata = <D>{
+    name: 'example',
+    description: 'example'
+  };
+
+  /** 실행되는 부분 */
+  async run(interaction: I) {
+    await interaction.editReply({
+      embeds: [
+        mkembed({
+          title: `example`,
+          description: `example`,
+          footer: { text: `example` },
+          color: 'ORANGE'
+        })
+      ]
+    });
+  }
+}
