@@ -55,8 +55,9 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
       // 봇 음성채널에 접속
       mapPlayer.set(guildid, Player);
     });
-    subscription?.player.on(AudioPlayerStatus.Idle, () => {
+    subscription?.player.on(AudioPlayerStatus.Idle, (P) => {
       // 봇 노래 재생 끝났을때
+      if (P.status === AudioPlayerStatus.Playing) return;
       play(message, undefined);
     });
     subscription?.connection.on(VoiceConnectionStatus.Disconnected, () => {
