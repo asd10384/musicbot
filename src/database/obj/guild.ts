@@ -54,4 +54,4 @@ const GuildSchema: Schema = new Schema({
   }
 });
 
-export const guild_model = model<guild_type>('Guild_test', GuildSchema);
+export const guild_model = model<guild_type>(`Guild${(process.env.BOT_NUMBER) ? process.env.BOT_NUMBER : ''}`, GuildSchema);
