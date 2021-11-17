@@ -30,8 +30,6 @@ export default async function search(message: M, text: string): Promise<ytsr.Ite
     if (list && list.items && list.items.length > 0) {
       if (guildDB.playing) {
         let queuelist: nowplay[] = [];
-        guildDB.queue = guildDB.queue.concat(queuelist);
-        await guildDB.save();
         list.items.forEach((data) => {
           queuelist.push({
             title: data.title,
@@ -42,6 +40,7 @@ export default async function search(message: M, text: string): Promise<ytsr.Ite
             player: `<@${message.author.id}>`
           });
         });
+        guildDB.queue = guildDB.queue.concat(queuelist);
         await guildDB.save();
         setmsg(message);
         return null;
