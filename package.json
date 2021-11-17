@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "start": "node .",
+    "start": "ts-cleaner && tsc && node .",
     "build": "ts-cleaner && tsc",
     "dev:watch": "nodemon -e ts --exec 'ts-cleaner && tsc && node . || exit 1'",
     "dev": "ts-cleaner && tsc && node ."
