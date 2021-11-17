@@ -42,7 +42,15 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
       channelId: voicechannel.id
     });
     const Player = createAudioPlayer();
-    const resource = createAudioResource(ytdl(data.url, { filter: "audioonly", quality: 'highestaudio', highWaterMark: 32 }), { inlineVolume: false });
+    const ytsource = ytdl(data.url, {
+      filter: "audioonly",
+      quality: 'highestaudio',
+      highWaterMark: 32,
+    }).on('error', (err) => {
+      if (client.debug) console.log('ytdl-core오류:', err);
+      play(message, undefined);
+    });
+    const resource = createAudioResource(ytsource, { inlineVolume: false });
     // resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 10 : 0.7);
     guildDB.playing = true;
     await guildDB.save();
@@ -83,10 +91,7 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
           color: 'DARK_RED'
         })
       ] }).then(m => client.msgdelete(m, 3000, true));
-      play(message, undefined).catch((err) => {
-        console.log('play오류:', err);
-        stop(message);
-      });
+      play(message, undefined);
     });
   } else {
     return message.channel.send({ embeds: [
