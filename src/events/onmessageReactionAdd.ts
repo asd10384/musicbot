@@ -1,9 +1,8 @@
 import { MessageReaction, PartialMessageReaction, PartialUser, User } from 'discord.js';
 import shuffle from '../music/shuffle';
 import MDB from "../database/Mongodb";
-import { play, pause } from "../music/play";
+import { pause, stopPlayer } from "../music/play";
 import stop from "../music/stop";
-import setmsg from '../music/msg';
 
 export default async function onmessageReactionAdd (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) {
   if (user.bot) return;
@@ -25,12 +24,11 @@ export default async function onmessageReactionAdd (reaction: MessageReaction | 
       await stop(reaction.message);
     }
     if (name === '⏭️') {
-      if (guildDB.playing) play(reaction.message);
+      if (guildDB.playing) stopPlayer(reaction.message.guildId);
     }
     if (name === '🔀') {
       if (guildDB.playing && guildDB.queue.length > 0) {
-        await shuffle(reaction.message.guildId);
-        await setmsg(reaction.message);
+        await shuffle(reaction.message);
       }
     }
     reaction.users.remove(user.id);

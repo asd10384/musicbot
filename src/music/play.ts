@@ -18,10 +18,11 @@ const proxy = process.env.PROXY;
 let agent: HttpsProxyAgent | undefined = undefined;
 if (proxy) agent = new HttpsProxyAgent(proxy);
 
-const mapPlayer: Map<string, AudioPlayer> = new Map();
+const mapPlayer: Map<string, AudioPlayer | undefined | null> = new Map();
 
 export async function play(message: M | PM, getsearch?: ytsr.Video) {
-  let guildDB = await MDB.get.guild(message);
+  stopPlayer(message.guildId!);
+  let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
   if (!guildDB) return;
   let voicechannel = getchannel(message);
   if (voicechannel) {
@@ -61,25 +62,26 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
     const resource = createAudioResource(ytsource, { inlineVolume: false });
     // resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 10 : 0.7);
     guildDB.playing = true;
-    await guildDB.save();
+    await guildDB.save().catch((err) => { if (client.debug) console.log('데이터베이스오류:', err) });
     const channelid = guildDB.channelId;
     const guildid = message.guildId!;
     Player.play(resource);
     const subscription = connection.subscribe(Player);
+    mapPlayer.set(guildid, Player);
     setmsg(message);
-    connection.on(VoiceConnectionStatus.Ready, () => {
-      // 봇 음성채널에 접속
-      mapPlayer.set(guildid, Player);
-    });
-    subscription?.player.on(AudioPlayerStatus.Idle, (P) => {
+    // connection.on(VoiceConnectionStatus.Ready, () => {
+    //   // 봇 음성채널에 접속
+    // });
+    Player.on(AudioPlayerStatus.Idle, (P) => {
       // 봇 노래 재생 끝났을때
       play(message, undefined);
     });
-    subscription?.connection.on(VoiceConnectionStatus.Disconnected, () => {
+    connection.on(VoiceConnectionStatus.Disconnected, () => {
       // 봇 음성채널에서 퇴장
       stop(message);
+      stopPlayer(guildid);
     });
-    subscription?.connection.on('error', (err) => {
+    connection.on('error', (err) => {
       if (client.debug) console.log('connection오류:', err);
       (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
         mkembed({
@@ -88,9 +90,9 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
           color: 'DARK_RED'
         })
       ] }).then(m => client.msgdelete(m, 3000, true));
-      play(message, undefined);
+      stopPlayer(guildid);
     });
-    subscription?.player.on('error', (err) => {
+    Player.on('error', (err) => {
       if (client.debug) console.log('Player오류:', err);
       (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
         mkembed({
@@ -99,7 +101,7 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
           color: 'DARK_RED'
         })
       ] }).then(m => client.msgdelete(m, 3000, true));
-      play(message, undefined);
+      stopPlayer(guildid);
     });
   } else {
     return message.channel.send({ embeds: [
@@ -122,5 +124,13 @@ export function pause(message: M | PM) {
       Player.unpause();
       setmsg(message);
     }
+  }
+}
+
+export function stopPlayer(guildId: string) {
+  const Player = mapPlayer.get(guildId);
+  if (Player) {
+    mapPlayer.set(guildId, undefined);
+    Player.stop();
   }
 }

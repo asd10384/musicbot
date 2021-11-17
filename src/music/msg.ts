@@ -6,7 +6,7 @@ import { TextChannel } from "discord.js";
 import mkembed from "../function/mkembed";
 
 export default async function setmsg(message: M | PM, pause?: boolean) {
-  MDB.get.guild(message).then((guildDB) => {
+  MDB.module.guild.findOne({ id: message.guildId! }).then((guildDB) => {
     if (guildDB) {
       let text = setlist(guildDB);
       let embed = setembed(guildDB, pause);

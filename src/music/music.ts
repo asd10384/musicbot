@@ -7,9 +7,10 @@ import { play } from "./play";
 import queue from "./queue";
 
 export default async function music(message: M, text: string) {
-  let getsearch = await search(message, text);
+  const searching = await search(message, text);
+  const getsearch = searching[0];
   if (getsearch) {
-    let guildDB = await MDB.get.guild(message);
+    let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
     if (guildDB) {
       if (getsearch.type === 'video') {
         if (guildDB.playing) {
@@ -39,11 +40,37 @@ export default async function music(message: M, text: string) {
       }).then(m => client.msgdelete(m, 0.5));
     }
   } else {
-    if (getsearch === null) return;
+    const options = searching[1];
+    if (options.type === "playlist") {
+      if (options.err === "notfound") {
+        return message.channel?.send({
+          embeds: [
+            mkembed({
+              title: `플레이리스트를 찾을수 없습니다.`,
+              color: 'DARK_RED'
+            })
+          ]
+        }).then(m => client.msgdelete(m, 0.5));
+      }
+      return;
+    }
+    if (options.type === "video") {
+      if (options.err === "notfound") {
+        return message.channel?.send({
+          embeds: [
+            mkembed({
+              title: `영상을 찾을수 없습니다.`,
+              color: 'DARK_RED'
+            })
+          ]
+        }).then(m => client.msgdelete(m, 0.5));
+      }
+    }
     return message.channel?.send({
       embeds: [
         mkembed({
-          title: `영상을 찾을수 없습니다.`,
+          title: `오류발생`,
+          description: `다시 시도해주세요.`,
           color: 'DARK_RED'
         })
       ]

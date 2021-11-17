@@ -1,11 +1,15 @@
+import { client } from "..";
+import { PM, M } from "../aliases/discord.js"
 import MDB from "../database/Mongodb";
+import setmsg from "./msg";
 
-export default async function shuffle(guildId: string) {
-  MDB.module.guild.findOne({ id: guildId }).then(async (guildDB) => {
+export default async function shuffle(message: M | PM) {
+  MDB.module.guild.findOne({ id: message.guildId! }).then(async (guildDB) => {
     if (guildDB) {
       guildDB.queue = await fshuffle(guildDB.queue);
-      await guildDB.save();
+      await guildDB.save().catch((err) => { if (client.debug) console.log('데이터베이스오류:', err) });
     }
+    setmsg(message);
   });
 }
 
