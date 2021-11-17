@@ -16,3 +16,5 @@ client.onEvent('ready', onReady);
 client.onEvent('interactionCreate', onInteractionCreate);
 client.onEvent('messageCreate', onMessageCreate);
 client.onEvent('messageReactionAdd', onmessageReactionAdd);
+
+process.setMaxListeners(0);

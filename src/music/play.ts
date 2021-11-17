@@ -4,7 +4,7 @@ import mkembed from "../function/mkembed";
 import { nowplay } from "../database/obj/guild";
 import ytsr from "ytsr";
 import ytdl from "ytdl-core";
-import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState, getVoiceConnection, joinVoiceChannel, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, getVoiceConnection, joinVoiceChannel, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
 import getchannel from "./getchannel";
 import MDB from "../database/Mongodb";
 import setmsg from "./msg";
@@ -21,7 +21,6 @@ if (proxy) agent = new HttpsProxyAgent(proxy);
 const mapPlayer: Map<string, AudioPlayer | undefined | null> = new Map();
 
 export async function play(message: M | PM, getsearch?: ytsr.Video) {
-  stopPlayer(message.guildId!);
   let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
   if (!guildDB) return;
   let voicechannel = getchannel(message);
@@ -59,8 +58,8 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
       if (client.debug) console.log('ytdl-core오류:', err);
       play(message, undefined);
     });
-    const resource = createAudioResource(ytsource, { inlineVolume: false });
-    // resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 10 : 0.7);
+    const { stream, type } = await demuxProbe(ytsource);
+    const resource = createAudioResource(stream, { inlineVolume: true, inputType: type });
     guildDB.playing = true;
     await guildDB.save().catch((err) => { if (client.debug) console.log('데이터베이스오류:', err) });
     const channelid = guildDB.channelId;
@@ -74,6 +73,7 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
     // });
     Player.on(AudioPlayerStatus.Idle, (P) => {
       // 봇 노래 재생 끝났을때
+      Player.stop();
       play(message, undefined);
     });
     connection.on(VoiceConnectionStatus.Disconnected, () => {
@@ -87,6 +87,7 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
         mkembed({
           title: `오류발생`,
           description: '영상을 재생할수 없습니다.\n다시 시도해주세요.',
+          footer: { text: `connection error` },
           color: 'DARK_RED'
         })
       ] }).then(m => client.msgdelete(m, 3000, true));
@@ -98,6 +99,7 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
         mkembed({
           title: `오류발생`,
           description: '영상을 재생할수 없습니다.\n다시 시도해주세요.',
+          footer: { text: `Player error` },
           color: 'DARK_RED'
         })
       ] }).then(m => client.msgdelete(m, 3000, true));

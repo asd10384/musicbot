@@ -19,7 +19,9 @@ export default class Consts {
     'GUILDS',
     'GUILD_MESSAGES',
     'GUILD_MESSAGE_REACTIONS',
-    'GUILD_VOICE_STATES'
+    'GUILD_VOICE_STATES',
+    'GUILD_INTEGRATIONS',
+    'GUILD_MESSAGE_TYPING'
     /* 권한을 이곳에 추가 */
   ];
 
