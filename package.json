@@ -36,6 +36,7 @@
     "ffmpeg": "^0.0.4",
     "ffmpeg-static": "^4.4.0",
     "fs": "^0.0.1-security",
+    "https-proxy-agent": "^5.0.0",
     "libsodium-wrappers": "^0.7.9",
     "mongoose": "^6.0.12",
     "opusscript": "^0.0.8",

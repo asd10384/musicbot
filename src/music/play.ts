@@ -10,6 +10,13 @@ import MDB from "../database/Mongodb";
 import setmsg from "./msg";
 import stop from "./stop";
 import { TextChannel } from "discord.js";
+import { HttpsProxyAgent } from "https-proxy-agent";
+import { config } from "dotenv";
+config();
+
+const proxy = process.env.PROXY;
+let agent: HttpsProxyAgent | undefined = undefined;
+if (proxy) agent = new HttpsProxyAgent(proxy);
 
 const mapPlayer: Map<string, AudioPlayer> = new Map();
 
@@ -46,6 +53,7 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
       filter: "audioonly",
       quality: 'highestaudio',
       highWaterMark: 32,
+      requestOptions: { agent }
     }).on('error', (err) => {
       if (client.debug) console.log('ytdl-core오류:', err);
       play(message, undefined);
