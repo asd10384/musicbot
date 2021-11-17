@@ -60,6 +60,7 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
     });
     const { stream, type } = await demuxProbe(ytsource);
     const resource = createAudioResource(stream, { inlineVolume: true, inputType: type });
+    resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 100 : 0.7);
     guildDB.playing = true;
     await guildDB.save().catch((err) => { if (client.debug) console.log('데이터베이스오류:', err) });
     const channelid = guildDB.channelId;
