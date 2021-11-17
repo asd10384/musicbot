@@ -54,4 +54,4 @@ const GuildSchema: Schema = new Schema({
   }
 });
 
-export const guild_model = model<guild_type>('Guild', GuildSchema);
+export const guild_model = model<guild_type>('Guild_test', GuildSchema);
