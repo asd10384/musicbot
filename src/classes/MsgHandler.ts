@@ -41,7 +41,7 @@ export default class MsgHandler {
     } else {
       MDB.get.guild(message).then((guildID) => {
         if (guildID!.channelId === message.channelId) {
-          music(message, message.content);
+          music(message, message.content.trim());
           client.msgdelete(message, 350, true);
         }
       });
