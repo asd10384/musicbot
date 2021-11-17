@@ -1,11 +1,11 @@
 import { client } from "..";
-import { M, PM } from "../aliases/discord.js";
+import { M, PM, I } from "../aliases/discord.js";
 import { guild_type, nowplay } from "../database/obj/guild";
 import MDB from "../database/Mongodb";
 import { TextChannel } from "discord.js";
 import mkembed from "../function/mkembed";
 
-export default async function setmsg(message: M | PM, pause?: boolean) {
+export default async function setmsg(message: M | PM | I, pause?: boolean) {
   MDB.module.guild.findOne({ id: message.guildId! }).then((guildDB) => {
     if (guildDB) {
       let text = setlist(guildDB);

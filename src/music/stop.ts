@@ -3,10 +3,8 @@ import { getVoiceConnection } from "@discordjs/voice";
 import { M, PM } from "../aliases/discord.js";
 import MDB from "../database/Mongodb";
 import setmsg from "./msg";
-import { stopPlayer } from "./play.js";
 
 export default async function stop(message: M | PM) {
-  stopPlayer(message.guildId!);
   let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
   if (!guildDB) return;
   guildDB.playing = false;

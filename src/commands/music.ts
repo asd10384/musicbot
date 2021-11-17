@@ -6,6 +6,8 @@ import { MessageActionRow, MessageButton, TextChannel } from "discord.js";
 import mkembed from "../function/mkembed";
 import MDB from "../database/Mongodb";
 import stop from "../music/stop";
+import { config } from "dotenv";
+config();
 
 /**
  * DB
@@ -58,7 +60,7 @@ export default class MusicCommand implements Command {
     if (cmd === 'create_channel') {
       if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
       let guildDB = await MDB.get.guild(interaction);
-      const channel = await interaction.guild?.channels.create('MUSIC_CHANNEL', {
+      const channel = await interaction.guild?.channels.create(`MUSIC_CHANNEL${(process.env.BOT_NUMBER) ? process.env.BOT_NUMBER : ''}`, {
         type: 'GUILD_TEXT',
         topic: `Type in chat to play`
       });
@@ -75,7 +77,7 @@ export default class MusicCommand implements Command {
       });
       guildDB!.channelId = channel?.id!;
       guildDB!.msgId = msg?.id!;
-      await guildDB!.save();
+      await guildDB!.save().catch((err) => { if (client.debug) console.log('데이터베이스오류:', err) });
       msg?.react('⏯️');
       msg?.react('⏹️');
       msg?.react('⏭️');
@@ -112,7 +114,7 @@ export default class MusicCommand implements Command {
         });
         guildDB!.channelId = channel?.id!;
         guildDB!.msgId = msg?.id!;
-        await guildDB!.save();
+        await guildDB!.save().catch((err) => { if (client.debug) console.log('데이터베이스오류:', err) });
         msg?.react('⏯️');
         msg?.react('⏹️');
         msg?.react('⏭️');

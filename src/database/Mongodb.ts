@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import { I, M, MEM } from "../aliases/discord.js";
 import { connect } from "mongoose";
-import { GuildMember, PartialMessage, VoiceState } from "discord.js";
+import { GuildMember, PartialMessage, SelectMenuInteraction, VoiceState } from "discord.js";
 import { guild_type, guild_model } from "./obj/guild";
 import { user_type, user_model } from "./obj/user";
 
@@ -25,7 +25,7 @@ const out = {
 
 export default out;
 
-async function guild_get(msg: M | I | VoiceState | PartialMessage) {
+async function guild_get(msg: M | I | VoiceState | PartialMessage | SelectMenuInteraction) {
   let guildDB: guild_type | null = await guild_model.findOne({ id: msg.guild?.id! });
   if (guildDB) {
     return guildDB;

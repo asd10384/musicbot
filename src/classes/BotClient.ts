@@ -20,6 +20,7 @@ export default class BotClient extends Client {
   ttstimer: Map<string, { start: boolean, time: number }>;
   ttstimertime: number;
   embedcolor: ColorResolvable;
+  maxqueue: number;
   /**
    * 클라이언트 생성
    * 
@@ -49,6 +50,7 @@ export default class BotClient extends Client {
     this.ttstimer = new Map<string, { start: boolean, time: number }>();
     this.ttstimertime = (60) * 45; //분
     this.embedcolor = "ORANGE";
+    this.maxqueue = 20;
   }
 
   /**
