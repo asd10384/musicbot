@@ -13,6 +13,7 @@
 ```
 Node.js must be installed.
 Node.js가 설치되어 있어야 합니다.
+[**`ts-first-setting.md`**](https://github.com/asd10384/musicbot/blob/main/ts-first-setting.md) 파일을 참고해 npm 모듈 설치
 ```
 
 ### Installing / 설치
@@ -23,7 +24,7 @@ npm install --save --force
 
 ### Start / 시작
 
- 1.  [**`.env.example`**](https://github.com/asd10384/embot/blob/main/.env.example) 파일을 참고해 **`.env`** 파일생성
+ 1.  [**`.env.example`**](https://github.com/asd10384/musicbot/blob/main/.env.example) 파일을 참고해 **`.env`** 파일생성
  2.  [**`설치`**](https://github.com/asd10384/musicbot#installing--%EC%84%A4%EC%B9%98)
  3.  **DEV** 상태라면 **`npm run dev`** 로 봇 실행
  4.  **PRODUCTION** 상태라면 **`npm run build`** 로 **ts->js** 변환 후 **`npm run start`** 로 봇 실행
