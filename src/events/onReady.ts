@@ -12,6 +12,7 @@ export default function onReady() {
 
   console.log('Ready!', client.user.username);
   console.log('Activity:', JSON.stringify(actlist));
+  console.log('로그확인:', client.debug);
 
   if (process.env.REFRESH_SLASH_COMMAND_ON_READY === 'true') slash.registCachedCommands(client);
 

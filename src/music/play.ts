@@ -1,10 +1,10 @@
 import { client } from "..";
-import { PM, M } from "../aliases/discord.js"
+import { PM, M } from "../aliases/discord.js.js"
 import mkembed from "../function/mkembed";
 import { nowplay } from "../database/obj/guild";
 import ytsr from "ytsr";
 import ytdl from "ytdl-core";
-import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, getVoiceConnection, joinVoiceChannel, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, getVoiceConnection, joinVoiceChannel, StreamType, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import getchannel from "./getchannel";
 import MDB from "../database/Mongodb";
 import setmsg from "./msg";
@@ -12,6 +12,7 @@ import stop from "./stop";
 import { TextChannel } from "discord.js";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import { config } from "dotenv";
+import internal from "stream";
 config();
 
 const proxy = process.env.PROXY;
@@ -23,6 +24,8 @@ const mapPlayer: Map<string, AudioPlayer | undefined | null> = new Map();
 export async function play(message: M | PM, getsearch?: ytsr.Video) {
   let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
   if (!guildDB) return;
+  const channelid = guildDB.channelId;
+  const guildid = message.guildId!;
   let voicechannel = getchannel(message);
   if (voicechannel) {
     let data: nowplay | undefined = undefined;
@@ -39,6 +42,21 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
       data = guildDB.queue.shift();
     }
     if (data) {
+      const checkarea = await getarea(data.url);
+      if (checkarea) {
+        data.image = data.image.replace('hqdefault', 'maxresdefault');
+        guildDB.nowplay = data;
+      } else {
+        (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
+          mkembed({
+            title: `오류발생`,
+            description: '현재 지역에서 영상을 재생할수 없습니다.',
+            footer: { text: `Area error` },
+            color: 'DARK_RED'
+          })
+        ] }).then(m => client.msgdelete(m, 3000, true));
+      }
+      data.image = data.image.replace('hqdefault', 'maxresdefault');
       guildDB.nowplay = data;
     } else {
       return getVoiceConnection(message.guildId!)?.disconnect();
@@ -49,22 +67,34 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
       channelId: voicechannel.id
     });
     const Player = createAudioPlayer();
-    const ytsource = ytdl(data.url, {
-      filter: "audioonly",
-      quality: 'highestaudio',
-      highWaterMark: 32,
-      requestOptions: { agent }
-    }).on('error', (err) => {
-      if (client.debug) console.log('ytdl-core오류:', err);
+    let ytsource: internal.Readable | undefined = undefined;
+    try {
+      ytsource = ytdl(data.url, {
+        filter: "audioonly",
+        quality: 'highestaudio',
+        highWaterMark: 1 << 25,
+        requestOptions: { agent }
+      }).on('error', (err) => {
+        if (client.debug) console.log('ytdl-core오류:', err);
+        return undefined;
+      });
+    } catch {}
+    if (!ytsource) {
       play(message, undefined);
-    });
-    const { stream, type } = await demuxProbe(ytsource);
-    const resource = createAudioResource(stream, { inlineVolume: true, inputType: type });
+      return;
+    }
+    try {
+      await entersState(connection, VoiceConnectionStatus.Ready, 20000);
+    } catch {
+      if (connection.state.status !== VoiceConnectionStatus.Destroyed) {
+        connection.destroy();
+        stopPlayer(guildid);
+      }
+    }
+    const resource = createAudioResource(ytsource, { inlineVolume: true, inputType: StreamType.Arbitrary });
     resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 100 : 0.7);
     guildDB.playing = true;
     await guildDB.save().catch((err) => { if (client.debug) console.log('데이터베이스오류:', err) });
-    const channelid = guildDB.channelId;
-    const guildid = message.guildId!;
     Player.play(resource);
     const subscription = connection.subscribe(Player);
     mapPlayer.set(guildid, Player);
@@ -136,4 +166,14 @@ export function stopPlayer(guildId: string) {
     mapPlayer.set(guildId, undefined);
     Player.stop();
   }
+}
+
+export async function getarea(url: string) {
+  const info = await ytdl.getInfo(url).catch((err) => {
+    return undefined;
+  });
+  if (info) {
+    return info.videoDetails.availableCountries.includes('KR');
+  }
+  return false;
 }

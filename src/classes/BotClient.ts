@@ -50,7 +50,7 @@ export default class BotClient extends Client {
     this.ttstimer = new Map<string, { start: boolean, time: number }>();
     this.ttstimertime = (60) * 45; //분
     this.embedcolor = "ORANGE";
-    this.maxqueue = 20;
+    this.maxqueue = 30;
   }
 
   /**

@@ -9,6 +9,9 @@ import queue from "./queue";
 export default async function music(message: M, text: string) {
   const searching = await search(message, text);
   const getsearch = searching[0];
+  if (searching[1].addembed) {
+    searching[1].addembed.delete().catch((err) => { if (client.debug) console.log('addembed 메세지 삭제 오류') });
+  }
   if (getsearch) {
     let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
     if (guildDB) {
@@ -51,6 +54,16 @@ export default async function music(message: M, text: string) {
             })
           ]
         }).then(m => client.msgdelete(m, 0.5));
+      }
+      if (options.err === "added") {
+        return message.channel?.send({
+          embeds: [
+            mkembed({
+              title: `현재 플레이리스트를 추가하는중입니다.\n잠시뒤 사용해주세요.`,
+              color: 'DARK_RED'
+            })
+          ]
+        }).then(m => client.msgdelete(m, 1));
       }
       return;
     }

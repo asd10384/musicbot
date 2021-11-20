@@ -5,6 +5,9 @@ import _ from '../consts';
 import { MsgCommand as Command } from '../interfaces/Command';
 import MDB from "../database/Mongodb";
 import music from "../music/music";
+import mkembed from '../function/mkembed';
+
+const cooldown: { [key: string]: number } = {};
 
 export default class MsgHandler {
   public commands: Collection<string, Command>;
@@ -41,8 +44,18 @@ export default class MsgHandler {
     } else {
       MDB.get.guild(message).then((guildID) => {
         if (guildID!.channelId === message.channelId) {
-          music(message, message.content.trim());
           client.msgdelete(message, 350, true);
+          if (cooldown[`${message.guildId!}.${message.author.id}`] && cooldown[`${message.guildId!}.${message.author.id}`] > Date.now()) {
+            message.channel.send({ embeds: [
+              mkembed({
+                description: `**<@${message.author.id}>님 너무 빠르게 입력했습니다.**\n${Math.round(((cooldown[`${message.guildId!}.${message.author.id}`] - Date.now()) / 1000) * 100) / 100}초 뒤에 다시 사용해주세요.`,
+                color: 'DARK_RED'
+              })
+            ] }).then(m => client.msgdelete(m, 1));
+          } else {
+            cooldown[`${message.guildId!}.${message.author.id}`] = Date.now() + 2 * 1000;
+            music(message, message.content.trim());
+          }
         }
       });
     }

@@ -92,7 +92,7 @@ export default class MusicCommand implements Command {
         if (channel) {
           await (channel as TextChannel).messages.fetch().then((msg) => {
             try {
-              if (msg.size > 0) (channel as TextChannel).bulkDelete(msg.size);
+              if (msg.size > 0) (channel as TextChannel).bulkDelete(msg.size).catch((err) => { if (client.debug) console.log('메세지 전체 삭제 오류'); });
             } catch (err) {}
           });
         } else {
