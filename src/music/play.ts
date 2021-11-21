@@ -15,6 +15,8 @@ import { config } from "dotenv";
 import internal from "stream";
 config();
 
+process.setMaxListeners(0);
+
 const proxy = process.env.PROXY;
 let agent: HttpsProxyAgent | undefined = undefined;
 if (proxy) agent = new HttpsProxyAgent(proxy);
@@ -67,20 +69,37 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
       channelId: voicechannel.id
     });
     const Player = createAudioPlayer();
+    connection.setMaxListeners(0);
+    Player.setMaxListeners(0);
     let ytsource: internal.Readable | undefined = undefined;
     try {
       ytsource = ytdl(data.url, {
         filter: "audioonly",
         quality: 'highestaudio',
-        highWaterMark: 1 << 25,
+        highWaterMark: 1 << 27,
         requestOptions: { agent }
       }).on('error', (err) => {
-        if (client.debug) console.log('ytdl-core오류:', err);
+        if (client.debug) console.log('ytdl-core오류1:', err);
         return undefined;
       });
-    } catch {}
+    } catch {
+      let ytsource2: internal.Readable | undefined = undefined;
+      try {
+        ytsource2 = ytdl(data.url, {
+          filter: "audioonly",
+          quality: 'highestaudio',
+          highWaterMark: 1 << 25,
+          requestOptions: { agent }
+        }).on('error', (err) => {
+          if (client.debug) console.log('ytdl-core오류2:', err);
+          return undefined;
+        });
+      } catch {}
+      ytsource = ytsource2;
+    }
     if (!ytsource) {
-      play(message, undefined);
+      await stopPlayer(message.guildId!);
+      setTimeout(() => play(message, undefined), 50);
       return;
     }
     try {
@@ -143,7 +162,7 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
         description: '음성채널에 들어가서 사용해주세요.',
         color: 'DARK_RED'
       })
-    ] }).then(m => client.msgdelete(m, 0.5));
+    ] }).then(m => client.msgdelete(m, 1));
   }
 }
 
@@ -160,7 +179,7 @@ export function pause(message: M | PM) {
   }
 }
 
-export function stopPlayer(guildId: string) {
+export async function stopPlayer(guildId: string) {
   const Player = mapPlayer.get(guildId);
   if (Player) {
     mapPlayer.set(guildId, undefined);
