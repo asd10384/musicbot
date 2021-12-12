@@ -2,7 +2,7 @@ import { client } from '..';
 import { MessageReaction, PartialMessageReaction, PartialUser, User } from 'discord.js';
 import shuffle from '../music/shuffle';
 import MDB from "../database/Mongodb";
-import { pause, stopPlayer, skipPlayer } from "../music/play";
+import { pause, stopPlayer } from "../music/play";
 import stop from "../music/stop";
 
 export default async function onmessageReactionAdd (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) {
@@ -26,7 +26,7 @@ export default async function onmessageReactionAdd (reaction: MessageReaction | 
       await stop(reaction.message);
     }
     if (name === '⏭️') {
-      if (musicDB.playing) skipPlayer(reaction.message);
+      if (musicDB.playing) stopPlayer(reaction.message.guildId!);
     }
     if (name === '🔀') {
       if (musicDB.playing && musicDB.queue.length > 0) {

@@ -123,10 +123,8 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
     // });
     Player.on(AudioPlayerStatus.Idle, (P) => {
       // 봇 노래 재생 끝났을때
-      if (!mapPlayer.get(guildid)) {
-        Player.stop();
-        play(message, undefined);
-      }
+      Player.stop();
+      play(message, undefined);
     });
     connection.on(VoiceConnectionStatus.Disconnected, () => {
       // 봇 음성채널에서 퇴장
@@ -181,20 +179,21 @@ export function pause(message: M | PM) {
   }
 }
 
-export async function skipPlayer(message: M | PM) {
-  const Player = mapPlayer.get(message.guildId!);
-  const connection = getVoiceConnection(message.guildId!);
-  if (Player) {
-    if (connection) {
-      Player.stop();
-      await entersState(connection, VoiceConnectionStatus.Ready, 5_000);
-      play(message);
-    } else {
-      mapPlayer.set(message.guildId!, undefined);
-      Player.stop();
-    }
-  }
-}
+// export async function skipPlayer(message: M | PM) {
+//   const Player = mapPlayer.get(message.guildId!);
+//   const connection = getVoiceConnection(message.guildId!);
+//   if (Player) {
+//     if (connection) {
+//       Player.stop();
+//       await entersState(connection, VoiceConnectionStatus.Ready, 5_000);
+//       play(message);
+//     } else {
+//       mapPlayer.set(message.guildId!, undefined);
+//       Player.stop();
+//     }
+//   }
+// }
+
 export async function stopPlayer(guildId: string) {
   const Player = mapPlayer.get(guildId);
   if (Player) {
