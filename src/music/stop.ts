@@ -7,9 +7,10 @@ import setmsg from "./msg";
 export default async function stop(message: M | PM) {
   let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
   if (!guildDB) return;
-  guildDB.playing = false;
-  guildDB.queue = [];
-  guildDB.nowplay = {
+  let musicDB = client.musicdb(message.guildId!);
+  musicDB.playing = false;
+  musicDB.queue = [];
+  musicDB.nowplaying = {
     author: '',
     duration: '',
     player: '',
@@ -17,7 +18,7 @@ export default async function stop(message: M | PM) {
     url: '',
     image: ''
   };
-  await guildDB.save().catch((err) => { if (client.debug) console.log('데이터베이스오류:', err) });
+  client.music.set(message.guildId!, musicDB);
   setmsg(message);
   getVoiceConnection(message.guildId!)?.disconnect();
 }

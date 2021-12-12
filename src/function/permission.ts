@@ -1,4 +1,4 @@
-import mkembed from "./mkembed";
+import { client } from "..";
 import MDB from "../database/Mongodb";
 import { I, M } from "../aliases/discord.js";
 import { GuildMemberRoleManager, MessageEmbed, Permissions } from "discord.js";
@@ -18,7 +18,7 @@ export async function check_permission(msg: I | M): Promise<boolean> {
   return false;
 }
 
-export const embed_permission: MessageEmbed = mkembed({
+export const embed_permission: MessageEmbed = client.mkembed({
   description: `이 명령어를 사용할\n권한이 없습니다.`,
   color: 'DARK_RED'
 });

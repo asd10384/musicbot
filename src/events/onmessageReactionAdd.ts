@@ -1,7 +1,8 @@
+import { client } from '..';
 import { MessageReaction, PartialMessageReaction, PartialUser, User } from 'discord.js';
 import shuffle from '../music/shuffle';
 import MDB from "../database/Mongodb";
-import { pause, stopPlayer } from "../music/play";
+import { pause, stopPlayer, skipPlayer } from "../music/play";
 import stop from "../music/stop";
 
 export default async function onmessageReactionAdd (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) {
@@ -10,6 +11,7 @@ export default async function onmessageReactionAdd (reaction: MessageReaction | 
 
   let guildDB = await MDB.module.guild.findOne({ id: reaction.message.guildId });
   if (!guildDB) return console.log('reaction 데이터베이스 검색 실패');
+  let musicDB = client.musicdb(reaction.message.guildId!);
 
   if (reaction.message.partial) await reaction.message.fetch();
   if (reaction.partial) await reaction.fetch();
@@ -18,16 +20,16 @@ export default async function onmessageReactionAdd (reaction: MessageReaction | 
 
   if (reaction.message.channelId === guildDB.channelId) {
     if (name === '⏯️') {
-      if (guildDB.playing) pause(reaction.message);
+      if (musicDB.playing) pause(reaction.message);
     }
     if (name === '⏹️') {
       await stop(reaction.message);
     }
     if (name === '⏭️') {
-      if (guildDB.playing) stopPlayer(reaction.message.guildId);
+      if (musicDB.playing) skipPlayer(reaction.message);
     }
     if (name === '🔀') {
-      if (guildDB.playing && guildDB.queue.length > 0) {
+      if (musicDB.playing && musicDB.queue.length > 0) {
         await shuffle(reaction.message);
       }
     }

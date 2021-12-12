@@ -2,6 +2,12 @@ import { config } from "dotenv";
 import { Document, model, Schema } from "mongoose";
 config();
 
+export interface music {
+  playing: boolean;
+  nowplaying: nowplay | null;
+  queue: nowplay[]
+};
+
 export interface nowplay {
   title: string,
   author: string,
@@ -18,9 +24,6 @@ export interface guild_type extends Document {
   role: string[],
   channelId: string,
   msgId: string,
-  playing: boolean,
-  nowplay: nowplay,
-  queue: nowplay[],
   options: {
     volume: number,
     player: boolean,
@@ -36,16 +39,6 @@ const GuildSchema: Schema = new Schema({
   role: { type: Array },
   channelId: { type: String },
   msgId: { type: String },
-  playing: { type: Boolean },
-  nowplay: {
-    title: { type: String },
-    author: { type: String },
-    duration: { type: String },
-    url: { type: String },
-    image: { type: String },
-    player: { type: String }
-  },
-  queue: { type: Array },
   options: {
     volume: { type: Number },
     player: { type: Boolean },

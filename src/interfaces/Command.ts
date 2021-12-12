@@ -1,15 +1,13 @@
-import { ChatInputApplicationCommandData, CommandInteraction, Message } from "discord.js";
+import { ChatInputApplicationCommandData, CommandInteraction, Message, SelectMenuInteraction } from "discord.js";
 
-export interface SlashCommand {
-  run: (args: CommandInteraction) => any;
+export interface Command {
+  name: string;
+  visible: boolean;
+  description: string;
+  information: string;
+  aliases: string[];
   metadata: ChatInputApplicationCommandData;
-}
-
-export interface MsgCommand {
-  run: (message: Message, args: string[]) => any;
-  metadata: {
-    name: string,
-    description: string,
-    aliases: string[]
-  };
+  slashrun?: (args: CommandInteraction) => Promise<any>;
+  msgrun?: (message: Message, args: string[]) => Promise<any>;
+  menurun?: (interaction: SelectMenuInteraction, args: string[]) => Promise<any>;
 }

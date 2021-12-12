@@ -1,5 +1,4 @@
 import { client } from "..";
-import mkembed from "../function/mkembed.js";
 import { I, M } from "../aliases/discord.js";
 import search from "./search.js";
 import MDB from "../database/Mongodb";
@@ -14,9 +13,10 @@ export default async function music(message: M, text: string) {
   }
   if (getsearch) {
     let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
+    let musicDB = client.musicdb(message.guildId!);
     if (guildDB) {
       if (getsearch.type === 'video') {
-        if (guildDB.playing) {
+        if (musicDB.playing) {
           queue(message, getsearch);
         } else {
           play(message, getsearch);
@@ -24,7 +24,7 @@ export default async function music(message: M, text: string) {
       } else {
         return message.channel?.send({
           embeds: [
-            mkembed({
+            client.mkembed({
               title: `영상을 찾을수 없습니다.`,
               color: 'DARK_RED'
             })
@@ -34,7 +34,7 @@ export default async function music(message: M, text: string) {
     } else {
       return message.channel?.send({
         embeds: [
-          mkembed({
+          client.mkembed({
             title: `알수없는 오류발생.`,
             description: '다시 시도해주세요.',
             color: 'DARK_RED'
@@ -48,7 +48,7 @@ export default async function music(message: M, text: string) {
       if (options.err === "notfound") {
         return message.channel?.send({
           embeds: [
-            mkembed({
+            client.mkembed({
               title: `플레이리스트를 찾을수 없습니다.`,
               color: 'DARK_RED'
             })
@@ -58,7 +58,7 @@ export default async function music(message: M, text: string) {
       if (options.err === "added") {
         return message.channel?.send({
           embeds: [
-            mkembed({
+            client.mkembed({
               title: `현재 플레이리스트를 추가하는중입니다.\n잠시뒤 사용해주세요.`,
               color: 'DARK_RED'
             })
@@ -71,7 +71,7 @@ export default async function music(message: M, text: string) {
       if (options.err === "notfound") {
         return message.channel?.send({
           embeds: [
-            mkembed({
+            client.mkembed({
               title: `영상을 찾을수 없습니다.`,
               color: 'DARK_RED'
             })
@@ -81,7 +81,7 @@ export default async function music(message: M, text: string) {
     }
     return message.channel?.send({
       embeds: [
-        mkembed({
+        client.mkembed({
           title: `오류발생`,
           description: `다시 시도해주세요.`,
           color: 'DARK_RED'

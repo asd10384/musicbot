@@ -1,11 +1,13 @@
-import { slash } from '..';
+import { client, handler } from '..';
 import { Interaction } from 'discord.js';
-import runSMInteraction from '../function/SelectMenuInteraction';
 
 export default async function onInteractionCreate (interaction: Interaction) {
   if (interaction.isSelectMenu()) {
     await interaction.deferReply({ ephemeral: true }).catch(() => {});
-    runSMInteraction(interaction);
+    const commandName = interaction.customId;
+    const args = interaction.values;
+    const command = handler.commands.get(commandName);
+    if (command && command.menurun) return command.menurun(interaction, args);
   }
   if (!interaction.isCommand()) return;
 
@@ -14,5 +16,5 @@ export default async function onInteractionCreate (interaction: Interaction) {
    * ephemeral: true
    */
   await interaction.deferReply({ ephemeral: true }).catch(() => {});
-  slash.runCommand(interaction);
+  handler.runCommand(interaction);
 }

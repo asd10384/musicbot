@@ -5,7 +5,6 @@ import MDB from "../database/Mongodb";
 import { nowplay } from "../database/obj/guild";
 import { M } from "../aliases/discord.js";
 import setmsg from "./msg";
-import mkembed from "../function/mkembed";
 
 type Vtype = "video" | "playlist" | "database";
 type Etype = "notfound" | "added";
@@ -34,8 +33,11 @@ export default async function search(message: M, text: string): Promise<[ytsr.It
     if (!guildDB) return [ undefined, { type: "database", err: "notfound" } ];
     
     inputplaylist.add(message.guildId!);
+    
+    let musicDB = client.musicdb(message.guildId!);
+
     const addedembed = await message.channel.send({ embeds: [
-      mkembed({
+      client.mkembed({
         description: `<@${message.author.id}> 플레이리스트 확인중...\n(노래가 많으면 많을수록 오래걸립니다.)`,
         color: client.embedcolor
       })
@@ -51,13 +53,13 @@ export default async function search(message: M, text: string): Promise<[ytsr.It
     if (list && list.items && list.items.length > 0) {
       if (client.debug) console.log(message.guild?.name, list.title, list.items.length, (guildDB.options.listlimit) ? guildDB.options.listlimit : 300);
       const addembed = await message.channel.send({ embeds: [
-        mkembed({
+        client.mkembed({
           title: `\` ${list.title} \` 플레이리스트 추가중...`,
           description: `재생목록에 \` ${list.items.length} \` 곡 추가중`,
           color: client.embedcolor
         })
       ] });
-      if (guildDB.playing) {
+      if (musicDB.playing) {
         let queuelist: nowplay[] = [];
         list.items.forEach((data) => {
           queuelist.push({
@@ -69,8 +71,8 @@ export default async function search(message: M, text: string): Promise<[ytsr.It
             player: `<@${message.author.id}>`
           });
         });
-        guildDB.queue = guildDB.queue.concat(queuelist);
-        await guildDB.save().catch((err) => { if (client.debug) console.log('데이터베이스오류:', err) });
+        musicDB.queue = musicDB.queue.concat(queuelist);
+        client.music.set(message.guildId!, musicDB);
         setmsg(message);
         inputplaylist.delete(message.guildId!);
         return [ undefined, { type: "playlist", addembed: addembed } ];
@@ -87,8 +89,8 @@ export default async function search(message: M, text: string): Promise<[ytsr.It
             player: `<@${message.author.id}>`
           });
         });
-        guildDB.queue = guildDB.queue.concat(queuelist);
-        await guildDB.save().catch((err) => { if (client.debug) console.log('데이터베이스오류:', err) });
+        musicDB.queue = musicDB.queue.concat(queuelist);
+        client.music.set(message.guildId!, musicDB);
         if (!output) {
           inputplaylist.delete(message.guildId!);
           return [ undefined, { type: "video", err: "notfound", addembed: addembed } ];

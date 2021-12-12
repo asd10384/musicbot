@@ -1,6 +1,5 @@
 import BotClient from "./classes/BotClient";
-import SlashHandler from "./classes/SlashHandler";
-import MsgHandler from "./classes/MsgHandler";
+import SlashHandler from "./classes/Handler";
 
 import onReady from "./events/onReady";
 import onInteractionCreate from "./events/onInteractionCreate";
@@ -9,8 +8,7 @@ import onmessageReactionAdd from "./events/onmessageReactionAdd";
 
 // 봇 클라이언트 생성
 export const client = new BotClient();
-export const slash = new SlashHandler();
-export const msg = new MsgHandler();
+export const handler = new SlashHandler();
 
 client.onEvent('ready', onReady);
 client.onEvent('interactionCreate', onInteractionCreate);

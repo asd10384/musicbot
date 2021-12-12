@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-import { client, slash } from "..";
+import { client, handler } from "..";
 
 config();
 
@@ -7,14 +7,14 @@ config();
 export default function onReady() {
   if (!client.user) return;
 
-  let prefix = client.prefix;
+  const prefix = client.prefix;
   let actlist: { text: string, time: number }[] = eval(process.env.ACTIVITY!);
 
   console.log('Ready!', client.user.username);
   console.log('Activity:', JSON.stringify(actlist));
   console.log('로그확인:', client.debug);
 
-  if (process.env.REFRESH_SLASH_COMMAND_ON_READY === 'true') slash.registCachedCommands(client);
+  if (process.env.REFRESH_SLASH_COMMAND_ON_READY === 'true') handler.registCachedCommands(client);
 
   client.user.setActivity(actlist[0].text);
   let i = 1;
