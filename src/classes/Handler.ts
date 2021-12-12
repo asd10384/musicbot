@@ -32,7 +32,7 @@ export default class SlashHandler {
     const metadatas = [] as ApplicationCommandData[];
     for (const command of this.commands.values()) {
       if (!command.metadata) continue;
-
+      if (!command.visible || !command.slashrun) continue;
       metadatas.push(command.metadata);
     }
 
