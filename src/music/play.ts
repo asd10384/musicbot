@@ -121,9 +121,10 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
     // connection.on(VoiceConnectionStatus.Ready, () => {
     //   // 봇 음성채널에 접속
     // });
-    Player.on(AudioPlayerStatus.Idle, (P) => {
+    Player.on(AudioPlayerStatus.Idle, async (P) => {
       // 봇 노래 재생 끝났을때
       Player.stop();
+      await entersState(connection, VoiceConnectionStatus.Ready, 5_000);
       play(message, undefined);
     });
     connection.on(VoiceConnectionStatus.Disconnected, () => {
