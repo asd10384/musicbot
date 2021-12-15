@@ -9,7 +9,7 @@ import setmsg from "./msg";
 type Vtype = "video" | "playlist" | "database";
 type Etype = "notfound" | "added";
 
-const inputplaylist = new Set<string>();
+export const inputplaylist = new Set<string>();
 
 export default async function search(message: M, text: string): Promise<[ytsr.Item | undefined, { type?: Vtype, err?: Etype, addembed?: M }]> {
   if (inputplaylist.has(message.guildId!)) return [ undefined, { type: "playlist", err: "added" } ];
@@ -104,6 +104,7 @@ export default async function search(message: M, text: string): Promise<[ytsr.It
         return [ getyt.items[0], { type: "video", addembed: addembed } ];
       }
     } else {
+      inputplaylist.delete(message.guildId!);
       return [ undefined, { type: "playlist", err: "notfound" } ];
     }
   } else {
@@ -113,8 +114,10 @@ export default async function search(message: M, text: string): Promise<[ytsr.It
       limit: 1
     });
     if (list && list.items && list.items.length > 0) {
+      inputplaylist.delete(message.guildId!);
       return [ list.items[0], { type: "video" } ];
     } else {
+      inputplaylist.delete(message.guildId!);
       return [ undefined, { type: "video", err: "notfound" } ];
     }
   }

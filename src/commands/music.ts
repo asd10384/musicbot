@@ -8,6 +8,7 @@ import { guild_type } from "../database/obj/guild";
 import stop from "../music/stop";
 import { config } from "dotenv";
 import { joinVoiceChannel } from "@discordjs/voice";
+import { inputplaylist } from "../music/search";
 config();
 
 /**
@@ -134,6 +135,7 @@ export default class MusicCommand implements Command {
   }
 
   async fix(message: M | I, guildDB: guild_type): Promise<string> {
+    inputplaylist.delete(message.guildId!);
     let channel = message.guild?.channels.cache.get(guildDB.channelId);
     if (channel) {
       await (channel as TextChannel).messages.fetch().then((msg) => {
