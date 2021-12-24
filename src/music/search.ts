@@ -18,7 +18,6 @@ export default async function search(message: M, text: string): Promise<[ytsr.It
     let yid = url.video[1].replace(/\&.+/g,'');
     let list = await ytsr(`https://www.youtube.com/watch?v=${yid}`, {
       gl: 'KR',
-      hl: 'ko',
       limit: 1
     }).catch((err) => {
       return undefined;
@@ -97,7 +96,6 @@ export default async function search(message: M, text: string): Promise<[ytsr.It
         }
         let getyt = await ytsr(output.shortUrl, {
           gl: 'KO',
-          hl: 'KR',
           limit: 1
         });
         inputplaylist.delete(message.guildId!);
@@ -110,7 +108,6 @@ export default async function search(message: M, text: string): Promise<[ytsr.It
   } else {
     let list = await ytsr(text, {
       gl: 'KO',
-      hl: 'KR',
       limit: 1
     });
     if (list && list.items && list.items.length > 0) {
