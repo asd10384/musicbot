@@ -1,7 +1,6 @@
 import { client } from "..";
 import { PM, M, I } from "../aliases/discord.js.js"
 import { nowplay } from "../database/obj/guild";
-import ytsr from "ytsr";
 import ytdl from "ytdl-core";
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, getVoiceConnection, joinVoiceChannel, StreamType, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import getchannel from "./getchannel";
@@ -22,7 +21,7 @@ if (proxy) agent = new HttpsProxyAgent(proxy);
 
 const mapPlayer: Map<string, AudioPlayer | undefined | null> = new Map();
 
-export async function play(message: M | PM, getsearch?: ytsr.Video) {
+export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
   let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
   if (!guildDB) return;
   let musicDB = client.musicdb(message.guildId!);
@@ -32,13 +31,14 @@ export async function play(message: M | PM, getsearch?: ytsr.Video) {
   if (voicechannel) {
     let data: nowplay | undefined = undefined;
     if (getsearch) {
+      var getinfo = getsearch.videoDetails;
       data = {
-        title: getsearch.title,
-        author: getsearch.author!.name,
-        duration: getsearch.duration!,
+        title: getinfo.title,
+        author: getinfo.author!.name,
+        duration: getinfo.lengthSeconds,
         player: `<@${message.author!.id}>`,
-        url: getsearch.url,
-        image: (getsearch.thumbnails[0].url) ? getsearch.thumbnails[0].url : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`
+        url: getinfo.video_url,
+        image: (getinfo.thumbnails[0].url) ? getinfo.thumbnails[0].url : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`
       };
     } else {
       data = musicDB.queue.shift();

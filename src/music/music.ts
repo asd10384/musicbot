@@ -15,21 +15,10 @@ export default async function music(message: M, text: string) {
     let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
     let musicDB = client.musicdb(message.guildId!);
     if (guildDB) {
-      if (getsearch.type === 'video') {
-        if (musicDB.playing) {
-          queue(message, getsearch);
-        } else {
-          play(message, getsearch);
-        }
+      if (musicDB.playing) {
+        queue(message, getsearch);
       } else {
-        return message.channel?.send({
-          embeds: [
-            client.mkembed({
-              title: `영상을 찾을수 없습니다.`,
-              color: 'DARK_RED'
-            })
-          ]
-        }).then(m => client.msgdelete(m, 0.5));
+        play(message, getsearch);
       }
     } else {
       return message.channel?.send({

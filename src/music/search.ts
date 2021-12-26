@@ -5,25 +5,25 @@ import MDB from "../database/Mongodb";
 import { nowplay } from "../database/obj/guild";
 import { M } from "../aliases/discord.js";
 import setmsg from "./msg";
+import ytdl from "ytdl-core";
 
 type Vtype = "video" | "playlist" | "database";
 type Etype = "notfound" | "added";
 
 export const inputplaylist = new Set<string>();
 
-export default async function search(message: M, text: string): Promise<[ytsr.Item | undefined, { type?: Vtype, err?: Etype, addembed?: M }]> {
+export default async function search(message: M, text: string): Promise<[ytdl.videoInfo | undefined, { type?: Vtype, err?: Etype, addembed?: M }]> {
   if (inputplaylist.has(message.guildId!)) return [ undefined, { type: "playlist", err: "added" } ];
   let url = checkurl(text);
   if (url.video) {
     let yid = url.video[1].replace(/\&.+/g,'');
-    let list = await ytsr(`https://www.youtube.com/watch?v=${yid}`, {
-      gl: 'KR',
-      limit: 1
+    let getinfo = await ytdl.getInfo(`https://www.youtube.com/watch?v=${yid}`, {
+      lang: "KR"
     }).catch((err) => {
       return undefined;
     });
-    if (list && list.items) {
-      return [ list.items[0], { type: "video" } ];
+    if (getinfo) {
+      return [ getinfo, { type: "video" } ];
     } else {
       return [ undefined, { type: "video", err: "notfound" } ];
     }
@@ -94,12 +94,11 @@ export default async function search(message: M, text: string): Promise<[ytsr.It
           inputplaylist.delete(message.guildId!);
           return [ undefined, { type: "video", err: "notfound", addembed: addembed } ];
         }
-        let getyt = await ytsr(output.shortUrl, {
-          gl: 'KO',
-          limit: 1
+        let getyt = await ytdl.getInfo(output.shortUrl, {
+          lang: "KR"
         });
         inputplaylist.delete(message.guildId!);
-        return [ getyt.items[0], { type: "video", addembed: addembed } ];
+        return [ getyt, { type: "video", addembed: addembed } ];
       }
     } else {
       inputplaylist.delete(message.guildId!);
@@ -111,8 +110,14 @@ export default async function search(message: M, text: string): Promise<[ytsr.It
       limit: 1
     });
     if (list && list.items && list.items.length > 0) {
+      let getinfo = undefined;
+      if (list.items[0].type === "video") {
+        getinfo = await ytdl.getInfo(list.items[0].url, {
+          lang: "KR"
+        });
+      }
       inputplaylist.delete(message.guildId!);
-      return [ list.items[0], { type: "video" } ];
+      return [ getinfo, { type: "video" } ];
     } else {
       inputplaylist.delete(message.guildId!);
       return [ undefined, { type: "video", err: "notfound" } ];
