@@ -24,7 +24,7 @@ function setlist(guildDB: guild_type) {
   if (queue.length > 0) {
     for (let i=0; i<queue.length; i++) {
       let data = queue[i];
-      let text = `\n${i+1}. ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title} [${data.duration}]${(guildDB.options.player) ? ` ~ ${data.player}` : ''}`;
+      let text = `\n${i+1}. ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title} [${settime(data.duration)}]${(guildDB.options.player) ? ` ~ ${data.player}` : ''}`;
       if (length+text.length > 2000) {
         output += `\n+ ${queue.length-list.length}곡`;
         break;
@@ -44,7 +44,7 @@ function setembed(guildDB: guild_type, pause?: boolean) {
   let data = musicDB.nowplaying!;
   var title = '';
   if (musicDB.playing) {
-    title = `**[${data.duration}] - ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title}**`;
+    title = `**[${settime(data.duration)}] - ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title}**`;
   } else {
     title = `**현재 노래가 재생되지 않았습니다**.`;
     data.image = 'https://cdn.hydra.bot/hydra_no_music.png';
@@ -58,4 +58,22 @@ function setembed(guildDB: guild_type, pause?: boolean) {
   if (musicDB.playing && guildDB.options.player) em.setDescription(`노래 요청자: ${data.player}`);
   if (musicDB.playing) em.setFooter(`${musicDB.queue.length}개의 노래가 대기열에 있습니다. | Volume: ${guildDB.options.volume}%${(pause) ? ` | 노래가 일시중지 되었습니다.` : ''}`);
   return em;
+}
+
+function settime(time: string | number): string {
+  time = Number(time);
+  var list: string[] = [];
+  if (time > 3600) {
+    list.push(az(Math.floor(time/3600)));
+    list.push(az(Math.floor((time % 3600) / 60)));
+    list.push(az(Math.floor((time % 3600) % 60)));
+  } else {
+    list.push(az(Math.floor(time / 60)));
+    list.push(az(Math.floor(time % 60)));
+  }
+  return list.join(":");
+}
+
+function az(n: number): string {
+  return (n < 10) ? '0' + n : '' + n;
 }
