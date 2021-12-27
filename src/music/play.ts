@@ -2,7 +2,7 @@ import { client } from "..";
 import { PM, M, I } from "../aliases/discord.js.js"
 import { nowplay } from "../database/obj/guild";
 import ytdl from "ytdl-core";
-import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, getVoiceConnection, joinVoiceChannel, StreamType, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, StreamType, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import getchannel from "./getchannel";
 import MDB from "../database/Mongodb";
 import setmsg from "./msg";
@@ -61,13 +61,27 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       data.image = data.image.replace('hqdefault', 'maxresdefault');
       musicDB.nowplaying = data;
     } else {
-      return getVoiceConnection(message.guildId!)?.disconnect();
+      musicDB.playing = false;
+      musicDB.nowplaying = {
+        author: "",
+        duration: "",
+        image: "",
+        player: "",
+        title: "",
+        url: ""
+      };
+      client.music.set(message.guildId!, musicDB);
+      waitPlayer(message.guildId!);
+      setmsg(message);
+      return setTimeout(() => {
+        if (!client.musicdb(message.guildId!).playing) return stop(message);
+      }, (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000);
     }
     musicDB.playing = true;
     client.music.set(message.guildId!, musicDB);
     setmsg(message);
     const connection = joinVoiceChannel({
-      adapterCreator: message.guild?.voiceAdapterCreator!,
+      adapterCreator: message.guild?.voiceAdapterCreator! as DiscordGatewayAdapterCreator,
       guildId: message.guildId!,
       channelId: voicechannel.id
     });
@@ -194,6 +208,13 @@ export function pause(message: M | PM) {
 //     }
 //   }
 // }
+
+export async function waitPlayer(guildId: string) {
+  const Player = mapPlayer.get(guildId);
+  if (Player) {
+    Player.stop();
+  }
+}
 
 export async function stopPlayer(guildId: string) {
   const Player = mapPlayer.get(guildId);
