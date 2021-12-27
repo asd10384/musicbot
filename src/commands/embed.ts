@@ -5,6 +5,40 @@ import { I, D } from "../aliases/discord.js.js";
 import { ColorResolvable, Message, MessageActionRow, MessageButton, MessageEmbed } from "discord.js";
 import MDB from "../database/Mongodb";
 
+const colorlist = [
+  'DEFAULT', 
+  'WHITE', 
+  'AQUA', 
+  'GREEN', 
+  'BLUE', 
+  'YELLOW', 
+  'PURPLE', 
+  'LUMINOUS_VIVID_PINK', 
+  'FUCHSIA', 
+  'GOLD', 
+  'ORANGE', 
+  'RED', 
+  'GREY', 
+  'DARKER_GREY', 
+  'NAVY', 
+  'DARK_AQUA', 
+  'DARK_GREEN', 
+  'DARK_BLUE', 
+  'DARK_PURPLE', 
+  'DARK_VIVID_PINK', 
+  'DARK_GOLD', 
+  'DARK_ORANGE', 
+  'DARK_RED', 
+  'DARK_GREY', 
+  'LIGHT_GREY', 
+  'DARK_NAVY', 
+  'BLURPLE', 
+  'GREYPLE', 
+  'DARK_BUT_NOT_BLACK', 
+  'NOT_QUITE_BLACK', 
+  'RANDOM'
+];
+
 /**
  * DB
  * let guildDB = await MDB.get.guild(interaction);
@@ -31,55 +65,32 @@ export default class ExampleCommand implements Command {
   async msgrun(message: Message, args: string[]) {
     if (args[0] === "help" || args[0] === "도움말" || args[0] === "명령어") return message.channel.send({ embeds: [ this.help() ] }).then(m => client.msgdelete(m, 4));
     if (args[0] === "color" || args[0] === "색깔") {
-      const list = [
-        'DEFAULT', 
-        'WHITE', 
-        'AQUA', 
-        'GREEN', 
-        'BLUE', 
-        'YELLOW', 
-        'PURPLE', 
-        'LUMINOUS_VIVID_PINK', 
-        'FUCHSIA', 
-        'GOLD', 
-        'ORANGE', 
-        'RED', 
-        'GREY', 
-        'DARKER_GREY', 
-        'NAVY', 
-        'DARK_AQUA', 
-        'DARK_GREEN', 
-        'DARK_BLUE', 
-        'DARK_PURPLE', 
-        'DARK_VIVID_PINK', 
-        'DARK_GOLD', 
-        'DARK_ORANGE', 
-        'DARK_RED', 
-        'DARK_GREY', 
-        'LIGHT_GREY', 
-        'DARK_NAVY', 
-        'BLURPLE', 
-        'GREYPLE', 
-        'DARK_BUT_NOT_BLACK', 
-        'NOT_QUITE_BLACK', 
-        'RANDOM'
-      ];
       return message.channel.send({ embeds: [
         client.mkembed({
           title: `\` 임베드 색깔 \``,
-          description: list.join("\n"),
+          description: colorlist.join("\n"),
           color: client.embedcolor
         })
       ] }).then(m => client.msgdelete(m, 4));
     }
-    if (args[0] && args[1]) {
-      const args2 = args.slice(1).join(' ').split("#@#");
-      const embed = client.mkembed({
-        title: args2[0],
-        color: args[0] as ColorResolvable
-      });
-      if (args2[1]) embed.setDescription(args2[1]);
-      return message.channel.send({ embeds: [ embed ] });
+    if (args[0]) {
+      if (args[1]) {
+        const args2 = args.slice(1).join(' ').split("#@#");
+        const embed = client.mkembed({
+          title: args2[0],
+          color: args[0] as ColorResolvable
+        });
+        if (args2[1]) embed.setDescription(args2[1]);
+        if (args2[2]) embed.setFooter(args2[2]);
+        return message.channel.send({ embeds: [ embed ] });
+      }
+      if (!colorlist.includes(args[0])) {
+        const args2 = args.slice(1).join(' ').split("#@#");
+        const embed = client.mkembed({ title: args2[0] });
+        if (args2[1]) embed.setDescription(args2[1]);
+        if (args2[2]) embed.setFooter(args2[2]);
+        return message.channel.send({ embeds: [ embed ] });
+      }
     }
     return message.channel.send({ embeds: [ this.help() ] }).then(m => client.msgdelete(m, 4));
   }
@@ -87,7 +98,10 @@ export default class ExampleCommand implements Command {
   help(): MessageEmbed {
     return client.mkembed({
       title: `\` 임베드 도움말 \``,
-      description: `${client.prefix}임베드 색깔\n${client.prefix}임베드 [색깔] [제목]#@#[내용]#@#[참고]`,
+      description: `
+        ${client.prefix}임베드 색깔
+        ${client.prefix}임베드 [제목]#@#[내용]#@#[참고]
+        ${client.prefix}임베드 [색깔] [제목]#@#[내용]#@#[참고]`,
       footer: { text: `example` },
       color: client.embedcolor
     });
