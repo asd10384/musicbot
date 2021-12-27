@@ -7,7 +7,7 @@ import MDB from "../database/Mongodb";
 import { guild_type } from "../database/obj/guild";
 import stop from "../music/stop";
 import { config } from "dotenv";
-import { joinVoiceChannel } from "@discordjs/voice";
+import { DiscordGatewayAdapterCreator, joinVoiceChannel } from "@discordjs/voice";
 import { inputplaylist } from "../music/search";
 config();
 
@@ -100,7 +100,7 @@ export default class MusicCommand implements Command {
     if (cmd === "join") {
       const channel = interaction.options.getChannel("channel", true);
       joinVoiceChannel({
-        adapterCreator: interaction.guild!.voiceAdapterCreator,
+        adapterCreator: interaction.guild!.voiceAdapterCreator as DiscordGatewayAdapterCreator,
         channelId: channel.id,
         guildId: interaction.guildId!
       });

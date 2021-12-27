@@ -37,7 +37,7 @@ export default class QueueCommand implements Command {
   async slashrun(interaction: I) {
     const getnumber = interaction.options.getInteger('number');
     let guildDB = await MDB.get.guild(interaction);
-    let musicDB = client.musicdb(interaction.guildId);
+    let musicDB = client.musicdb(interaction.guildId!);
     return await interaction.editReply({ embeds: [ this.list(guildDB, musicDB, getnumber) ] });
   }
 
