@@ -167,7 +167,7 @@ export default class MusicCommand implements Command {
     msg?.react('⏹️');
     msg?.react('⏭️');
     msg?.react('🔀');
-    stop(msg);
+    stop(msg, true);
     return `Error correction completed!`;
   }
 }

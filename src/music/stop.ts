@@ -4,7 +4,7 @@ import { M, PM } from "../aliases/discord.js";
 import MDB from "../database/Mongodb";
 import setmsg from "./msg";
 
-export default async function stop(message: M | PM) {
+export default async function stop(message: M | PM, leave: boolean) {
   let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
   if (!guildDB) return;
   let musicDB = client.musicdb(message.guildId!);
@@ -20,5 +20,5 @@ export default async function stop(message: M | PM) {
   };
   client.music.set(message.guildId!, musicDB);
   setmsg(message);
-  getVoiceConnection(message.guildId!)?.disconnect();
+  if (leave) getVoiceConnection(message.guildId!)?.disconnect();
 }

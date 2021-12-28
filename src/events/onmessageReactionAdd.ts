@@ -26,20 +26,10 @@ export default async function onmessageReactionAdd (reaction: MessageReaction | 
       if (musicDB.playing) pause(reaction.message);
     }
     if (name === '⏹️') {
-      musicDB.playing = false;
-      musicDB.nowplaying = {
-        author: "",
-        duration: "",
-        image: "",
-        player: "",
-        title: "",
-        url: ""
-      };
-      client.music.set(reaction.message.guildId!, musicDB);
       waitPlayer(reaction.message.guildId!);
-      setmsg(reaction.message);
+      stop(reaction.message, false);
       setTimeout(() => {
-        if (!client.musicdb(reaction.message.guildId!).playing) stop(reaction.message);
+        if (!client.musicdb(reaction.message.guildId!).playing) stop(reaction.message, true);
       }, (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000);
     }
     if (name === '⏭️') {

@@ -61,20 +61,10 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       data.image = data.image.replace('hqdefault', 'maxresdefault');
       musicDB.nowplaying = data;
     } else {
-      musicDB.playing = false;
-      musicDB.nowplaying = {
-        author: "",
-        duration: "",
-        image: "",
-        player: "",
-        title: "",
-        url: ""
-      };
-      client.music.set(message.guildId!, musicDB);
       waitPlayer(message.guildId!);
-      setmsg(message);
+      stop(message, false);
       return setTimeout(() => {
-        if (!client.musicdb(message.guildId!).playing) return stop(message);
+        if (!client.musicdb(message.guildId!).playing) return stop(message, true);
       }, (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000);
     }
     musicDB.playing = true;
@@ -144,7 +134,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
     });
     connection.on(VoiceConnectionStatus.Disconnected, () => {
       // 봇 음성채널에서 퇴장
-      stop(message);
+      stop(message, true);
       stopPlayer(guildid);
     });
     connection.on('error', (err) => {
