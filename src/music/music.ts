@@ -63,6 +63,16 @@ export default async function music(message: M, text: string) {
       return;
     }
     if (options.type === "video") {
+      if (options.err === "livestream") {
+        return message.channel?.send({
+          embeds: [
+            client.mkembed({
+              title: `실시간 영상은 재생할 수 없습니다.`,
+              color: 'DARK_RED'
+            })
+          ]
+        }).then(m => client.msgdelete(m, 0.5));
+      }
       if (options.err === "notfound") {
         return message.channel?.send({
           embeds: [

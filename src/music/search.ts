@@ -9,7 +9,7 @@ import ytdl from "ytdl-core";
 import { fshuffle } from "./shuffle";
 
 type Vtype = "video" | "playlist" | "database";
-type Etype = "notfound" | "added";
+type Etype = "notfound" | "added" | "livestream";
 interface parmas {
   shuffle?: boolean;
 };
@@ -27,6 +27,7 @@ export default async function search(message: M, text: string, parmas?: parmas):
       return undefined;
     });
     if (getinfo) {
+      if (getinfo.videoDetails.lengthSeconds === "0") return [ undefined, { type: "video", err: "livestream" } ]
       return [ getinfo, { type: "video" } ];
     } else {
       return [ undefined, { type: "video", err: "notfound" } ];
@@ -71,7 +72,7 @@ export default async function search(message: M, text: string, parmas?: parmas):
             duration: data.durationSec!.toString(),
             author: data.author.name,
             url: data.shortUrl,
-            image: (data.thumbnails[0].url) ? data.thumbnails[0].url : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+            image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
             player: `<@${message.author.id}>`
           });
         });
@@ -89,7 +90,7 @@ export default async function search(message: M, text: string, parmas?: parmas):
             duration: data.durationSec!.toString(),
             author: data.author.name,
             url: data.shortUrl,
-            image: (data.thumbnails[0].url) ? data.thumbnails[0].url : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+            image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
             player: `<@${message.author.id}>`
           });
         });

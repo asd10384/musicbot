@@ -62,6 +62,7 @@ async function setembed(guildDB: guild_type, pause?: boolean) {
 
 async function settime(time: string | number): Promise<string> {
   time = Number(time);
+  if (time === 0) return "실시간";
   var list: string[] = [];
   if (time > 3600) {
     list.push(az(Math.floor(time/3600)));

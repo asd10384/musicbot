@@ -52,7 +52,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
         (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
           client.mkembed({
             title: `오류발생`,
-            description: '현재 지역에서 영상을 재생할수 없습니다.',
+            description: '현재 지역에서 영상을 재생할 수 없습니다.',
             footer: { text: `Area error` },
             color: 'DARK_RED'
           })
@@ -82,8 +82,9 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
     try {
       ytsource = ytdl(data.url, {
         filter: "audioonly",
-        quality: 'highestaudio',
+        quality: "highestaudio",
         highWaterMark: 1 << 27,
+        dlChunkSize: 0,
         requestOptions: { agent }
       }).on('error', (err) => {
         if (client.debug) console.log('ytdl-core오류1:', err);
@@ -142,7 +143,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
         client.mkembed({
           title: `오류발생`,
-          description: '영상을 재생할수 없습니다.\n다시 시도해주세요.',
+          description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
           footer: { text: `connection error` },
           color: 'DARK_RED'
         })
@@ -154,7 +155,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
         client.mkembed({
           title: `오류발생`,
-          description: '영상을 재생할수 없습니다.\n다시 시도해주세요.',
+          description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
           footer: { text: `Player error` },
           color: 'DARK_RED'
         })
