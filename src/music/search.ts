@@ -63,7 +63,7 @@ export default async function search(message: M, text: string): Promise<[ytdl.vi
         list.items.forEach((data) => {
           queuelist.push({
             title: data.title,
-            duration: data.duration!,
+            duration: data.durationSec!.toString(),
             author: data.author.name,
             url: data.shortUrl,
             image: (data.thumbnails[0].url) ? data.thumbnails[0].url : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
@@ -81,7 +81,7 @@ export default async function search(message: M, text: string): Promise<[ytdl.vi
         list.items.forEach((data) => {
           queuelist.push({
             title: data.title,
-            duration: data.duration!,
+            duration: data.durationSec!.toString(),
             author: data.author.name,
             url: data.shortUrl,
             image: (data.thumbnails[0].url) ? data.thumbnails[0].url : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,

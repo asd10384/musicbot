@@ -5,17 +5,17 @@ import MDB from "../database/Mongodb";
 import { TextChannel } from "discord.js";
 
 export default async function setmsg(message: M | PM | I, pause?: boolean) {
-  MDB.module.guild.findOne({ id: message.guildId! }).then((guildDB) => {
+  MDB.module.guild.findOne({ id: message.guildId! }).then(async (guildDB) => {
     if (guildDB) {
-      let text = setlist(guildDB);
-      let embed = setembed(guildDB, pause);
+      let text = await setlist(guildDB);
+      let embed = await setembed(guildDB, pause);
       let channel = message.guild?.channels.cache.get(guildDB.channelId);
       (channel as TextChannel).messages.cache.get(guildDB.msgId)?.edit({ content: text, embeds: [embed] });
     }
   });
 }
 
-function setlist(guildDB: guild_type) {
+async function setlist(guildDB: guild_type) {
   let musicDB = client.musicdb(guildDB.id);
   var output = '__**대기열 목록:**__';
   var list: string[] = [];
@@ -24,7 +24,7 @@ function setlist(guildDB: guild_type) {
   if (queue.length > 0) {
     for (let i=0; i<queue.length; i++) {
       let data = queue[i];
-      let text = `\n${i+1}. ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title} [${settime(data.duration)}]${(guildDB.options.player) ? ` ~ ${data.player}` : ''}`;
+      let text = `\n${i+1}. ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title} [${await settime(data.duration)}]${(guildDB.options.player) ? ` ~ ${data.player}` : ''}`;
       if (length+text.length > 2000) {
         output += `\n+ ${queue.length-list.length}곡`;
         break;
@@ -39,12 +39,12 @@ function setlist(guildDB: guild_type) {
   return output;
 }
 
-function setembed(guildDB: guild_type, pause?: boolean) {
+async function setembed(guildDB: guild_type, pause?: boolean) {
   let musicDB = client.musicdb(guildDB.id);
   let data = musicDB.nowplaying!;
   var title = '';
   if (musicDB.playing) {
-    title = `**[${settime(data.duration)}] - ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title}**`;
+    title = `**[${await settime(data.duration)}] - ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title}**`;
   } else {
     title = `**현재 노래가 재생되지 않았습니다**.`;
     data.image = 'https://cdn.hydra.bot/hydra_no_music.png';
@@ -60,7 +60,7 @@ function setembed(guildDB: guild_type, pause?: boolean) {
   return em;
 }
 
-function settime(time: string | number): string {
+async function settime(time: string | number): Promise<string> {
   time = Number(time);
   var list: string[] = [];
   if (time > 3600) {
