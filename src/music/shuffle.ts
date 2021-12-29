@@ -9,7 +9,7 @@ export default async function shuffle(message: M | PM) {
   setmsg(message);
 }
 
-async function fshuffle(list: any[]) {
+export async function fshuffle(list: any[]) {
   var j, x, i;
   for (i=list.length; i; i-=1) {
     j = Math.floor(Math.random() * i);

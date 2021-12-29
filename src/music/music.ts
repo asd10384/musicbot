@@ -6,7 +6,13 @@ import { play } from "./play";
 import queue from "./queue";
 
 export default async function music(message: M, text: string) {
-  const searching = await search(message, text);
+  const args = text.split(/ +/g);
+  const parmastext = args.slice(1).join('').trim().toUpperCase();
+  var parmas: string[] = [];
+  if (parmastext.startsWith('-')) parmas = parmastext.slice(1).split('-');
+  const searching = await search(message, args[0], {
+    shuffle: (parmas.includes("S")) ? true : false
+  });
   const getsearch = searching[0];
   if (searching[1].addembed) {
     searching[1].addembed.delete().catch((err) => { if (client.debug) console.log('addembed 메세지 삭제 오류') });

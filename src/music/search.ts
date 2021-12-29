@@ -6,13 +6,17 @@ import { nowplay } from "../database/obj/guild";
 import { M } from "../aliases/discord.js";
 import setmsg from "./msg";
 import ytdl from "ytdl-core";
+import { fshuffle } from "./shuffle";
 
 type Vtype = "video" | "playlist" | "database";
 type Etype = "notfound" | "added";
+interface parmas {
+  shuffle?: boolean;
+};
 
 export const inputplaylist = new Set<string>();
 
-export default async function search(message: M, text: string): Promise<[ytdl.videoInfo | undefined, { type?: Vtype, err?: Etype, addembed?: M }]> {
+export default async function search(message: M, text: string, parmas?: parmas): Promise<[ytdl.videoInfo | undefined, { type?: Vtype, err?: Etype, addembed?: M }]> {
   if (inputplaylist.has(message.guildId!)) return [ undefined, { type: "playlist", err: "added" } ];
   let url = checkurl(text);
   if (url.video) {
@@ -54,10 +58,11 @@ export default async function search(message: M, text: string): Promise<[ytdl.vi
       const addembed = await message.channel.send({ embeds: [
         client.mkembed({
           title: `\` ${list.title} \` 플레이리스트 추가중...`,
-          description: `재생목록에 \` ${list.items.length} \` 곡 추가중`,
+          description: `재생목록에 \` ${list.items.length} \` 곡 ${parmas?.shuffle ? "섞어서 " : ""}추가중`,
           color: client.embedcolor
         })
       ] });
+        if (parmas?.shuffle) list.items = await fshuffle(list.items);
       if (musicDB.playing) {
         let queuelist: nowplay[] = [];
         list.items.forEach((data) => {
