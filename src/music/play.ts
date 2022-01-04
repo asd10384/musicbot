@@ -119,7 +119,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       }
     }
     const resource = createAudioResource(ytsource, { inlineVolume: true, inputType: StreamType.Arbitrary });
-    resource.volume?.setVolumeDecibels(10);
+    resource.volume?.setVolumeDecibels(5);
     resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 100 : 0.7);
     Player.play(resource);
     const subscription = connection.subscribe(Player);
