@@ -45,6 +45,8 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       if (!data && guildDB.options.recommend) data = await getrecommend(message);
     }
     if (data) {
+      const getq = [ "maxresdefault", "sddefault", "hqdefault", "mqdefault", "default" ];
+      data.image = data.image.replace(/\?.+/g,'').replace(/\.jpg|\.png/g,'').replace(new RegExp(getq.join('|'), 'g'), '').trim() + "hqdefault.jpg";
       const checkarea = await getarea(data.url);
       if (checkarea) {
         musicDB.nowplaying = data;
@@ -239,9 +241,11 @@ async function getrecommend(message: M | PM) {
       if (recommend && recommend.related_videos && recommend.related_videos.length > 0) {
         recommend.related_videos.sort((a, b) => {
           if (a.isLive) return -1;
-          return a.length_seconds! - b.length_seconds!;
+          let c1 = a.length_seconds! - b.length_seconds!;
+          let c2 = Number(b.view_count!) - Number(a.view_count!);
+          return c1 * c2;
         });
-        let data = recommend.related_videos[Math.round(Math.random()*3)];
+        let data = recommend.related_videos[Math.round(Math.random()*2)];
         var output: nowplay = {
           title: data.title!,
           duration: data.length_seconds!.toString(),
