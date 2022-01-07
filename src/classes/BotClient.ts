@@ -116,11 +116,11 @@ export default class BotClient extends Client {
     if (data.url) embed.setURL(data.url);
     if (data.image) embed.setImage(data.image);
     if (data.thumbnail) embed.setThumbnail(data.thumbnail);
-    if (data.author) embed.setAuthor(data.author.name, data.author.iconURL, data.author.url);
+    if (data.author) embed.setAuthor({ name: data.author.name, iconURL: data.author.iconURL, url: data.author.url });
     if (data.addField) embed.addField(data.addField.name, data.addField.value, data.addField.inline);
     if (data.addFields) embed.addFields(data.addFields);
     if (data.timestamp) embed.setTimestamp(data.timestamp);
-    if (data.footer) embed.setFooter(data.footer.text, data.footer.iconURL);
+    if (data.footer) embed.setFooter({ text: data.footer.text, iconURL: data.footer.iconURL });
     if (data.color) {
       embed.setColor(data.color);
     } else {

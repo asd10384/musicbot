@@ -47,7 +47,6 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
     if (data) {
       const checkarea = await getarea(data.url);
       if (checkarea) {
-        data.image = data.image.replace('hqdefault', 'maxresdefault');
         musicDB.nowplaying = data;
       } else {
         (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
@@ -59,7 +58,6 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
           })
         ] }).then(m => client.msgdelete(m, 3000, true));
       }
-      data.image = data.image.replace('hqdefault', 'maxresdefault');
       musicDB.nowplaying = data;
     } else {
       return waitend(message);

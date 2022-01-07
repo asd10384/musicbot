@@ -9,7 +9,7 @@ export default async function music(message: M, text: string) {
   const args = text.split('-');
   const searchtext = args.shift()!.trim();
   var parmas: string[] = [];
-  args.forEach((data) => parmas.push(data.replace(/ +/g, '')));
+  args.forEach((data) => parmas.push(data.replace(/ +/g, '').toUpperCase()));
   const searching = await search(message, searchtext, {
     shuffle: (parmas.includes("S")) ? true : false
   });
