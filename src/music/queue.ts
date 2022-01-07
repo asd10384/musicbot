@@ -11,7 +11,7 @@ export default async function queue(message: M, getsearch: ytdl.videoInfo) {
     duration: getinfo.lengthSeconds,
     author: getinfo.author!.name,
     url: getinfo.video_url,
-    image: (getinfo.thumbnails[0].url) ? getinfo.thumbnails[0].url : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+    image: (getinfo.thumbnails.length > 0 && getinfo.thumbnails[getinfo.thumbnails.length-1]?.url) ? getinfo.thumbnails[getinfo.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
     player: `<@${message.author.id}>`
   });
   client.music.set(message.guildId!, musicDB);

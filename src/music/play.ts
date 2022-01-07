@@ -1,13 +1,13 @@
 import { client } from "..";
-import { PM, M, I } from "../aliases/discord.js.js"
+import { PM, M } from "../aliases/discord.js.js"
 import { nowplay } from "../database/obj/guild";
 import ytdl from "ytdl-core";
-import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, StreamType, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, joinVoiceChannel, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
 import getchannel from "./getchannel";
 import MDB from "../database/Mongodb";
 import setmsg from "./msg";
 import stop from "./stop";
-import { Message, PartialMessage, TextChannel } from "discord.js";
+import { TextChannel } from "discord.js";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import { config } from "dotenv";
 import internal from "stream";
@@ -42,6 +42,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       };
     } else {
       data = musicDB.queue.shift();
+      if (!data && guildDB.options.recommend) data = await getrecommend(message);
     }
     if (data) {
       const checkarea = await getarea(data.url);
@@ -61,11 +62,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       data.image = data.image.replace('hqdefault', 'maxresdefault');
       musicDB.nowplaying = data;
     } else {
-      waitPlayer(message.guildId!);
-      stop(message, false);
-      return setTimeout(() => {
-        if (!client.musicdb(message.guildId!).playing) return stop(message, true);
-      }, (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000);
+      return waitend(message);
     }
     musicDB.playing = true;
     client.music.set(message.guildId!, musicDB);
@@ -224,4 +221,40 @@ export async function getarea(url: string) {
     return info.videoDetails.availableCountries.includes('KR');
   }
   return false;
+}
+
+export async function waitend(message: M | PM) {
+  waitPlayer(message.guildId!);
+  stop(message, false);
+  setTimeout(() => {
+    if (!client.musicdb(message.guildId!).playing) return stop(message, true);
+  }, (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000);
+}
+
+async function getrecommend(message: M | PM) {
+  let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
+  if (!guildDB) return;
+  if (guildDB.options.recommend) {
+    let musicDB = client.musicdb(message.guildId!);
+    if (musicDB && musicDB.nowplaying && musicDB.nowplaying.url.length > 0) {
+      const recommend = await ytdl.getInfo(musicDB.nowplaying.url);
+      if (recommend && recommend.related_videos && recommend.related_videos.length > 0) {
+        recommend.related_videos.sort((a, b) => {
+          if (a.isLive) return -1;
+          return a.length_seconds! - b.length_seconds!;
+        });
+        let data = recommend.related_videos[Math.round(Math.random()*3)];
+        var output: nowplay = {
+          title: data.title!,
+          duration: data.length_seconds!.toString(),
+          author: (data.author as ytdl.Author).name ? (data.author as ytdl.Author).name : (data.author as String).toString(),
+          image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+          player: `자동재생으로 재생됨`,
+          url: `https://www.youtube.com/watch?v=` + data.id!
+        }
+        return output;
+      }
+    }
+  }
+  return undefined;
 }

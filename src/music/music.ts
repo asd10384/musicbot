@@ -6,11 +6,11 @@ import { play } from "./play";
 import queue from "./queue";
 
 export default async function music(message: M, text: string) {
-  const args = text.split(/ +/g);
-  const parmastext = args.slice(1).join('').trim().toUpperCase();
+  const args = text.split('-');
+  const searchtext = args.shift()!.trim();
   var parmas: string[] = [];
-  if (parmastext.startsWith('-')) parmas = parmastext.slice(1).split('-');
-  const searching = await search(message, args[0], {
+  args.forEach((data) => parmas.push(data.replace(/ +/g, '')));
+  const searching = await search(message, searchtext, {
     shuffle: (parmas.includes("S")) ? true : false
   });
   const getsearch = searching[0];

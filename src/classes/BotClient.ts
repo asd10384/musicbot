@@ -51,7 +51,7 @@ export default class BotClient extends Client {
     };
     this.ttstimer = new Map<string, { start: boolean, time: number }>();
     this.ttstimertime = (60) * 45; //분
-    this.embedcolor = "ORANGE";
+    this.embedcolor = process.env.EMBED_COLOR ? process.env.EMBED_COLOR.trim().toUpperCase() as ColorResolvable : "ORANGE";
     this.maxqueue = 30;
     this.music = new Map();
   }
@@ -121,7 +121,11 @@ export default class BotClient extends Client {
     if (data.addFields) embed.addFields(data.addFields);
     if (data.timestamp) embed.setTimestamp(data.timestamp);
     if (data.footer) embed.setFooter(data.footer.text, data.footer.iconURL);
-    if (data.color) embed.setColor(data.color);
+    if (data.color) {
+      embed.setColor(data.color);
+    } else {
+      embed.setColor(this.embedcolor);
+    }
     return embed;
   }
 

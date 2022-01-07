@@ -5,30 +5,31 @@ config();
 export interface music {
   playing: boolean;
   nowplaying: nowplay | null;
-  queue: nowplay[]
+  queue: nowplay[];
 };
 
 export interface nowplay {
-  title: string,
-  author: string,
-  duration: string,
-  url: string,
-  image: string,
-  player: string
+  title: string;
+  author: string;
+  duration: string;
+  url: string;
+  image: string;
+  player: string;
 };
 
 export interface guild_type extends Document {
-  id: string,
-  name: string,
-  prefix: string,
-  role: string[],
-  channelId: string,
-  msgId: string,
+  id: string;
+  name: string;
+  prefix: string;
+  role: string[];
+  channelId: string;
+  msgId: string;
   options: {
-    volume: number,
-    player: boolean,
-    listlimit: number,
-    author: boolean
+    volume: number;
+    player: boolean;
+    listlimit: number;
+    author: boolean;
+    recommend: boolean;
   }
 }
 
@@ -43,7 +44,8 @@ const GuildSchema: Schema = new Schema({
     volume: { type: Number },
     player: { type: Boolean },
     listlimit: { type: Number },
-    author: { type: Boolean }
+    author: { type: Boolean },
+    recommend: { type: Boolean }
   }
 });
 

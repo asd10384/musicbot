@@ -3,10 +3,10 @@ import { Document, model, Schema } from "mongoose";
 config();
 
 export interface user_type extends Document {
-  id: string,
-  tag: string,
-  nickname: string,
-  canplay: boolean
+  id: string;
+  tag: string;
+  nickname: string;
+  canplay: boolean;
 }
 
 const UserSchema: Schema = new Schema({
