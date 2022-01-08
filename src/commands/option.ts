@@ -65,6 +65,7 @@ export default class OptionCommand implements Command {
 
   /** 실행되는 부분 */
   async slashrun(interaction: I) {
+    if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
     const guildDB = await MDB.get.guild(interaction);
     if (!guildDB) return;
     const cmd = interaction.options.getSubcommand();
