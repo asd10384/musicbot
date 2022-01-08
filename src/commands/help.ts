@@ -39,11 +39,11 @@ export default class HelpCommand implements Command {
     if (command) {
       embed.setTitle(`\` /${args[0]} \` 명령어`)
         .setDescription(`이름: ${args[0]}\n설명: ${command.information ? command.information : command.description}`)
-        .setFooter(`도움말: /help`);
+        .setFooter({ text: `도움말: /help` });
     } else {
       embed.setTitle(`\` ${args[0]} \` 명령어`)
         .setDescription(`명령어를 찾을수 없습니다.`)
-        .setFooter(`도움말: /help`)
+        .setFooter({ text: `도움말: /help` })
         .setColor('DARK_RED');
     }
     return await interaction.editReply({ embeds: [ embed ] });

@@ -57,9 +57,9 @@ async function setembed(guildDB: guild_type, pause?: boolean) {
   });
   if (musicDB.playing && guildDB.options.player) em.setDescription(`노래 요청자: ${data.player}`);
   if (musicDB.playing) {
-    em.setFooter(`대기열: ${musicDB.queue.length}개 | Volume: ${guildDB.options.volume}%${guildDB.options.recommend ? " | 자동재생: 활성화" : ""}${(pause) ? ` | 노래가 일시중지 되었습니다.` : ''}`);
+    em.setFooter({ text: `대기열: ${musicDB.queue.length}개 | Volume: ${guildDB.options.volume}%${guildDB.options.recommend ? " | 자동재생: 활성화" : ""}${(pause) ? ` | 노래가 일시중지 되었습니다.` : ''}` });
   } else {
-    em.setFooter(`Volume: ${guildDB.options.volume}%${guildDB.options.recommend ? " | 자동재생: 활성화" : ""}`);
+    em.setFooter({ text: `Volume: ${guildDB.options.volume}%${guildDB.options.recommend ? " | 자동재생: 활성화" : ""}` });
   }
   return em;
 }

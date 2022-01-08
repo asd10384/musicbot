@@ -81,14 +81,14 @@ export default class ExampleCommand implements Command {
           color: args[0] as ColorResolvable
         });
         if (args2[1]) embed.setDescription(args2[1]);
-        if (args2[2]) embed.setFooter(args2[2]);
+        if (args2[2]) embed.setFooter({ text: args2[2] });
         return message.channel.send({ embeds: [ embed ] });
       }
       if (!colorlist.includes(args[0])) {
         const args2 = args.slice(1).join(' ').split("#@#");
         const embed = client.mkembed({ title: args2[0] });
         if (args2[1]) embed.setDescription(args2[1]);
-        if (args2[2]) embed.setFooter(args2[2]);
+        if (args2[2]) embed.setFooter({ text: args2[2] });
         return message.channel.send({ embeds: [ embed ] });
       }
     }
