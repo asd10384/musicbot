@@ -240,10 +240,12 @@ async function getrecommend(message: M | PM) {
       const recommend = await ytdl.getInfo(musicDB.nowplaying.url);
       if (recommend && recommend.related_videos && recommend.related_videos.length > 0) {
         recommend.related_videos.sort((a, b) => {
-          if (a.isLive) return -1;
+          if (a.isLive) return 1;
           let c1 = a.length_seconds! - b.length_seconds!;
           let c2 = Number(b.view_count!) - Number(a.view_count!);
-          return c1 * c2;
+          if (c1 < 0 && c2 < 0) return -1;
+          if (c1 >= 0 || c2 < 0) return 0;
+          return 1;
         });
         let data = recommend.related_videos[Math.round(Math.random()*2)];
         var output: nowplay = {
