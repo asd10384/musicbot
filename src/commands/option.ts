@@ -17,7 +17,7 @@ import setmsg from "../music/msg";
  */
 
 /** 예시 명령어 */
-export default class ExampleCommand implements Command {
+export default class OptionCommand implements Command {
   /** 해당 명령어 설명 */
   name = "option";
   visible = true;
