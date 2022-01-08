@@ -33,6 +33,7 @@ export default class RemoveCommand implements Command {
       required: true
     }]
   };
+  msgmetadata?: { name: string; des: string; }[] = undefined;
 
   /** 실행되는 부분 */
   async slashrun(interaction: I) {

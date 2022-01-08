@@ -61,6 +61,25 @@ export default class 역할Command implements Command {
     ]
   };
 
+  msgmetadata?: { name: string, des: string }[] = [
+    {
+      name: "도움말",
+      des: "역할 도움말"
+    },
+    {
+      name: "목록",
+      des: "등록된 역할 확인"
+    },
+    {
+      name: "추가",
+      des: "특정 명령어 사용가능한 역할 추가"
+    },
+    {
+      name: "제거",
+      des: "특정 명령어 사용가능한 역할 제거"
+    }
+  ];
+
   /** 실행되는 부분 */
   async slashrun(interaction: I) {
     if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
@@ -70,7 +89,9 @@ export default class 역할Command implements Command {
     if (cmd === '목록') return await interaction.editReply({ embeds: [ this.list(guildDB!) ] });
     if (cmd === '추가') return await interaction.editReply({ embeds: [ this.add(guildDB!, role!.id) ] });
     if (cmd === '제거') return await interaction.editReply({ embeds: [ this.remove(guildDB!, role!.id) ] });
-    if (cmd === '도움말') return await interaction.editReply({ embeds: [ client.help(this.name, this.metadata, true) ] });
+    if (cmd === '도움말') return await interaction.editReply({ embeds: [
+      client.help(this.name, this.metadata, this.msgmetadata)!
+    ] });
   }
   async msgrun(message: Message, args: string[]) {
     if (!(await ckper(message))) return message.channel.send({ embeds: [ emper ] });
@@ -90,7 +111,7 @@ export default class 역할Command implements Command {
       }
       return message.channel.send({ embeds: [ this.err("제거", "역할을 찾을수 없습니다.") ] }).then(m => client.msgdelete(m, 1));
     }
-    return message.channel.send({ embeds: [ client.help(this.name, this.metadata) ] }).then(m => client.msgdelete(m, 5));
+    return message.channel.send({ embeds: [ client.help(this.name, this.metadata, this.msgmetadata)! ] }).then(m => client.msgdelete(m, 5));
   }
 
   err(name: string, desc: string): MessageEmbed {

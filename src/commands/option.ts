@@ -62,6 +62,7 @@ export default class OptionCommand implements Command {
       }
     ]
   };
+  msgmetadata?: { name: string; des: string; }[] = undefined;
 
   /** 실행되는 부분 */
   async slashrun(interaction: I) {

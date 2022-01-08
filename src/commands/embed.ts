@@ -60,6 +60,20 @@ export default class ExampleCommand implements Command {
     name: this.name,
     description: this.description
   };
+  msgmetadata?: { name: string; des: string; }[] = [
+    {
+      name: "색깔",
+      des: "색깔 확인"
+    },
+    {
+      name: "[제목]#@#[내용]#@#[참고]",
+      des: "임베드 생성"
+    },
+    {
+      name: "[색깔] [제목]#@#[내용]#@#[참고]",
+      des: "임베드 생성(색깔포함)"
+    }
+  ];
 
   /** 실행되는 부분 */
   async msgrun(message: Message, args: string[]) {
@@ -96,14 +110,6 @@ export default class ExampleCommand implements Command {
   }
 
   help(): MessageEmbed {
-    return client.mkembed({
-      title: `\` 임베드 도움말 \``,
-      description: `
-        ${client.prefix}임베드 색깔
-        ${client.prefix}임베드 [제목]#@#[내용]#@#[참고]
-        ${client.prefix}임베드 [색깔] [제목]#@#[내용]#@#[참고]`,
-      footer: { text: `example` },
-      color: client.embedcolor
-    });
+    return client.help(this.metadata.name, this.metadata, this.msgmetadata)!;
   }
 }

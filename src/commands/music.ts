@@ -71,6 +71,7 @@ export default class MusicCommand implements Command {
       }
     ]
   };
+  msgmetadata?: { name: string; des: string; }[] = undefined;
 
   /** 실행되는 부분 */
   async slashrun(interaction: I) {
