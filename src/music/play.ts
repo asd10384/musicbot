@@ -16,8 +16,7 @@ config();
 process.setMaxListeners(0);
 
 const proxy = process.env.PROXY;
-let agent: HttpsProxyAgent | undefined = undefined;
-if (proxy) agent = new HttpsProxyAgent(proxy);
+export const agent = new HttpsProxyAgent(proxy!);
 
 const mapPlayer: Map<string, AudioPlayer | undefined | null> = new Map();
 
@@ -214,7 +213,10 @@ export async function stopPlayer(guildId: string) {
 }
 
 export async function getarea(url: string) {
-  const info = await ytdl.getInfo(url).catch((err) => {
+  const info = await ytdl.getInfo(url, {
+    lang: "KR",
+    requestOptions: { agent }
+  }).catch((err) => {
     return undefined;
   });
   if (info) {
@@ -237,7 +239,10 @@ async function getrecommend(message: M | PM) {
   if (guildDB.options.recommend) {
     let musicDB = client.musicdb(message.guildId!);
     if (musicDB && musicDB.nowplaying && musicDB.nowplaying.url.length > 0) {
-      const recommend = await ytdl.getInfo(musicDB.nowplaying.url);
+      const recommend = await ytdl.getInfo(musicDB.nowplaying.url, {
+        lang: "KR",
+        requestOptions: { agent }
+      });
       if (recommend && recommend.related_videos && recommend.related_videos.length > 0) {
         recommend.related_videos.sort((a, b) => {
           if (a.isLive) return 1;
