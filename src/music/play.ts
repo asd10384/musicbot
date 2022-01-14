@@ -185,7 +185,7 @@ export function pause(message: M | PM) {
 export async function setVolume(guildId: string, number: number) {
   const Player = mapPlayer.get(guildId);
   if (Player && Player[0] && Player[1]) {
-    Player[1].volume?.setVolume(number/10);
+    Player[1].volume?.setVolume(number / 100);
   }
 }
 
