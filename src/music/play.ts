@@ -2,7 +2,7 @@ import { client } from "..";
 import { PM, M } from "../aliases/discord.js.js"
 import { nowplay } from "../database/obj/guild";
 import ytdl from "ytdl-core";
-import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, joinVoiceChannel, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayer, AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, joinVoiceChannel, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
 import getchannel from "./getchannel";
 import MDB from "../database/Mongodb";
 import setmsg from "./msg";
@@ -18,7 +18,7 @@ process.setMaxListeners(0);
 const proxy = process.env.PROXY;
 export const agent = new HttpsProxyAgent(proxy!);
 
-const mapPlayer: Map<string, AudioPlayer | undefined | null> = new Map();
+const mapPlayer: Map<string, [ AudioPlayer | undefined | null, AudioResource<any> | undefined | null ]> = new Map();
 
 export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
   let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
@@ -44,8 +44,8 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       if (!data && guildDB.options.recommend) data = await getrecommend(message);
     }
     if (data) {
-      const getq = [ "maxresdefault", "sddefault", "hqdefault", "mqdefault", "default" ];
-      data.image = data.image.replace(/\?.+/g,'').replace(/\.jpg|\.png/g,'').replace(new RegExp(getq.join('|'), 'g'), '').trim() + "hqdefault.jpg";
+      const getq = [ "maxresdefault", "sddefault", "hqdefault", "mqdefault", "default", "0", "1", "2", "3" ];
+      data.image = data.image.replace(new RegExp(`${getq.join('.|')}.`, 'g'), 'hqdefault.').replace(/\?.+/g,"").trim();
       const checkarea = await getarea(data.url);
       if (checkarea) {
         musicDB.nowplaying = data;
@@ -119,7 +119,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
     resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 100 : 0.7);
     Player.play(resource);
     const subscription = connection.subscribe(Player);
-    mapPlayer.set(guildid, Player);
+    mapPlayer.set(guildid, [ Player, resource ]);
     // connection.on(VoiceConnectionStatus.Ready, () => {
     //   // 봇 음성채널에 접속
     // });
@@ -171,44 +171,36 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
 
 export function pause(message: M | PM) {
   const Player = mapPlayer.get(message.guildId!);
-  if (Player) {
-    if (Player.state.status === AudioPlayerStatus.Playing) {
-      Player.pause();
+  if (Player && Player[0]) {
+    if (Player[0].state.status === AudioPlayerStatus.Playing) {
+      Player[0].pause();
       setmsg(message, true);
     } else {
-      Player.unpause();
+      Player[0].unpause();
       setmsg(message);
     }
   }
 }
 
-// export async function skipPlayer(message: M | PM) {
-//   const Player = mapPlayer.get(message.guildId!);
-//   const connection = getVoiceConnection(message.guildId!);
-//   if (Player) {
-//     if (connection) {
-//       Player.stop();
-//       await entersState(connection, VoiceConnectionStatus.Ready, 5_000);
-//       play(message);
-//     } else {
-//       mapPlayer.set(message.guildId!, undefined);
-//       Player.stop();
-//     }
-//   }
-// }
+export async function setVolume(guildId: string, number: number) {
+  const Player = mapPlayer.get(guildId);
+  if (Player && Player[0] && Player[1]) {
+    Player[1].volume?.setVolume(number/10);
+  }
+}
 
 export async function waitPlayer(guildId: string) {
   const Player = mapPlayer.get(guildId);
-  if (Player) {
-    Player.stop();
+  if (Player && Player[0]) {
+    Player[0].stop();
   }
 }
 
 export async function stopPlayer(guildId: string) {
   const Player = mapPlayer.get(guildId);
-  if (Player) {
-    mapPlayer.set(guildId, undefined);
-    Player.stop();
+  if (Player && Player[0]) {
+    mapPlayer.set(guildId, [ undefined, undefined ]);
+    Player[0].stop();
   }
 }
 

@@ -6,6 +6,7 @@ import { Message, MessageActionRow, MessageButton, MessageEmbed } from "discord.
 import MDB from "../database/Mongodb";
 import { guild_type } from "../database/obj/guild";
 import setmsg from "../music/msg";
+import { setVolume } from "../music/play";
 
 /**
  * DB
@@ -109,6 +110,7 @@ export default class OptionCommand implements Command {
       return true;
     });
     if (suc) {
+      setVolume(message.guildId!, number);
       setmsg(message);
       return client.mkembed({
         title: `**볼륨 설정완료**`,
