@@ -45,7 +45,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
     }
     if (data) {
       const getq = [ "maxresdefault", "sddefault", "hqdefault", "mqdefault", "default", "0", "1", "2", "3" ];
-      data.image = data.image.replace(new RegExp(`${getq.join('.|')}.`, 'g'), 'hqdefault.').replace(/\?.+/g,"").trim();
+      data.image = data.image.replace(new RegExp(`${getq.join('\\.|')}\\.`, 'g'), 'hqdefault.').replace(/\?.+/g,"").trim();
       const checkarea = await getarea(data.url);
       if (checkarea) {
         musicDB.nowplaying = data;
