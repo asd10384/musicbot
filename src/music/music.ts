@@ -6,7 +6,7 @@ import { play } from "./play";
 import queue from "./queue";
 
 export default async function music(message: M, text: string) {
-  const args = text.split('-');
+  const args = text.split(' -');
   const searchtext = args.shift()!.trim();
   var parmas: string[] = [];
   args.forEach((data) => parmas.push(data.replace(/ +/g, '').toUpperCase()));
