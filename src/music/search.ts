@@ -83,7 +83,7 @@ export default async function search(message: M, text: string, parmas?: parmas):
         });
         musicDB.queue = musicDB.queue.concat(queuelist);
         client.music.set(message.guildId!, musicDB);
-        setmsg(message);
+        setmsg(message.guild!);
         inputplaylist.delete(message.guildId!);
         return [ undefined, { type: "playlist", addembed: addembed } ];
       } else {

@@ -2,7 +2,7 @@ import { client } from "..";
 import { PM, M } from "../aliases/discord.js.js"
 import { nowplay } from "../database/obj/guild";
 import ytdl from "ytdl-core";
-import { AudioPlayer, AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, joinVoiceChannel, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayer, AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
 import getchannel from "./getchannel";
 import MDB from "../database/Mongodb";
 import setmsg from "./msg";
@@ -65,7 +65,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
     }
     musicDB.playing = true;
     client.music.set(message.guildId!, musicDB);
-    setmsg(message);
+    setmsg(message.guild!);
     const connection = joinVoiceChannel({
       adapterCreator: message.guild?.voiceAdapterCreator! as DiscordGatewayAdapterCreator,
       guildId: message.guildId!,
@@ -129,12 +129,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       await entersState(connection, VoiceConnectionStatus.Ready, 5_000);
       play(message, undefined);
     });
-    connection.on(VoiceConnectionStatus.Disconnected, () => {
-      // 봇 음성채널에서 퇴장
-      stop(message, true);
-      stopPlayer(guildid);
-    });
-    connection.on('error', (err) => {
+    connection.once('error', (err) => {
       if (client.debug) console.log('connection오류:', err);
       (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
         client.mkembed({
@@ -146,7 +141,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       ] }).then(m => client.msgdelete(m, 3000, true));
       stopPlayer(guildid);
     });
-    Player.on('error', (err) => {
+    Player.once('error', (err) => {
       if (client.debug) console.log('Player오류:', err);
       (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
         client.mkembed({
@@ -174,10 +169,10 @@ export function pause(message: M | PM) {
   if (Player && Player[0]) {
     if (Player[0].state.status === AudioPlayerStatus.Playing) {
       Player[0].pause();
-      setmsg(message, true);
+      setmsg(message.guild!, true);
     } else {
       Player[0].unpause();
-      setmsg(message);
+      setmsg(message.guild!);
     }
   }
 }
@@ -219,9 +214,9 @@ export async function getarea(url: string) {
 
 export async function waitend(message: M | PM) {
   waitPlayer(message.guildId!);
-  stop(message, false);
+  stop(message.guild!, false);
   setTimeout(() => {
-    if (!client.musicdb(message.guildId!).playing) return stop(message, true);
+    if (!client.musicdb(message.guildId!).playing) return stop(message.guild!, true);
   }, (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000);
 }
 

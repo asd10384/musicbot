@@ -50,7 +50,7 @@ export default class RemoveCommand implements Command {
       });
       musicDB.queue = list;
       client.music.set(message.guildId!, musicDB);
-      setmsg(message);
+      setmsg(message.guild!);
       return client.mkembed({
         title: `${number}번 노래 제거 완료`,
         description: `/queue 로 번호를 확인해주세요.`,

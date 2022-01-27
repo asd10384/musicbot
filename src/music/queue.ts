@@ -15,5 +15,5 @@ export default async function queue(message: M, getsearch: ytdl.videoInfo) {
     player: `<@${message.author.id}>`
   });
   client.music.set(message.guildId!, musicDB);
-  setmsg(message);
+  setmsg(message.guild!);
 }

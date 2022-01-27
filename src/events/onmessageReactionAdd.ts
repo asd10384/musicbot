@@ -27,9 +27,9 @@ export default async function onmessageReactionAdd (reaction: MessageReaction | 
     }
     if (name === '⏹️') {
       waitPlayer(reaction.message.guildId!);
-      stop(reaction.message, false);
+      stop(reaction.message.guild!, false);
       setTimeout(() => {
-        if (!client.musicdb(reaction.message.guildId!).playing) stop(reaction.message, true);
+        if (!client.musicdb(reaction.message.guildId!).playing) stop(reaction.message.guild!, true);
       }, (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000);
     }
     if (name === '⏭️') {

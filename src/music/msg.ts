@@ -2,14 +2,14 @@ import { client } from "..";
 import { M, PM, I } from "../aliases/discord.js";
 import { guild_type, nowplay } from "../database/obj/guild";
 import MDB from "../database/Mongodb";
-import { TextChannel } from "discord.js";
+import { Guild, TextChannel } from "discord.js";
 
-export default async function setmsg(message: M | PM | I, pause?: boolean) {
-  MDB.module.guild.findOne({ id: message.guildId! }).then(async (guildDB) => {
+export default async function setmsg(guild: Guild, pause?: boolean) {
+  MDB.module.guild.findOne({ id: guild.id }).then(async (guildDB) => {
     if (guildDB) {
       let text = await setlist(guildDB);
       let embed = await setembed(guildDB, pause);
-      let channel = message.guild?.channels.cache.get(guildDB.channelId);
+      let channel = guild.channels.cache.get(guildDB.channelId);
       (channel as TextChannel).messages.cache.get(guildDB.msgId)?.edit({ content: text, embeds: [embed] });
     }
   });

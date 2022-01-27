@@ -111,7 +111,7 @@ export default class OptionCommand implements Command {
     });
     if (suc) {
       setVolume(message.guildId!, number);
-      setmsg(message);
+      setmsg(message.guild!);
       return client.mkembed({
         title: `**볼륨 설정완료**`,
         description: `**현재 볼륨: ${guildDB.options.volume}%**`,
@@ -168,7 +168,7 @@ export default class OptionCommand implements Command {
       return true;
     });
     if (suc) {
-      setmsg(message);
+      setmsg(message.guild!);
       return client.mkembed({
         title: `**자동재생 설정완료**`,
         description: `**자동재생: ${guildDB.options.recommend ? "True" : "False"}**`,

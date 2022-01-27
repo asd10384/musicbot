@@ -6,6 +6,7 @@ import onInteractionCreate from "./events/onInteractionCreate";
 import onMessageCreate from "./events/onMessageCreate";
 import onmessageReactionAdd from "./events/onmessageReactionAdd";
 import guildDelete from "./events/guildDelete";
+import voiceStateUpdate from "./events/voiceStateUpdate";
 
 // 봇 클라이언트 생성
 export const client = new BotClient();
@@ -16,3 +17,4 @@ client.onEvent('interactionCreate', onInteractionCreate);
 client.onEvent('messageCreate', onMessageCreate);
 client.onEvent('messageReactionAdd', onmessageReactionAdd);
 client.onEvent('guildDelete', guildDelete);
+client.onEvent('voiceStateUpdate', voiceStateUpdate)

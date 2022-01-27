@@ -6,7 +6,7 @@ export default async function shuffle(message: M | PM) {
   let musicDB = client.musicdb(message.guildId!);
   musicDB.queue = await fshuffle(musicDB.queue);
   client.music.set(message.guildId!, musicDB);
-  setmsg(message);
+  setmsg(message.guild!);
 }
 
 export async function fshuffle(list: any[]) {
