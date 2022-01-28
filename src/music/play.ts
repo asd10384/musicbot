@@ -129,7 +129,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       await entersState(connection, VoiceConnectionStatus.Ready, 5_000);
       play(message, undefined);
     });
-    connection.once('error', (err) => {
+    connection.on('error', (err) => {
       if (client.debug) console.log('connection오류:', err);
       (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
         client.mkembed({
@@ -141,7 +141,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       ] }).then(m => client.msgdelete(m, 3000, true));
       stopPlayer(guildid);
     });
-    Player.once('error', (err) => {
+    Player.on('error', (err) => {
       if (client.debug) console.log('Player오류:', err);
       (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
         client.mkembed({
