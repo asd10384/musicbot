@@ -86,21 +86,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
         if (client.debug) console.log('ytdl-core오류1:', err);
         return undefined;
       });
-    } catch {
-      let ytsource2: internal.Readable | undefined = undefined;
-      try {
-        ytsource2 = ytdl(data.url, {
-          filter: "audioonly",
-          quality: 'highestaudio',
-          highWaterMark: 1 << 25,
-          requestOptions: { agent }
-        }).on('error', (err) => {
-          if (client.debug) console.log('ytdl-core오류2:', err);
-          return undefined;
-        });
-      } catch {}
-      ytsource = ytsource2;
-    }
+    } catch {}
     if (!ytsource) {
       await stopPlayer(message.guildId!);
       setTimeout(() => play(message, undefined), 50);

@@ -7,7 +7,6 @@ import { M } from "../aliases/discord.js";
 import setmsg from "./msg";
 import ytdl from "ytdl-core";
 import { fshuffle } from "./shuffle";
-import { agent } from "./play";
 
 type Vtype = "video" | "playlist" | "database";
 type Etype = "notfound" | "added" | "livestream";
@@ -23,8 +22,7 @@ export default async function search(message: M, text: string, parmas?: parmas):
   if (url.video) {
     let yid = url.video[1].replace(/\&.+/g,'');
     let getinfo = await ytdl.getInfo(`https://www.youtube.com/watch?v=${yid}`, {
-      lang: "KR",
-      requestOptions: { agent }
+      lang: "KR"
     }).catch((err) => {
       return undefined;
     });
@@ -52,7 +50,6 @@ export default async function search(message: M, text: string, parmas?: parmas):
     let yid = url.list[1].replace(/\&.+/g,'');
     let list = await ytpl(yid, {
       gl: "KR",
-      requestOptions: { agent },
       limit: 50000 // (guildDB.options.listlimit) ? guildDB.options.listlimit : 300
     }).catch((err) => {
       if (client.debug) console.log(err);
@@ -106,8 +103,7 @@ export default async function search(message: M, text: string, parmas?: parmas):
           return [ undefined, { type: "video", err: "notfound", addembed: addembed } ];
         }
         let getyt = await ytdl.getInfo(output.shortUrl, {
-          lang: "KR",
-          requestOptions: { agent }
+          lang: "KR"
         });
         inputplaylist.delete(message.guildId!);
         return [ getyt, { type: "video", addembed: addembed } ];
@@ -119,15 +115,13 @@ export default async function search(message: M, text: string, parmas?: parmas):
   } else {
     let list = await ytsr(text, {
       gl: 'KO',
-      limit: 1,
-      requestOptions: { agent }
+      limit: 1
     });
     if (list && list.items && list.items.length > 0) {
       let getinfo = undefined;
       if (list.items[0].type === "video") {
         getinfo = await ytdl.getInfo(list.items[0].url, {
-          lang: "KR",
-          requestOptions: { agent }
+          lang: "KR"
         });
       }
       inputplaylist.delete(message.guildId!);
