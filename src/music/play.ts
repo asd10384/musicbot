@@ -79,14 +79,16 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       ytsource = ytdl(data.url, {
         filter: "audioonly",
         quality: "highestaudio",
-        highWaterMark: 1 << 27,
+        highWaterMark: 1 << 25,
         dlChunkSize: 0,
         requestOptions: { agent }
       }).on('error', (err) => {
         if (client.debug) console.log('ytdl-core오류1:', err);
         return undefined;
       });
-    } catch {}
+    } catch {
+      ytsource = undefined;
+    }
     if (!ytsource) {
       await stopPlayer(message.guildId!);
       setTimeout(() => play(message, undefined), 50);
