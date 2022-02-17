@@ -1,4 +1,4 @@
-import { client } from "..";
+import { client } from "../index";
 import { check_permission as ckper, embed_permission as emper } from "../function/permission";
 import { Command } from "../interfaces/Command";
 import { I, D } from "../aliases/discord.js.js";
@@ -141,7 +141,7 @@ export default class 역할Command implements Command {
         title: `\` 역할 추가 오류 \``,
         description: `<@&${roleId}> 역할이 이미 등록되어 있습니다.`,
         footer: { text: `목록: /역할 목록` },
-        color: 'DARK_RED'
+        color: "DARK_RED"
       });
     } else {
       guildDB.role.push(roleId);
@@ -174,7 +174,7 @@ export default class 역할Command implements Command {
         title: `\` 역할 제거 오류 \``,
         description: `<@&${roleId}> 역할이 등록되어있지 않습니다.`,
         footer: { text: `목록: /역할 목록` },
-        color: 'DARK_RED'
+        color: "DARK_RED"
       });
     }
   }

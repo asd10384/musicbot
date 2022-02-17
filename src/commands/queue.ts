@@ -1,4 +1,4 @@
-import { client } from "..";
+import { client } from "../index";
 import { check_permission as ckper, embed_permission as emper } from "../function/permission";
 import { Command } from "../interfaces/Command";
 import { I, D } from "../aliases/discord.js";
@@ -54,12 +54,12 @@ export default class QueueCommand implements Command {
           if (getnumber < 1) return client.mkembed({
             title: `QUEUE 오류`,
             description: `번호는 0보다 커야합니다.`,
-            color: 'DARK_RED'
+            color: "DARK_RED"
           });
           if (getnumber > list.length) return client.mkembed({
             title: `QUEUE 오류`,
             description: `입력한 번호가 너무 큽니다.\n현재 \` 1~${list.length} \` 번까지 입력가능합니다.`,
-            color: 'DARK_RED'
+            color: "DARK_RED"
           });
           let musicDB = client.musicdb(guildDB.id);
           let options = guildDB.options;

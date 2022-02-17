@@ -1,7 +1,5 @@
-import { config } from "dotenv";
-import { client, handler } from "..";
-
-config();
+import "dotenv/config";
+import { client, handler } from "../index";
 
 /** onReady 핸들러 */
 export default function onReady() {
@@ -16,6 +14,10 @@ export default function onReady() {
 
   if (process.env.REFRESH_SLASH_COMMAND_ON_READY === 'true') handler.registCachedCommands(client);
 
+  if (process.env.ENVIROMENT === "DEV") {
+    client.user.setActivity("봇 수정");
+    return;
+  }
   client.user.setActivity(actlist[0].text);
   let i = 1;
   let time = actlist[1].time;

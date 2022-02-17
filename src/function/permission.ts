@@ -1,9 +1,8 @@
-import { client } from "..";
+import "dotenv/config";
+import { client } from "../index";
 import MDB from "../database/Mongodb";
 import { I, M } from "../aliases/discord.js";
 import { GuildMemberRoleManager, MessageEmbed, Permissions } from "discord.js";
-import { config } from "dotenv";
-config();
 
 /**
  * DB
@@ -23,5 +22,5 @@ export async function check_permission(msg: I | M): Promise<boolean> {
 
 export const embed_permission: MessageEmbed = client.mkembed({
   description: `이 명령어를 사용할\n권한이 없습니다.`,
-  color: 'DARK_RED'
+  color: "DARK_RED"
 });

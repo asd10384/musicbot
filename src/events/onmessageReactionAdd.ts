@@ -1,12 +1,9 @@
-import { client } from '..';
+import "dotenv/config";
+import { client } from '../index';
 import { MessageReaction, PartialMessageReaction, PartialUser, User } from 'discord.js';
 import shuffle from '../music/shuffle';
 import MDB from "../database/Mongodb";
-import { pause, stopPlayer, waitPlayer } from "../music/play";
-import stop from "../music/stop";
-import setmsg from '../music/msg';
-import { config } from "dotenv";
-config();
+import { pause, skipPlayer, waitend } from "../music/play";
 
 export default async function onmessageReactionAdd (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) {
   if (user.bot) return;
@@ -26,14 +23,10 @@ export default async function onmessageReactionAdd (reaction: MessageReaction | 
       if (musicDB.playing) pause(reaction.message);
     }
     if (name === '⏹️') {
-      waitPlayer(reaction.message.guildId!);
-      stop(reaction.message.guild!, false);
-      setTimeout(() => {
-        if (!client.musicdb(reaction.message.guildId!).playing) stop(reaction.message.guild!, true);
-      }, (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000);
+      await waitend(reaction.message);
     }
     if (name === '⏭️') {
-      if (musicDB.playing) stopPlayer(reaction.message.guildId!);
+      if (musicDB.playing) await skipPlayer(reaction.message);
     }
     if (name === '🔀') {
       if (musicDB.playing && musicDB.queue.length > 0) {

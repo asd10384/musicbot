@@ -1,4 +1,4 @@
-import { client, handler } from "..";
+import { client, handler } from "../index";
 import { check_permission as ckper, embed_permission as emper } from "../function/permission";
 import { Command } from "../interfaces/Command";
 import { I, D } from "../aliases/discord.js";
@@ -45,7 +45,7 @@ export default class HelpCommand implements Command {
       embed.setTitle(`\` ${args[0]} 도움말 \``)
         .setDescription(`명령어를 찾을수 없습니다.`)
         .setFooter({ text: `도움말: /help` })
-        .setColor('DARK_RED');
+        .setColor("DARK_RED");
     }
     if (embed2) return await interaction.editReply({ embeds: [ embed, embed2 ] });
     return await interaction.editReply({ embeds: [ embed ] });

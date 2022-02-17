@@ -1,6 +1,5 @@
-import { config } from "dotenv";
+import "dotenv/config";
 import { Document, model, Schema } from "mongoose";
-config();
 
 export interface music {
   playing: boolean;
@@ -35,17 +34,17 @@ export interface guild_type extends Document {
 
 const GuildSchema: Schema = new Schema({
   id: { type: String, required: true },
-  name: { type: String },
+  name: { type: String, default: "" },
   prefix: { type: String, default: (process.env.PREFIX) ? process.env.PREFIX : 'm;' },
-  role: { type: Array },
-  channelId: { type: String },
-  msgId: { type: String },
+  role: { type: Array, default: [] },
+  channelId: { type: String, default: "" },
+  msgId: { type: String, default: "" },
   options: {
-    volume: { type: Number },
-    player: { type: Boolean },
-    listlimit: { type: Number },
-    author: { type: Boolean },
-    recommend: { type: Boolean }
+    volume: { type: Number, default: 50 },
+    player: { type: Boolean, default: true },
+    listlimit: { type: Number, default: 300 },
+    author: { type: Boolean, default: false },
+    recommend: { type: Boolean, default: false }
   }
 });
 

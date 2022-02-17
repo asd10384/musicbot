@@ -1,31 +1,28 @@
-import { client } from "..";
+import "dotenv/config";
+import { client } from "../index";
 import { PM, M } from "../aliases/discord.js.js"
 import { nowplay } from "../database/obj/guild";
 import ytdl from "ytdl-core";
-import { AudioPlayer, AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
 import getchannel from "./getchannel";
 import MDB from "../database/Mongodb";
 import setmsg from "./msg";
 import stop from "./stop";
 import { TextChannel } from "discord.js";
 import { HttpsProxyAgent } from "https-proxy-agent";
-import { config } from "dotenv";
 import internal from "stream";
-config();
 
-process.setMaxListeners(0);
+export const agent = new HttpsProxyAgent(process.env.PROXY!);
 
-const proxy = process.env.PROXY;
-export const agent = new HttpsProxyAgent(proxy!);
-
-const mapPlayer: Map<string, [ AudioPlayer | undefined | null, AudioResource<any> | undefined | null ]> = new Map();
+const mapPlayer: Map<string, [ PlayerSubscription | undefined | null, AudioResource<any> | undefined | null ]> = new Map();
 
 export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
   let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
-  if (!guildDB) return;
+  if (!guildDB) return stop(message.guild!, true);
   let musicDB = client.musicdb(message.guildId!);
   const channelid = guildDB.channelId;
   const guildid = message.guildId!;
+  const msgchannel = message.guild?.channels.cache.get(channelid) as TextChannel;
   let voicechannel = getchannel(message);
   if (voicechannel) {
     let data: nowplay | undefined = undefined;
@@ -50,12 +47,12 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       if (checkarea) {
         musicDB.nowplaying = data;
       } else {
-        (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
+        msgchannel.send({ embeds: [
           client.mkembed({
             title: `오류발생`,
             description: '현재 지역에서 영상을 재생할 수 없습니다.',
             footer: { text: `Area error` },
-            color: 'DARK_RED'
+            color: "DARK_RED"
           })
         ] }).then(m => client.msgdelete(m, 3000, true));
       }
@@ -90,63 +87,81 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
       ytsource = undefined;
     }
     if (!ytsource) {
+      connection.destroy();
       await stopPlayer(message.guildId!);
+      msgchannel.send({ embeds: [
+        client.mkembed({
+          title: `오류발생`,
+          description: '영상을 찾을수 없습니다.',
+          footer: { text: `not found ytsource` },
+          color: "DARK_RED"
+        })
+      ] }).then(m => client.msgdelete(m, 3000, true));
       setTimeout(() => play(message, undefined), 50);
       return;
     }
     try {
       await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
     } catch {
-      if (connection.state.status !== VoiceConnectionStatus.Destroyed) {
-        connection.destroy();
-        stopPlayer(guildid);
-      }
+      msgchannel.send({ embeds: [
+        client.mkembed({
+          title: `오류발생`,
+          description: '재생시도중 오류발생',
+          footer: { text: `not set entersState` },
+          color: "DARK_RED"
+        })
+      ] }).then(m => client.msgdelete(m, 3000, true));
+      setTimeout(() => play(message, undefined), 50);
+      return;
     }
     const resource = createAudioResource(ytsource, { inlineVolume: true, inputType: StreamType.Arbitrary });
     resource.volume?.setVolumeDecibels(5);
     resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 100 : 0.7);
     Player.play(resource);
     const subscription = connection.subscribe(Player);
-    mapPlayer.set(guildid, [ Player, resource ]);
+    mapPlayer.set(guildid, [ subscription, resource ]);
     // connection.on(VoiceConnectionStatus.Ready, () => {
     //   // 봇 음성채널에 접속
     // });
     Player.on(AudioPlayerStatus.Idle, async (P) => {
       // 봇 노래 재생 끝났을때
       Player.stop();
-      await entersState(connection, VoiceConnectionStatus.Ready, 5_000);
+      await entersState(connection, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
       play(message, undefined);
+      return;
     });
     connection.on('error', (err) => {
       if (client.debug) console.log('connection오류:', err);
-      (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
+      msgchannel.send({ embeds: [
         client.mkembed({
           title: `오류발생`,
           description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
           footer: { text: `connection error` },
-          color: 'DARK_RED'
+          color: "DARK_RED"
         })
       ] }).then(m => client.msgdelete(m, 3000, true));
       stopPlayer(guildid);
+      return;
     });
     Player.on('error', (err) => {
       if (client.debug) console.log('Player오류:', err);
-      (message.guild?.channels.cache.get(channelid) as TextChannel).send({ embeds: [
+      msgchannel.send({ embeds: [
         client.mkembed({
           title: `오류발생`,
           description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
           footer: { text: `Player error` },
-          color: 'DARK_RED'
+          color: "DARK_RED"
         })
       ] }).then(m => client.msgdelete(m, 3000, true));
       stopPlayer(guildid);
+      return;
     });
   } else {
     return message.channel.send({ embeds: [
       client.mkembed({
         title: '음성채널을 찾을수 없습니다.',
         description: '음성채널에 들어가서 사용해주세요.',
-        color: 'DARK_RED'
+        color: "DARK_RED"
       })
     ] }).then(m => client.msgdelete(m, 1));
   }
@@ -155,13 +170,21 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
 export function pause(message: M | PM) {
   const Player = mapPlayer.get(message.guildId!);
   if (Player && Player[0]) {
-    if (Player[0].state.status === AudioPlayerStatus.Playing) {
-      Player[0].pause();
+    if (Player[0].player.state.status === AudioPlayerStatus.Playing) {
+      Player[0].player.pause();
       setmsg(message.guild!, true);
     } else {
-      Player[0].unpause();
+      Player[0].player.unpause();
       setmsg(message.guild!);
     }
+  }
+}
+
+export async function skipPlayer(message: M | PM) {
+  const Player = mapPlayer.get(message.guildId!);
+  if (Player && Player[0] && Player[1]) {
+    await entersState(Player[0].connection, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
+    play(message, undefined);
   }
 }
 
@@ -175,7 +198,7 @@ export async function setVolume(guildId: string, number: number) {
 export async function waitPlayer(guildId: string) {
   const Player = mapPlayer.get(guildId);
   if (Player && Player[0]) {
-    Player[0].stop();
+    Player[0].player.stop();
   }
 }
 
@@ -183,29 +206,31 @@ export async function stopPlayer(guildId: string) {
   const Player = mapPlayer.get(guildId);
   if (Player && Player[0]) {
     mapPlayer.set(guildId, [ undefined, undefined ]);
-    Player[0].stop();
+    Player[0].player.stop();
   }
 }
 
-export async function getarea(url: string) {
+export async function getarea(url: string): Promise<boolean> {
   const info = await ytdl.getInfo(url, {
     lang: "KR",
     requestOptions: { agent }
   }).catch((err) => {
     return undefined;
   });
-  if (info) {
+  if (info && info.videoDetails) {
     return info.videoDetails.availableCountries.includes('KR');
   }
   return false;
 }
 
-export async function waitend(message: M | PM) {
+export async function waitend(message: M | PM): Promise<void> {
+  if (!client.musicdb(message.guildId!).playing) return;
   waitPlayer(message.guildId!);
   stop(message.guild!, false);
   setTimeout(() => {
     if (!client.musicdb(message.guildId!).playing) return stop(message.guild!, true);
   }, (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000);
+  return;
 }
 
 async function getrecommend(message: M | PM) {

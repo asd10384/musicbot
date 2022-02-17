@@ -1,4 +1,4 @@
-import { client } from "..";
+import { client } from "../index";
 import { I, M } from "../aliases/discord.js";
 import search from "./search.js";
 import MDB from "../database/Mongodb";
@@ -7,16 +7,16 @@ import queue from "./queue";
 
 export default async function music(message: M, text: string) {
   const args = text.split(' -');
+  if (args.length === 0) return;
   const searchtext = args.shift()!.trim();
   var parmas: string[] = [];
-  args.forEach((data) => parmas.push(data.replace(/ +/g, '').toUpperCase()));
+  args.forEach((data) => parmas.push(data.trim().toUpperCase()));
   const searching = await search(message, searchtext, {
     shuffle: (parmas.includes("S")) ? true : false
   });
   const getsearch = searching[0];
-  if (searching[1].addembed) {
-    searching[1].addembed.delete().catch((err) => { if (client.debug) console.log('addembed 메세지 삭제 오류') });
-  }
+  const options = searching[1];
+  if (options.addembed) options.addembed.delete().catch((err) => { if (client.debug) console.log('addembed 메세지 삭제 오류') });
   if (getsearch) {
     let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
     let musicDB = client.musicdb(message.guildId!);
@@ -30,22 +30,21 @@ export default async function music(message: M, text: string) {
       return message.channel?.send({
         embeds: [
           client.mkembed({
-            title: `알수없는 오류발생.`,
+            title: `데이터베이스 오류발생`,
             description: '다시 시도해주세요.',
-            color: 'DARK_RED'
+            color: "DARK_RED"
           })
         ]
       }).then(m => client.msgdelete(m, 0.5));
     }
   } else {
-    const options = searching[1];
     if (options.type === "playlist") {
       if (options.err === "notfound") {
         return message.channel?.send({
           embeds: [
             client.mkembed({
               title: `플레이리스트를 찾을수 없습니다.`,
-              color: 'DARK_RED'
+              color: "DARK_RED"
             })
           ]
         }).then(m => client.msgdelete(m, 0.5));
@@ -55,7 +54,7 @@ export default async function music(message: M, text: string) {
           embeds: [
             client.mkembed({
               title: `현재 플레이리스트를 추가하는중입니다.\n잠시뒤 사용해주세요.`,
-              color: 'DARK_RED'
+              color: "DARK_RED"
             })
           ]
         }).then(m => client.msgdelete(m, 1));
@@ -68,7 +67,7 @@ export default async function music(message: M, text: string) {
           embeds: [
             client.mkembed({
               title: `실시간 영상은 재생할 수 없습니다.`,
-              color: 'DARK_RED'
+              color: "DARK_RED"
             })
           ]
         }).then(m => client.msgdelete(m, 0.5));
@@ -78,7 +77,7 @@ export default async function music(message: M, text: string) {
           embeds: [
             client.mkembed({
               title: `영상을 찾을수 없습니다.`,
-              color: 'DARK_RED'
+              color: "DARK_RED"
             })
           ]
         }).then(m => client.msgdelete(m, 0.5));
@@ -89,7 +88,7 @@ export default async function music(message: M, text: string) {
         client.mkembed({
           title: `오류발생`,
           description: `다시 시도해주세요.`,
-          color: 'DARK_RED'
+          color: "DARK_RED"
         })
       ]
     }).then(m => client.msgdelete(m, 0.5));

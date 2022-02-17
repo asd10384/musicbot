@@ -1,4 +1,4 @@
-import { client } from "..";
+import { client } from "../index";
 import { check_permission as ckper, embed_permission as emper } from "../function/permission";
 import { Command } from "../interfaces/Command";
 import { I, D } from "../aliases/discord.js.js";
@@ -28,7 +28,7 @@ const colorlist = [
   'DARK_VIVID_PINK', 
   'DARK_GOLD', 
   'DARK_ORANGE', 
-  'DARK_RED', 
+  "DARK_RED", 
   'DARK_GREY', 
   'LIGHT_GREY', 
   'DARK_NAVY', 

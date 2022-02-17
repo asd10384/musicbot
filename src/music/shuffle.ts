@@ -1,4 +1,4 @@
-import { client } from "..";
+import { client } from "../index";
 import { PM, M } from "../aliases/discord.js"
 import setmsg from "./msg";
 

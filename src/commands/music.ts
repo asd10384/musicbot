@@ -1,4 +1,5 @@
-import { client } from "..";
+import "dotenv/config";
+import { client } from "../index";
 import { check_permission as ckper, embed_permission as emper } from "../function/permission";
 import { Command } from "../interfaces/Command";
 import { I, D, M } from "../aliases/discord.js.js";
@@ -6,10 +7,8 @@ import { MessageActionRow, MessageButton, MessageEmbed, TextChannel } from "disc
 import MDB from "../database/Mongodb";
 import { guild_type } from "../database/obj/guild";
 import stop from "../music/stop";
-import { config } from "dotenv";
 import { DiscordGatewayAdapterCreator, joinVoiceChannel } from "@discordjs/voice";
 import { inputplaylist } from "../music/search";
-config();
 
 /**
  * DB
@@ -47,17 +46,6 @@ export default class MusicCommand implements Command {
         description: 'search soung'
       },
       {
-        type: 'SUB_COMMAND',
-        name: 'play',
-        description: 'song play',
-        options: [{
-          type: 'STRING',
-          name: 'text',
-          description: 'SONG TITLE OR URL',
-          required: true
-        }]
-      },
-      {
         type: "SUB_COMMAND",
         name: "join",
         description: "bot join voice channel",
@@ -88,15 +76,6 @@ export default class MusicCommand implements Command {
         return await interaction.editReply({ content: await this.fix(interaction, guildDB) });
       }
       return await interaction.editReply({ content: "데이터베이스를 찾을수 없습니다." })
-    }
-    if (cmd === 'play') {
-      const text = interaction.options.getString('text');
-      await interaction.editReply({ embeds: [
-        client.mkembed({
-          title: '현재 재작중입니다.',
-          color: 'DARK_RED'
-        })
-      ] });
     }
     if (cmd === "join") {
       const channel = interaction.options.getChannel("channel", true);

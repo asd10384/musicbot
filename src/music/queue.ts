@@ -1,4 +1,4 @@
-import { client } from "..";
+import { client } from "../index";
 import { M } from "../aliases/discord.js"
 import setmsg from "./msg";
 import ytdl from "ytdl-core";

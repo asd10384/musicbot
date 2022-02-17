@@ -1,9 +1,7 @@
+import "dotenv/config"; // .env 불러오기
 import { ChatInputApplicationCommandData, Client, ClientEvents, ColorResolvable, EmbedFieldData, Message, MessageEmbed } from 'discord.js';
-import { config } from 'dotenv';
 import _ from '../consts';
 import { music } from "../database/obj/guild";
-
-config(); // .env 불러오기
 
 /**
  * 봇 클라이언트

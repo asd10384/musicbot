@@ -3,17 +3,15 @@ import { readdirSync } from 'fs';
 import _ from '../consts';
 import BotClient from './BotClient';
 import { Command } from '../interfaces/Command';
-import { client } from '..';
-import MDB from "../database/Mongodb";
-import music from '../music/music';
+import { client } from '../index';
 
 export default class SlashHandler {
   public commands: Collection<string, Command>;
-  public cooldown: { [key: string]: number };
+  public cooldown: Map<string, number>;
 
   constructor () {
     this.commands = new Collection();
-    this.cooldown = {};
+    this.cooldown = new Map();
 
     const commandPath = _.COMMANDS_PATH;
     const commandFiles = readdirSync(commandPath);
@@ -55,42 +53,6 @@ export default class SlashHandler {
 
     if (!command) return;
     if (command.slashrun) command.slashrun(interaction);
-  }
-  
-  public msgrunCommand (message: Message) {
-    if (message.author.bot || message.channel.type === 'DM') return;
-    if (message.content.startsWith(client.prefix)) {
-      const content = message.content.slice(client.prefix.length).trim();
-      const args = content.split(/ +/g);
-      const commandName = args.shift()?.toLowerCase();
-      const command = this.commands.get(commandName!) || this.commands.find((cmd) => cmd.aliases.includes(commandName!));
-      try {
-        if (!command || !command.msgrun) return this.err(message, commandName);
-        command.msgrun(message, args);
-      } catch(error) {
-        if (client.debug) console.log(error); // 오류확인
-        this.err(message, commandName);
-      } finally {
-        client.msgdelete(message, 0);
-      }
-    } else {
-      MDB.get.guild(message).then((guildID) => {
-        if (guildID!.channelId === message.channelId) {
-          client.msgdelete(message, 350, true);
-          if (this.cooldown[`${message.guildId!}.${message.author.id}`] && this.cooldown[`${message.guildId!}.${message.author.id}`] > Date.now()) {
-            message.channel.send({ embeds: [
-              client.mkembed({
-                description: `**<@${message.author.id}>님 너무 빠르게 입력했습니다.**\n${Math.round(((this.cooldown[`${message.guildId!}.${message.author.id}`] - Date.now()) / 1000) * 100) / 100}초 뒤에 다시 사용해주세요.`,
-                color: 'DARK_RED'
-              })
-            ] }).then(m => client.msgdelete(m, 0.75));
-          } else {
-            this.cooldown[`${message.guildId!}.${message.author.id}`] = Date.now() + 2 * 1000;
-            music(message, message.content.trim());
-          }
-        }
-      });
-    }
   }
 
   err(message: Message, commandName: string | undefined | null) {

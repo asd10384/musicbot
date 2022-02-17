@@ -1,4 +1,4 @@
-import { I, M, PM } from "../aliases/discord.js";
+import { M, PM } from "../aliases/discord.js";
 
 export default function getchannel(message: M | PM) {
   if (message.guild?.me?.voice.channelId) return message.guild.me.voice.channel;
