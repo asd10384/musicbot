@@ -15,6 +15,7 @@ import internal from "stream";
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
 
 const mapPlayer: Map<string, [ PlayerSubscription | undefined | null, AudioResource<any> | undefined | null ]> = new Map();
+const timeout: Map<string, NodeJS.Timeout> = new Map();
 
 export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
   let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
@@ -39,6 +40,10 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
     } else {
       data = musicDB.queue.shift();
       if (!data && guildDB.options.recommend) data = await getrecommend(message);
+    }
+    if (timeout.get(message.guildId!)) {
+      clearTimeout(timeout.get(message.guildId!)!);
+      timeout.delete(message.guildId!);
     }
     if (data) {
       const getq = [ "maxresdefault", "sddefault", "hqdefault", "mqdefault", "default", "0", "1", "2", "3" ];
@@ -227,9 +232,12 @@ export async function waitend(message: M | PM): Promise<void> {
   if (!client.musicdb(message.guildId!).playing) return;
   waitPlayer(message.guildId!);
   stop(message.guild!, false);
-  setTimeout(() => {
-    if (!client.musicdb(message.guildId!).playing) return stop(message.guild!, true);
-  }, (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000);
+  timeout.set(
+    message.guildId!,
+    setTimeout(() => {
+      if (!client.musicdb(message.guildId!).playing) return stop(message.guild!, true);
+    }, (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000)
+  );
   return;
 }
 
