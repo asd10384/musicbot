@@ -20,9 +20,10 @@ async function setlist(guildDB: guild_type) {
   var list: string[] = [];
   var length = output.length + 20;
   let queue = musicDB.queue;
-  if (queue.length > 0) {
-    for (let i=0; i<queue.length; i++) {
-      let data = queue[i];
+  let queuenumber = musicDB.queuenumber;
+  if (queuenumber.length > 0) {
+    for (let i=0; i<queuenumber.length; i++) {
+      let data = queue[queuenumber[i]];
       let text = `\n${i+1}. ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title} [${await settime(data.duration)}]${(guildDB.options.player) ? ` ~ ${data.player}` : ''}`;
       if (length+text.length > 2000) {
         output += `\n+ ${queue.length-list.length}곡`;

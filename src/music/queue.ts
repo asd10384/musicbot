@@ -6,6 +6,7 @@ import ytdl from "ytdl-core";
 export default async function queue(message: M, getsearch: ytdl.videoInfo) {
   var getinfo = getsearch.videoDetails;
   let musicDB = client.musicdb(message.guildId!);
+  musicDB.queuenumber.push(musicDB.queue.length ? musicDB.queue.length : 0);
   musicDB.queue.push({
     title: getinfo.title,
     duration: getinfo.lengthSeconds,

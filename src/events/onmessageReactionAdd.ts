@@ -29,7 +29,7 @@ export default async function onmessageReactionAdd (reaction: MessageReaction | 
       if (musicDB.playing) await skipPlayer(reaction.message);
     }
     if (name === '🔀') {
-      if (musicDB.playing && musicDB.queue.length > 0) {
+      if (musicDB.playing && musicDB.queuenumber.length > 0) {
         await shuffle(reaction.message);
       }
     }

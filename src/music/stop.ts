@@ -10,6 +10,7 @@ export default async function stop(guild: Guild, leave: boolean) {
   let musicDB = client.musicdb(guild.id);
   musicDB.playing = false;
   musicDB.queue = [];
+  musicDB.queuenumber = [];
   musicDB.nowplaying = {
     author: '',
     duration: '',

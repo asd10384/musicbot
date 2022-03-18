@@ -40,8 +40,16 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
         image: (getinfo.thumbnails[0].url) ? getinfo.thumbnails[0].url : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`
       };
     } else {
-      data = musicDB.queue.shift();
-      if (!data && guildDB.options.recommend) data = await getrecommend(message);
+      let num = musicDB.queuenumber.shift();
+      if (num === undefined || num === null || num === NaN) {
+        if (guildDB.options.recommend) {
+          data = await getrecommend(message);
+        } else {
+          return waitend(message);
+        }
+      } else {
+        data = musicDB.queue[num];
+      }
     }
     if (timeout.get(message.guildId!)) {
       clearTimeout(timeout.get(message.guildId!)!);

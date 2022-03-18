@@ -66,6 +66,9 @@ export default async function search(message: M, text: string, parmas?: parmas):
       });
       if (parmas?.shuffle) list.items = await fshuffle(list.items);
       if (musicDB.playing) {
+        musicDB.queuenumber = musicDB.queuenumber.concat(list.items.map((data, i) => {
+          return musicDB.queue.length+i;
+        }));
         musicDB.queue = musicDB.queue.concat(list.items.map((data) => {
           return {
             title: data.title,
@@ -82,6 +85,9 @@ export default async function search(message: M, text: string, parmas?: parmas):
         return [ undefined, { type: "playlist", addembed: addembed } ];
       } else {
         let output = list.items.shift()!;
+        musicDB.queuenumber = musicDB.queuenumber.concat(list.items.map((data, i) => {
+          return musicDB.queue.length+i;
+        }));
         musicDB.queue = musicDB.queue.concat(list.items.map((data) => {
           return {
             title: data.title,

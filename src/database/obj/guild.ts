@@ -5,6 +5,7 @@ export interface music {
   playing: boolean;
   nowplaying: nowplay | null;
   queue: nowplay[];
+  queuenumber: number[];
 };
 
 export interface nowplay {

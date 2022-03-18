@@ -4,7 +4,7 @@ import setmsg from "./msg";
 
 export default async function shuffle(message: M | PM) {
   let musicDB = client.musicdb(message.guildId!);
-  musicDB.queue = await fshuffle(musicDB.queue);
+  musicDB.queuenumber = await fshuffle(musicDB.queuenumber);
   client.music.set(message.guildId!, musicDB);
   setmsg(message.guild!);
 }

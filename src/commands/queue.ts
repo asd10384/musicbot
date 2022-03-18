@@ -64,8 +64,9 @@ export default class QueueCommand implements Command {
           let musicDB = client.musicdb(guildDB.id);
           let options = guildDB.options;
           var list2: string[] = [];
-          musicDB.queue.forEach((data, i) => {
+          musicDB.queuenumber.forEach((num, i) => {
             if (!list2[Math.floor(i/client.maxqueue)]) list2[Math.floor(i/client.maxqueue)] = '';
+            let data = musicDB.queue[num];
             list2[Math.floor(i/client.maxqueue)] += `${i+1}. ${data.title} [${data.duration}]${(options.player) ? ` ~ ${data.player}` : ''}\n`;
           });
           return client.mkembed({

@@ -43,12 +43,12 @@ export default class RemoveCommand implements Command {
   }
 
   remove(message: Message | I, musicDB: music, number: number): MessageEmbed {
-    if (number > 0 && musicDB.queue.length >= number) {
-      let list: nowplay[] = [];
-      musicDB.queue.forEach((data, i) => {
-        if (i !== number-1) list.push(data);
+    if (number > 0 && musicDB.queuenumber.length >= number) {
+      let list: number[] = [];
+      musicDB.queuenumber.forEach((num, i) => {
+        if (i !== number-1) list.push(num);
       });
-      musicDB.queue = list;
+      musicDB.queuenumber = list;
       client.music.set(message.guildId!, musicDB);
       setmsg(message.guild!);
       return client.mkembed({

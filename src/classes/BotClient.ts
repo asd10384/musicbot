@@ -90,7 +90,8 @@ export default class BotClient extends Client {
     const output: music = {
       playing: false,
       nowplaying: null,
-      queue: []
+      queue: [],
+      queuenumber: []
     };
     this.music.set(guildId, output);
     return output;
