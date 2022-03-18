@@ -3,7 +3,7 @@ import { client } from "../index";
 import { PM, M } from "../aliases/discord.js.js"
 import { nowplay } from "../database/obj/guild";
 import ytdl from "ytdl-core";
-import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
 import getchannel from "./getchannel";
 import MDB from "../database/Mongodb";
 import setmsg from "./msg";
@@ -13,6 +13,7 @@ import { HttpsProxyAgent } from "https-proxy-agent";
 import internal from "stream";
 
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
+const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
 
 const mapPlayer: Map<string, [ PlayerSubscription | undefined | null, AudioResource<any> | undefined | null ]> = new Map();
 const timeout: Map<string, NodeJS.Timeout> = new Map();
@@ -26,6 +27,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
   const msgchannel = message.guild?.channels.cache.get(channelid) as TextChannel;
   let voicechannel = getchannel(message);
   if (voicechannel) {
+    if (getVoiceConnection(message.guildId!)) await entersState(getVoiceConnection(message.guildId!)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
     let data: nowplay | undefined = undefined;
     if (getsearch) {
       var getinfo = getsearch.videoDetails;
@@ -60,6 +62,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
             color: "DARK_RED"
           })
         ] }).then(m => client.msgdelete(m, 3000, true));
+        return skipPlayer(message);
       }
       musicDB.nowplaying = data;
     } else {
@@ -102,8 +105,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
           color: "DARK_RED"
         })
       ] }).then(m => client.msgdelete(m, 3000, true));
-      setTimeout(() => play(message, undefined), 50);
-      return;
+      return skipPlayer(message);
     }
     try {
       await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
@@ -116,8 +118,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
           color: "DARK_RED"
         })
       ] }).then(m => client.msgdelete(m, 3000, true));
-      setTimeout(() => play(message, undefined), 50);
-      return;
+      return skipPlayer(message);
     }
     const resource = createAudioResource(ytsource, { inlineVolume: true, inputType: StreamType.Arbitrary });
     resource.volume?.setVolumeDecibels(5);
@@ -125,15 +126,11 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
     Player.play(resource);
     const subscription = connection.subscribe(Player);
     mapPlayer.set(guildid, [ subscription, resource ]);
-    // connection.on(VoiceConnectionStatus.Ready, () => {
-    //   // 봇 음성채널에 접속
-    // });
     Player.on(AudioPlayerStatus.Idle, async (P) => {
       // 봇 노래 재생 끝났을때
       Player.stop();
       await entersState(connection, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
-      play(message, undefined);
-      return;
+      return play(message, undefined);
     });
     connection.on('error', (err) => {
       if (client.debug) console.log('connection오류:', err);
@@ -145,8 +142,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
           color: "DARK_RED"
         })
       ] }).then(m => client.msgdelete(m, 3000, true));
-      stopPlayer(guildid);
-      return;
+      return stopPlayer(guildid);
     });
     Player.on('error', (err) => {
       if (client.debug) console.log('Player오류:', err);
@@ -158,8 +154,7 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
           color: "DARK_RED"
         })
       ] }).then(m => client.msgdelete(m, 3000, true));
-      stopPlayer(guildid);
-      return;
+      return stopPlayer(guildid);
     });
   } else {
     return message.channel.send({ embeds: [
@@ -186,16 +181,15 @@ export function pause(message: M | PM) {
 }
 
 export async function skipPlayer(message: M | PM) {
-  const Player = mapPlayer.get(message.guildId!);
-  if (Player && Player[0] && Player[1]) {
-    await entersState(Player[0].connection, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
+  if (getVoiceConnection(message.guildId!)) {
+    await entersState(getVoiceConnection(message.guildId!)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
     play(message, undefined);
   }
 }
 
 export async function setVolume(guildId: string, number: number) {
   const Player = mapPlayer.get(guildId);
-  if (Player && Player[0] && Player[1]) {
+  if (Player && Player[1]) {
     Player[1].volume?.setVolume(number / 100);
   }
 }
@@ -232,12 +226,9 @@ export async function waitend(message: M | PM): Promise<void> {
   if (!client.musicdb(message.guildId!).playing) return;
   waitPlayer(message.guildId!);
   stop(message.guild!, false);
-  timeout.set(
-    message.guildId!,
-    setTimeout(() => {
-      if (!client.musicdb(message.guildId!).playing) return stop(message.guild!, true);
-    }, (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000)
-  );
+  timeout.set(message.guildId!, setTimeout(() => {
+    if (!client.musicdb(message.guildId!).playing) return stop(message.guild!, true);
+  }, BOT_LEAVE_TIME));
   return;
 }
 
