@@ -16,8 +16,8 @@ export const agent = new HttpsProxyAgent(process.env.PROXY!);
 const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
 
 const mapPlayer: Map<string, [ PlayerSubscription | undefined | null, AudioResource<any> | undefined | null ]> = new Map();
-const timeout: Map<string, NodeJS.Timeout> = new Map();
-
+const timeout: Map<string, NodeJS.Timeout | undefined> = new Map();
+const notleave: Map<string, NodeJS.Timer | undefined> = new Map();
 export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
   let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
   if (!guildDB) return stop(message.guild!, true);
@@ -180,9 +180,25 @@ export function pause(message: M | PM) {
   if (Player && Player[0]) {
     if (Player[0].player.state.status === AudioPlayerStatus.Playing) {
       Player[0].player.pause();
+      entersState(getVoiceConnection(message.guildId!)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+      if (notleave.get(message.guildId!)) clearInterval(notleave.get(message.guildId!)!);
+      notleave.set(message.guildId!, setInterval(() => {
+        const Player = mapPlayer.get(message.guildId!);
+        if (Player && Player[0]) {
+          if (Player[0].player.state.status === AudioPlayerStatus.Paused) {
+            entersState(getVoiceConnection(message.guildId!)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+          } else {
+            if (notleave.get(message.guildId!)) clearInterval(notleave.get(message.guildId!)!);
+          }
+        }
+      }, 1000*60*60));
       setmsg(message.guild!, true);
     } else {
       Player[0].player.unpause();
+      if (notleave.get(message.guildId!)) {
+        clearInterval(notleave.get(message.guildId!)!);
+        notleave.delete(message.guildId!);
+      }
       setmsg(message.guild!);
     }
   }
