@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { client } from '../index';
-import { MessageReaction, PartialMessageReaction, PartialUser, User } from 'discord.js';
+import { Guild, MessageReaction, PartialMessageReaction, PartialUser, User } from 'discord.js';
 import shuffle from '../music/shuffle';
 import MDB from "../database/Mongodb";
 import { pause, skipPlayer, waitend } from "../music/play";
@@ -20,7 +20,7 @@ export default async function onmessageReactionAdd (reaction: MessageReaction | 
 
   if (reaction.message.channelId === guildDB.channelId) {
     if (name === '⏯️') {
-      if (musicDB.playing) pause(reaction.message);
+      if (musicDB.playing) pause(reaction.message.guild as Guild);
     }
     if (name === '⏹️') {
       await waitend(reaction.message);

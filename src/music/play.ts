@@ -8,7 +8,7 @@ import getchannel from "./getchannel";
 import MDB from "../database/Mongodb";
 import setmsg from "./msg";
 import stop from "./stop";
-import { TextChannel } from "discord.js";
+import { Guild, TextChannel } from "discord.js";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import internal from "stream";
 
@@ -18,6 +18,8 @@ const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 
 const mapPlayer: Map<string, [ PlayerSubscription | undefined | null, AudioResource<any> | undefined | null ]> = new Map();
 const timeout: Map<string, NodeJS.Timeout | undefined> = new Map();
 const notleave: Map<string, NodeJS.Timer | undefined> = new Map();
+export const checkautopause: Set<string> = new Set();
+
 export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
   let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
   if (!guildDB) return stop(message.guild!, true);
@@ -175,32 +177,42 @@ export async function play(message: M | PM, getsearch?: ytdl.videoInfo) {
   }
 }
 
-export function pause(message: M | PM) {
-  const Player = mapPlayer.get(message.guildId!);
+export function pause(guild: Guild) {
+  const Player = mapPlayer.get(guild.id);
   if (Player && Player[0]) {
     if (Player[0].player.state.status === AudioPlayerStatus.Playing) {
       Player[0].player.pause();
-      entersState(getVoiceConnection(message.guildId!)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
-      if (notleave.get(message.guildId!)) clearInterval(notleave.get(message.guildId!)!);
-      notleave.set(message.guildId!, setInterval(() => {
-        const Player = mapPlayer.get(message.guildId!);
+      entersState(getVoiceConnection(guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+      if (notleave.get(guild.id)) clearInterval(notleave.get(guild.id)!);
+      notleave.set(guild.id, setInterval(() => {
+        const Player = mapPlayer.get(guild.id);
         if (Player && Player[0]) {
           if (Player[0].player.state.status === AudioPlayerStatus.Paused) {
-            entersState(getVoiceConnection(message.guildId!)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+            entersState(getVoiceConnection(guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
           } else {
-            if (notleave.get(message.guildId!)) clearInterval(notleave.get(message.guildId!)!);
+            if (notleave.get(guild.id)) clearInterval(notleave.get(guild.id)!);
           }
         }
       }, 1000*60*60));
-      setmsg(message.guild!, true);
+      setmsg(guild, true);
     } else {
       Player[0].player.unpause();
-      if (notleave.get(message.guildId!)) {
-        clearInterval(notleave.get(message.guildId!)!);
-        notleave.delete(message.guildId!);
+      if (notleave.get(guild.id)) {
+        clearInterval(notleave.get(guild.id)!);
+        notleave.delete(guild.id);
       }
-      setmsg(message.guild!);
+      setmsg(guild);
     }
+  }
+}
+
+export function autopause(guild: Guild) {
+  if (checkautopause.has(guild.id)) {
+    checkautopause.delete(guild.id);
+    pause(guild);
+  } else {
+    checkautopause.add(guild.id);
+    pause(guild);
   }
 }
 
