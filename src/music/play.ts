@@ -15,7 +15,7 @@ import internal from "stream";
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
 const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
 
-const mapPlayer: Map<string, [ PlayerSubscription | undefined | null, AudioResource<any> | undefined | null ]> = new Map();
+export const mapPlayer: Map<string, [ PlayerSubscription | undefined | null, AudioResource<any> | undefined | null ]> = new Map();
 const timeout: Map<string, NodeJS.Timeout | undefined> = new Map();
 const notleave: Map<string, NodeJS.Timer | undefined> = new Map();
 export const checkautopause: Set<string> = new Set();
@@ -193,7 +193,7 @@ export function pause(guild: Guild) {
             if (notleave.get(guild.id)) clearInterval(notleave.get(guild.id)!);
           }
         }
-      }, 1000*60*60));
+      }, 1000*60));
       setmsg(guild, true);
     } else {
       Player[0].player.unpause();
@@ -207,12 +207,17 @@ export function pause(guild: Guild) {
 }
 
 export function autopause(guild: Guild) {
+  const Player = mapPlayer.get(guild.id);
   if (checkautopause.has(guild.id)) {
-    checkautopause.delete(guild.id);
-    pause(guild);
+    if (Player && Player[0]?.player.state.status === AudioPlayerStatus.Paused) {
+      checkautopause.delete(guild.id);
+      pause(guild);
+    }
   } else {
-    checkautopause.add(guild.id);
-    pause(guild);
+    if (Player && Player[0]?.player.state.status === AudioPlayerStatus.Playing) {
+      checkautopause.add(guild.id);
+      pause(guild);
+    }
   }
 }
 

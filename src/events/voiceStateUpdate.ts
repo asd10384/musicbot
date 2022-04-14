@@ -1,14 +1,27 @@
 import { client } from "../index";
 import { ClientUser, Guild, GuildMember, VoiceState } from "discord.js";
 import stop from "../music/stop";
-import { autopause, checkautopause, stopPlayer } from "../music/play";
+import { autopause, checkautopause, mapPlayer, stopPlayer } from "../music/play";
+import { AudioPlayerStatus, DiscordGatewayAdapterCreator, joinVoiceChannel } from "@discordjs/voice";
 
 export default function voiceStateUpdate(oldState: VoiceState, newState: VoiceState) {
   if (newState.member!.id === client.user!.id && !newState.channelId) {
-    stop(newState.guild, true);
-    stopPlayer(newState.guild.id);
+    const Player = mapPlayer.get(oldState.guild.id);
+    if (oldState.channelId && Player && Player[0]?.player.state.status === AudioPlayerStatus.Paused) {
+      if (checkautopause.has(oldState.guild.id)) {
+        joinVoiceChannel({
+          guildId: oldState.guild.id,
+          channelId: oldState.channelId!,
+          adapterCreator: oldState.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator
+        });
+      }
+    } else {
+      stop(newState.guild, true);
+      stopPlayer(newState.guild.id);
+    }
+  } else {
+    botautopause(oldState.guild);
   }
-  botautopause(oldState.guild);
 }
 
 function botautopause(guild: Guild) {
