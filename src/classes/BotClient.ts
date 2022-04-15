@@ -1,7 +1,8 @@
 import "dotenv/config"; // .env 불러오기
-import { ChatInputApplicationCommandData, Client, ClientEvents, ColorResolvable, EmbedFieldData, Message, MessageEmbed } from 'discord.js';
+import { ChatInputApplicationCommandData, Client, ClientEvents, ColorResolvable, EmbedFieldData, Guild, Message, MessageEmbed } from 'discord.js';
 import _ from '../consts';
 import { music } from "../database/obj/guild";
+import Music from "../music/musicClass";
 
 /**
  * 봇 클라이언트
@@ -20,7 +21,7 @@ export default class BotClient extends Client {
   ttstimertime: number;
   embedcolor: ColorResolvable;
   maxqueue: number;
-  music: Map<string, music>;
+  musicClass: Map<string, Music>;
   /**
    * 클라이언트 생성
    * 
@@ -51,7 +52,7 @@ export default class BotClient extends Client {
     this.ttstimertime = (60) * 45; //분
     this.embedcolor = process.env.EMBED_COLOR ? process.env.EMBED_COLOR.trim().toUpperCase() as ColorResolvable : "ORANGE";
     this.maxqueue = 30;
-    this.music = new Map();
+    this.musicClass = new Map();
   }
 
   /**
@@ -72,30 +73,11 @@ export default class BotClient extends Client {
    */
   public onEvent = (event: keyof ClientEvents, func: Function, ...extra: any[]) => this.on(event, (...args) => func(...args, ...extra));
 
-  /** 총 유저 수 (Promise) */
-  public readonly totalUserCount = () => this.totalCounter('users');
-  /** 총 길드 수 (Promise) */
-  public readonly totalGuildCount = () => this.totalCounter('guilds');
-  /** 총 채널 수 (Promise) */
-  public readonly totalChannelCount = () => this.totalCounter('channels');
-
-  private async totalCounter (key: 'guilds' | 'users' | 'channels') {
-    if (!this.shard) return this[key].cache.size;
-    const shardData = await this.shard.fetchClientValues(`${key}.cache.size`) as number[];
-    return shardData.reduce((prev, curr) => prev + curr, 0);
+  public getmc = (guild: Guild): Music => {
+    if (!this.musicClass.has(guild.id)) this.musicClass.set(guild.id, new Music(guild));
+    return this.musicClass.get(guild.id)!;
   }
 
-  public musicdb = (guildId: string): music => {
-    if (this.music.get(guildId)) return this.music.get(guildId)!;
-    const output: music = {
-      playing: false,
-      nowplaying: null,
-      queue: [],
-      queuenumber: []
-    };
-    this.music.set(guildId, output);
-    return output;
-  }
   mkembed(data: {
     title?: string,
     description?: string,

@@ -2,10 +2,10 @@ import { client } from "../index";
 import ytsr from "ytsr";
 import ytpl from "ytpl";
 import MDB from "../database/Mongodb";
-import { M } from "../aliases/discord.js";
-import setmsg from "./msg";
+import { M } from "../aliases/discord.js.js";
 import ytdl from "ytdl-core";
 import { fshuffle } from "./shuffle";
+import setmsg from "./msg";
 
 type Vtype = "video" | "playlist" | "database";
 type Etype = "notfound" | "added" | "livestream";
@@ -26,7 +26,7 @@ export default async function search(message: M, text: string, parmas?: parmas):
       return undefined;
     });
     if (getinfo && getinfo.videoDetails) {
-      if (getinfo.videoDetails.lengthSeconds === "0") return [ undefined, { type: "video", err: "livestream" } ]
+      if (getinfo.videoDetails.lengthSeconds === "0") return [ undefined, { type: "video", err: "livestream" } ];
       return [ getinfo, { type: "video" } ];
     } else {
       return [ undefined, { type: "video", err: "notfound" } ];
@@ -35,7 +35,7 @@ export default async function search(message: M, text: string, parmas?: parmas):
     let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
     if (!guildDB) return [ undefined, { type: "database", err: "notfound" } ];
     inputplaylist.add(message.guildId!);
-    let musicDB = client.musicdb(message.guildId!);
+    const mc = client.getmc(message.guild!);
     const addedembed = await message.channel.send({ embeds: [
       client.mkembed({
         description: `<@${message.author.id}> 플레이리스트 확인중...\n(노래가 많으면 많을수록 오래걸립니다.)`,
@@ -44,8 +44,7 @@ export default async function search(message: M, text: string, parmas?: parmas):
     ] }).catch((err) => {
       return undefined;
     });
-    let pid = url.list[1].replace(/\&.+/g,'');
-    let list = await ytpl(pid, {
+    let list = await ytpl(url.list[1].replace(/\&.+/g,''), {
       gl: "KR",
       limit: 50000 // (guildDB.options.listlimit) ? guildDB.options.listlimit : 300
     }).catch((err) => {
@@ -65,46 +64,48 @@ export default async function search(message: M, text: string, parmas?: parmas):
         return undefined;
       });
       if (parmas?.shuffle) list.items = await fshuffle(list.items);
-      if (musicDB.playing) {
-        musicDB.queuenumber = musicDB.queuenumber.concat(list.items.map((data, i) => {
-          return musicDB.queue.length+i;
-        }));
-        musicDB.queue = musicDB.queue.concat(list.items.map((data) => {
-          return {
-            title: data.title,
-            duration: data.durationSec!.toString(),
-            author: data.author.name,
-            url: data.shortUrl,
-            image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
-            player: `<@${message.author.id}>`
-          }
-        }));
-        client.music.set(message.guildId!, musicDB);
+      if (mc.playing) {
+        mc.setqueue(
+          mc.queue.concat(list.items.map((data) => {
+            return {
+              title: data.title,
+              duration: data.durationSec!.toString(),
+              author: data.author.name,
+              url: data.shortUrl,
+              image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+              player: `<@${message.author.id}>`
+            }
+          })),
+          mc.queuenumber.concat(list.items.map((data, i) => {
+          return mc.queue.length+i;
+          }))
+        );
         setmsg(message.guild!);
         inputplaylist.delete(message.guildId!);
         return [ undefined, { type: "playlist", addembed: addembed } ];
       } else {
-        let output = list.items.shift()!;
-        musicDB.queuenumber = musicDB.queuenumber.concat(list.items.map((data, i) => {
-          return musicDB.queue.length+i;
-        }));
-        musicDB.queue = musicDB.queue.concat(list.items.map((data) => {
-          return {
-            title: data.title,
-            duration: data.durationSec!.toString(),
-            author: data.author.name,
-            url: data.shortUrl,
-            image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
-            player: `<@${message.author.id}>`
-          }
-        }));
-        client.music.set(message.guildId!, musicDB);
+        const output = list.items.shift()!;
+        mc.setqueue(
+          mc.queue.concat(list.items.map((data) => {
+            return {
+              title: data.title,
+              duration: data.durationSec!.toString(),
+              author: data.author.name,
+              url: data.shortUrl,
+              image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+              player: `<@${message.author.id}>`
+            }
+          })),
+          mc.queuenumber.concat(list.items.map((data, i) => {
+          return mc.queue.length+i;
+          }))
+        );
         let getyt = await ytdl.getInfo(output.shortUrl, {
           lang: "KR"
         });
         inputplaylist.delete(message.guildId!);
         if (getyt && getyt.videoDetails) {
-          if (getyt.videoDetails.lengthSeconds === "0") return [ undefined, { type: "video", err: "livestream" } ]
+          if (getyt.videoDetails.lengthSeconds === "0") return [ undefined, { type: "video", err: "livestream" } ];
           return [ getyt, { type: "video", addembed: addembed } ];
         } else {
           return [ undefined, { type: "video", err: "notfound" } ];

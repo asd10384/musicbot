@@ -1,8 +1,8 @@
 import { client } from "../index";
 import { check_permission as ckper, embed_permission as emper } from "../function/permission";
 import { Command } from "../interfaces/Command";
-import { I, D } from "../aliases/discord.js.js";
-import { Message, MessageActionRow, MessageButton, MessageEmbed } from "discord.js";
+import { I, D, M } from "../aliases/discord.js.js";
+import { MessageActionRow, MessageButton, MessageEmbed } from "discord.js";
 import MDB from "../database/Mongodb";
 import { music, nowplay } from "../database/obj/guild";
 import setmsg from "../music/msg";
@@ -38,18 +38,17 @@ export default class RemoveCommand implements Command {
   /** 실행되는 부분 */
   async slashrun(interaction: I) {
     let number = interaction.options.getInteger('number', true);
-    let musicDB = client.musicdb(interaction.guildId!);
-    return await interaction.editReply({ embeds: [ this.remove(interaction, musicDB, number) ] });
+    return await interaction.editReply({ embeds: [ this.remove(interaction, number) ] });
   }
 
-  remove(message: Message | I, musicDB: music, number: number): MessageEmbed {
-    if (number > 0 && musicDB.queuenumber.length >= number) {
+  remove(message: M | I, number: number): MessageEmbed {
+    const mc = client.getmc(message.guild!);
+    if (number > 0 && mc.queuenumber.length >= number) {
       let list: number[] = [];
-      musicDB.queuenumber.forEach((num, i) => {
+      mc.queuenumber.forEach((num, i) => {
         if (i !== number-1) list.push(num);
       });
-      musicDB.queuenumber = list;
-      client.music.set(message.guildId!, musicDB);
+      mc.setqueuenumber(list);
       setmsg(message.guild!);
       return client.mkembed({
         title: `${number}번 노래 제거 완료`,

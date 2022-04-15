@@ -2,7 +2,7 @@ import { client } from "../index";
 import { check_permission as ckper, embed_permission as emper } from "../function/permission";
 import { Command } from "../interfaces/Command";
 import { I, D } from "../aliases/discord.js";
-import { CacheType, MessageActionRow, MessageButton, MessageSelectMenu, SelectMenuInteraction } from "discord.js";
+import { CacheType, Guild, MessageActionRow, MessageButton, MessageSelectMenu, SelectMenuInteraction } from "discord.js";
 import MDB from "../database/Mongodb";
 import { guild_type, music } from "../database/obj/guild";
 
@@ -38,14 +38,14 @@ export default class QueueCommand implements Command {
   async slashrun(interaction: I) {
     const getnumber = interaction.options.getInteger('number');
     let guildDB = await MDB.get.guild(interaction);
-    let musicDB = client.musicdb(interaction.guildId!);
-    return await interaction.editReply({ embeds: [ this.list(guildDB, musicDB, getnumber) ] });
+    return await interaction.editReply({ embeds: [ this.list(interaction.guild!, guildDB, getnumber) ] });
   }
 
-  list(guildDB: guild_type | void, musicDB: music, getnumber: number | null) {
-    if (guildDB && musicDB.playing) {
+  list(guild: Guild, guildDB: guild_type | void, getnumber: number | null) {
+    const mc = client.getmc(guild);
+    if (guildDB && mc.playing) {
       var list: { label: string, description: string, value: string }[] = [];
-      const number = Math.ceil(musicDB.queue.length / client.maxqueue);
+      const number = Math.ceil(mc.queue.length / client.maxqueue);
       for (let i=0; i<number; i++) {
         list.push({ label: `${i+1}번`, description: `${(i*client.maxqueue)+1} ~ ${(i*client.maxqueue)+client.maxqueue}`, value: `${i}` });
       }
@@ -61,17 +61,16 @@ export default class QueueCommand implements Command {
             description: `입력한 번호가 너무 큽니다.\n현재 \` 1~${list.length} \` 번까지 입력가능합니다.`,
             color: "DARK_RED"
           });
-          let musicDB = client.musicdb(guildDB.id);
           let options = guildDB.options;
           var list2: string[] = [];
-          musicDB.queuenumber.forEach((num, i) => {
+          mc.queuenumber.forEach((num, i) => {
             if (!list2[Math.floor(i/client.maxqueue)]) list2[Math.floor(i/client.maxqueue)] = '';
-            let data = musicDB.queue[num];
+            let data = mc.queue[num-1];
             list2[Math.floor(i/client.maxqueue)] += `${i+1}. ${data.title} [${data.duration}]${(options.player) ? ` ~ ${data.player}` : ''}\n`;
           });
           return client.mkembed({
-            title: `${Number(getnumber)+1}번째 QUEUE ${((Number(getnumber)-1)*client.maxqueue)+1}~${((Number(getnumber)-1)*30)+30}`,
-            description: list2[Number(getnumber)],
+            title: `${Number(getnumber)}번째 QUEUE ${((Number(getnumber)-1)*client.maxqueue)+1}~${((Number(getnumber)-1)*30)+30}`,
+            description: list2[Number(getnumber)-1],
             color: client.embedcolor
           });
         }

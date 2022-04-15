@@ -6,7 +6,6 @@ import { I, D, M } from "../aliases/discord.js.js";
 import { MessageActionRow, MessageButton, MessageEmbed, TextChannel } from "discord.js";
 import MDB from "../database/Mongodb";
 import { guild_type } from "../database/obj/guild";
-import stop from "../music/stop";
 import { DiscordGatewayAdapterCreator, joinVoiceChannel } from "@discordjs/voice";
 import { inputplaylist } from "../music/search";
 
@@ -147,7 +146,7 @@ export default class MusicCommand implements Command {
     msg?.react('⏹️');
     msg?.react('⏭️');
     msg?.react('🔀');
-    stop(msg.guild!, true);
+    client.getmc(msg.guild!).stop(msg.guild!, true);
     return `Error correction completed!`;
   }
 }

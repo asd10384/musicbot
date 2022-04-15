@@ -1,30 +1,29 @@
 import { client } from "../index";
-import { I, M } from "../aliases/discord.js";
-import search from "./search.js";
+import { M } from "../aliases/discord.js.js";
+import search from "./search";
 import MDB from "../database/Mongodb";
-import { play } from "./play";
 import queue from "./queue";
 
 export default async function music(message: M, text: string) {
-  const args = text.split(' -');
+  let args = text.split(' -');
   if (args.length === 0) return;
   const searchtext = args.shift()!.trim();
-  var parmas: string[] = [];
-  args.forEach((data) => parmas.push(data.trim().toUpperCase()));
+  args = args.map(val => val.trim().toUpperCase());
+
   const searching = await search(message, searchtext, {
-    shuffle: (parmas.includes("S")) ? true : false
+    shuffle: (args.includes("S")) ? true : false
   });
   const getsearch = searching[0];
   const options = searching[1];
   if (options.addembed) options.addembed.delete().catch((err) => { if (client.debug) console.log('addembed 메세지 삭제 오류') });
   if (getsearch) {
+    const mc = client.getmc(message.guild!);
     let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
-    let musicDB = client.musicdb(message.guildId!);
     if (guildDB) {
-      if (musicDB.playing) {
+      if (mc.playing) {
         queue(message, getsearch);
       } else {
-        play(message, getsearch);
+        mc.play(message, getsearch);
       }
     } else {
       return message.channel?.send({

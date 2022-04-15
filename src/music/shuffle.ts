@@ -1,11 +1,10 @@
 import { client } from "../index";
-import { PM, M } from "../aliases/discord.js"
+import { PM, M } from "../aliases/discord.js.js"
 import setmsg from "./msg";
 
 export default async function shuffle(message: M | PM) {
-  let musicDB = client.musicdb(message.guildId!);
-  musicDB.queuenumber = await fshuffle(musicDB.queuenumber);
-  client.music.set(message.guildId!, musicDB);
+  const mc = client.getmc(message.guild!);
+  mc.setqueuenumber(await fshuffle(mc.queuenumber));
   setmsg(message.guild!);
 }
 
