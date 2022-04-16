@@ -120,10 +120,10 @@ export default class Music {
         });
         if (parmas?.shuffle) list.items = await fshuffle(list.items);
         if (this.playing) {
-          this.queuenumber.concat(list.items.map((data, i) => {
+          this.queuenumber = this.queuenumber.concat(list.items.map((data, i) => {
             return this.queue.length+i;
           }));
-          this.queue.concat(list.items.map((data) => {
+          this.queue = this.queue.concat(list.items.map((data) => {
             return {
               title: data.title,
               duration: data.durationSec!.toString(),
@@ -138,10 +138,10 @@ export default class Music {
           return [ undefined, { type: "playlist", addembed: addembed } ];
         } else {
           const output = list.items.shift()!;
-          this.queuenumber.concat(list.items.map((data, i) => {
+          this.queuenumber = this.queuenumber.concat(list.items.map((data, i) => {
             return this.queue.length+i;
           }));
-          this.queue.concat(list.items.map((data) => {
+          this.queue = this.queue.concat(list.items.map((data) => {
             return {
               title: data.title,
               duration: data.durationSec!.toString(),
