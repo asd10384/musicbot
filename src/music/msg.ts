@@ -22,7 +22,7 @@ async function setlist(guildDB: guild_type, guild: Guild) {
   const mc = client.getmc(guild);
   if (mc.queuenumber.length > 0) {
     for (let i=0; i<mc.queuenumber.length; i++) {
-      let data = mc.queue[mc.queuenumber[i]-1];
+      let data = mc.queue[mc.queuenumber[i]];
       let text = `\n${i+1}. ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title} [${await settime(data.duration)}]${(guildDB.options.player) ? ` ~ ${data.player}` : ''}`;
       if (length+text.length > 2000) {
         output += `\n+ ${mc.queue.length-list.length}곡`;
@@ -63,7 +63,7 @@ async function setembed(guildDB: guild_type, guild: Guild, pause?: boolean) {
   });
   if (mc.playing && guildDB.options.player) em.setDescription(`노래 요청자: ${data.player}`);
   if (mc.playing) {
-    em.setFooter({ text: `대기열: ${mc.queue.length}개 | Volume: ${guildDB.options.volume}%${guildDB.options.recommend ? " | 자동재생: 활성화" : ""}${(pause) ? ` | 노래가 일시중지 되었습니다.` : ''}` });
+    em.setFooter({ text: `대기열: ${mc.queuenumber.length}개 | Volume: ${guildDB.options.volume}%${guildDB.options.recommend ? " | 자동재생: 활성화" : ""}${(pause) ? ` | 노래가 일시중지 되었습니다.` : ''}` });
   } else {
     em.setFooter({ text: `Volume: ${guildDB.options.volume}%${guildDB.options.recommend ? " | 자동재생: 활성화" : ""}` });
   }

@@ -90,7 +90,6 @@ export default class Music {
       let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
       if (!guildDB) return [ undefined, { type: "database", err: "notfound" } ];
       this.inputplaylist = true;
-      const mc = client.getmc(message.guild!);
       const addedembed = await message.channel.send({ embeds: [
         client.mkembed({
           description: `<@${message.author.id}> 플레이리스트 확인중...\n(노래가 많으면 많을수록 오래걸립니다.)`,
@@ -120,42 +119,38 @@ export default class Music {
           return undefined;
         });
         if (parmas?.shuffle) list.items = await fshuffle(list.items);
-        if (mc.playing) {
-          mc.setqueue(
-            mc.queue.concat(list.items.map((data) => {
-              return {
-                title: data.title,
-                duration: data.durationSec!.toString(),
-                author: data.author.name,
-                url: data.shortUrl,
-                image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
-                player: `<@${message.author.id}>`
-              }
-            })),
-            mc.queuenumber.concat(list.items.map((data, i) => {
-              return mc.queue.length+i;
-            }))
-          );
+        if (this.playing) {
+          this.queuenumber.concat(list.items.map((data, i) => {
+            return this.queue.length+i;
+          }));
+          this.queue.concat(list.items.map((data) => {
+            return {
+              title: data.title,
+              duration: data.durationSec!.toString(),
+              author: data.author.name,
+              url: data.shortUrl,
+              image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+              player: `<@${message.author.id}>`
+            }
+          }));
           setmsg(message.guild!);
           this.inputplaylist = false;
           return [ undefined, { type: "playlist", addembed: addembed } ];
         } else {
           const output = list.items.shift()!;
-          mc.setqueue(
-            mc.queue.concat(list.items.map((data) => {
-              return {
-                title: data.title,
-                duration: data.durationSec!.toString(),
-                author: data.author.name,
-                url: data.shortUrl,
-                image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
-                player: `<@${message.author.id}>`
-              }
-            })),
-            mc.queuenumber.concat(list.items.map((data, i) => {
-            return mc.queue.length+i;
-            }))
-          );
+          this.queuenumber.concat(list.items.map((data, i) => {
+            return this.queue.length+i;
+          }));
+          this.queue.concat(list.items.map((data) => {
+            return {
+              title: data.title,
+              duration: data.durationSec!.toString(),
+              author: data.author.name,
+              url: data.shortUrl,
+              image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+              player: `<@${message.author.id}>`
+            }
+          }));
           let getyt = await ytdl.getInfo(output.shortUrl, {
             lang: "KR",
             requestOptions: { agent }
@@ -197,6 +192,20 @@ export default class Music {
       return [ undefined, { type: "video", err: "notfound" } ];
     }
   }
+  
+  async addqueue(message: M, getsearch: ytdl.videoInfo) {
+    let getinfo = getsearch.videoDetails;
+    this.queuenumber.push(this.queue.length);
+    this.queue.push({
+      title: getinfo.title,
+      duration: getinfo.lengthSeconds,
+      author: getinfo.author!.name,
+      url: getinfo.video_url,
+      image: (getinfo.thumbnails.length > 0 && getinfo.thumbnails[getinfo.thumbnails.length-1]?.url) ? getinfo.thumbnails[getinfo.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+      player: `<@${message.author.id}>`
+    });
+    setmsg(message.guild!);
+  }
 
   async getdata(message: M | PM, guildDB: guild_type, getsearch?: ytdl.videoInfo): Promise<nowplay | undefined> {
     let data: nowplay | undefined = undefined;
@@ -219,7 +228,7 @@ export default class Music {
           data = undefined;
         }
       } else {
-        data = this.queue[num-1];
+        data = this.queue[num];
       }
     }
     return data;

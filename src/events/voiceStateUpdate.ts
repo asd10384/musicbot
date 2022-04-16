@@ -27,7 +27,6 @@ function botautopause(guild: Guild) {
   const member = guild.members.cache.get(user.id) as GuildMember;
   const channel = member.voice.channel;
   const mc = client.getmc(guild);
-  console.log(channel?.members.filter((member) => member.user.bot === false).size);
   if (channel && channel.members.filter((member) => !member.user.bot).size === 0) {
     if (!mc.checkautopause) mc.autopause(guild);
   } else {

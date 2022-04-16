@@ -1,7 +1,6 @@
 import { client } from "../index";
 import { M } from "../aliases/discord.js.js";
 import MDB from "../database/Mongodb";
-import queue from "./queue";
 
 export type parmas = {
   shuffle?: boolean;
@@ -25,7 +24,7 @@ export default async function music(message: M, text: string) {
     let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
     if (guildDB) {
       if (mc.playing) {
-        queue(message, getsearch);
+        mc.addqueue(message, getsearch);
       } else {
         mc.play(message, getsearch);
       }
