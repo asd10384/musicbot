@@ -1,18 +1,22 @@
 import { client } from "../index";
 import { M } from "../aliases/discord.js.js";
-import search from "./search";
 import MDB from "../database/Mongodb";
 import queue from "./queue";
+
+export type parmas = {
+  shuffle?: boolean;
+}
 
 export default async function music(message: M, text: string) {
   let args = text.split(' -');
   if (args.length === 0) return;
   const searchtext = args.shift()!.trim();
   args = args.map(val => val.trim().toUpperCase());
-
-  const searching = await search(message, searchtext, {
+  const parmas: parmas = {
     shuffle: (args.includes("S")) ? true : false
-  });
+  }
+  const mc = client.getmc(message.guild!);
+  const searching = await mc.search(message, searchtext, parmas);
   const getsearch = searching[0];
   const options = searching[1];
   if (options.addembed) options.addembed.delete().catch((err) => { if (client.debug) console.log('addembed 메세지 삭제 오류') });

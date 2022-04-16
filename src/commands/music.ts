@@ -7,7 +7,6 @@ import { MessageActionRow, MessageButton, MessageEmbed, TextChannel } from "disc
 import MDB from "../database/Mongodb";
 import { guild_type } from "../database/obj/guild";
 import { DiscordGatewayAdapterCreator, joinVoiceChannel } from "@discordjs/voice";
-import { inputplaylist } from "../music/search";
 
 /**
  * DB
@@ -114,7 +113,7 @@ export default class MusicCommand implements Command {
   }
 
   async fix(message: M | I, guildDB: guild_type): Promise<string> {
-    inputplaylist.delete(message.guildId!);
+    client.getmc(message.guild!).setinputplaylist(false);
     let channel = message.guild?.channels.cache.get(guildDB.channelId);
     if (channel) {
       await (channel as TextChannel).messages.fetch().then((msg) => {

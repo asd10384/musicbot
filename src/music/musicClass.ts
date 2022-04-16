@@ -1,15 +1,20 @@
 import "dotenv/config";
 import { client } from "../index";
 import { Guild, TextChannel } from "discord.js";
-import ytdl from "ytdl-core";
 import { M, PM } from "../aliases/discord.js.js";
+import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
+import ytdl from "ytdl-core";
+import ytpl from "ytpl";
+import ytsr from "ytsr";
+import internal from "stream";
+import MDB from "../database/Mongodb";
 import { guild_type } from "../database/obj/guild";
 import { HttpsProxyAgent } from "https-proxy-agent";
-import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
-import MDB from "../database/Mongodb";
+import { fshuffle } from "./shuffle";
+import { parmas } from "./music";
 import setmsg from "./msg";
 import getchannel from "./getchannel";
-import internal from "stream";
+import checkurl from "./checkurl";
 
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
@@ -23,6 +28,9 @@ export interface nowplay {
   player: string;
 };
 
+type Vtype = "video" | "playlist" | "database";
+type Etype = "notfound" | "added" | "livestream";
+
 export default class Music {
   guild: Guild;
   playing: boolean;
@@ -33,6 +41,7 @@ export default class Music {
   timeout: NodeJS.Timeout | undefined;
   notleave: NodeJS.Timeout | undefined;
   checkautopause: boolean;
+  inputplaylist: boolean;
 
   constructor(guild: Guild) {
     this.guild = guild;
@@ -44,6 +53,7 @@ export default class Music {
     this.timeout = undefined;
     this.timeout = undefined;
     this.checkautopause = false;
+    this.inputplaylist = false;
   }
 
   setqueuenumber(getqueuenumber: number[]) {
@@ -53,6 +63,139 @@ export default class Music {
   setqueue(queue: nowplay[], queuenumber?: number[]) {
     if (queuenumber) this.queuenumber = queuenumber;
     this.queue = queue;
+  }
+
+  setinputplaylist(getinputplaylist: boolean) {
+    this.inputplaylist = getinputplaylist;
+  }
+
+  async search(message: M, text: string, parmas?: parmas): Promise<[ytdl.videoInfo | undefined, { type?: Vtype, err?: Etype, addembed?: M }]> {
+    if (this.inputplaylist) return [ undefined, { type: "playlist", err: "added" } ];
+    let url = checkurl(text);
+    if (url.video) {
+      let yid = url.video[1].replace(/\&.+/g,'');
+      let getinfo = await ytdl.getInfo(`https://www.youtube.com/watch?v=${yid}`, {
+        lang: "KR",
+        requestOptions: { agent }
+      }).catch((err) => {
+        return undefined;
+      });
+      if (getinfo && getinfo.videoDetails) {
+        if (getinfo.videoDetails.lengthSeconds === "0") return [ undefined, { type: "video", err: "livestream" } ];
+        return [ getinfo, { type: "video" } ];
+      } else {
+        return [ undefined, { type: "video", err: "notfound" } ];
+      }
+    } else if (url.list) {
+      let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
+      if (!guildDB) return [ undefined, { type: "database", err: "notfound" } ];
+      this.inputplaylist = true;
+      const mc = client.getmc(message.guild!);
+      const addedembed = await message.channel.send({ embeds: [
+        client.mkembed({
+          description: `<@${message.author.id}> 플레이리스트 확인중...\n(노래가 많으면 많을수록 오래걸립니다.)`,
+          color: client.embedcolor
+        })
+      ] }).catch((err) => {
+        return undefined;
+      });
+      let list = await ytpl(url.list[1].replace(/\&.+/g,''), {
+        gl: "KR",
+        requestOptions: { agent },
+        limit: 50000 // (guildDB.options.listlimit) ? guildDB.options.listlimit : 300
+      }).catch((err) => {
+        if (client.debug) console.log(err);
+        return undefined;
+      });
+      addedembed?.delete().catch((err) => {});
+      if (list && list.items && list.items.length > 0) {
+        if (client.debug) console.log(message.guild?.name, list.title, list.items.length, (guildDB.options.listlimit) ? guildDB.options.listlimit : 300);
+        const addembed = await message.channel.send({ embeds: [
+          client.mkembed({
+            title: `\` ${list.title} \` 플레이리스트 추가중...`,
+            description: `재생목록에 \` ${list.items.length} \` 곡 ${parmas?.shuffle ? "섞어서 " : ""}추가중`,
+            color: client.embedcolor
+          })
+        ] }).catch((err) => {
+          return undefined;
+        });
+        if (parmas?.shuffle) list.items = await fshuffle(list.items);
+        if (mc.playing) {
+          mc.setqueue(
+            mc.queue.concat(list.items.map((data) => {
+              return {
+                title: data.title,
+                duration: data.durationSec!.toString(),
+                author: data.author.name,
+                url: data.shortUrl,
+                image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+                player: `<@${message.author.id}>`
+              }
+            })),
+            mc.queuenumber.concat(list.items.map((data, i) => {
+              return mc.queue.length+i;
+            }))
+          );
+          setmsg(message.guild!);
+          this.inputplaylist = false;
+          return [ undefined, { type: "playlist", addembed: addembed } ];
+        } else {
+          const output = list.items.shift()!;
+          mc.setqueue(
+            mc.queue.concat(list.items.map((data) => {
+              return {
+                title: data.title,
+                duration: data.durationSec!.toString(),
+                author: data.author.name,
+                url: data.shortUrl,
+                image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+                player: `<@${message.author.id}>`
+              }
+            })),
+            mc.queuenumber.concat(list.items.map((data, i) => {
+            return mc.queue.length+i;
+            }))
+          );
+          let getyt = await ytdl.getInfo(output.shortUrl, {
+            lang: "KR",
+            requestOptions: { agent }
+          });
+          this.inputplaylist = false;
+          if (getyt && getyt.videoDetails) {
+            if (getyt.videoDetails.lengthSeconds === "0") return [ undefined, { type: "video", err: "livestream" } ];
+            return [ getyt, { type: "video", addembed: addembed } ];
+          } else {
+            return [ undefined, { type: "video", err: "notfound" } ];
+          }
+        }
+      } else {
+        this.inputplaylist = false;
+        return [ undefined, { type: "playlist", err: "notfound" } ];
+      }
+    } else {
+      let list = await ytsr(text, {
+        gl: 'KO',
+        requestOptions: { agent },
+        limit: 1
+      });
+      if (list && list.items && list.items.length > 0) {
+        list.items = list.items.filter((item) => item.type === "video");
+        if (list.items.length > 0 && list.items[0].type === "video") {
+          let getinfo = await ytdl.getInfo(list.items[0].url, {
+            lang: "KR"
+          });
+          this.inputplaylist = false;
+          if (getinfo && getinfo.videoDetails) {
+            if (getinfo.videoDetails.lengthSeconds === "0") return [ undefined, { type: "video", err: "livestream" } ]
+            return [ getinfo, { type: "video" } ];
+          } else {
+            return [ undefined, { type: "video", err: "notfound" } ];
+          }
+        }
+      }
+      this.inputplaylist = false;
+      return [ undefined, { type: "video", err: "notfound" } ];
+    }
   }
 
   async getdata(message: M | PM, guildDB: guild_type, getsearch?: ytdl.videoInfo): Promise<nowplay | undefined> {
@@ -86,7 +229,6 @@ export default class Music {
     let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
     if (!guildDB) return this.stop(message.guild!, true);
     const channelid = guildDB.channelId;
-    const guildid = message.guildId!;
     const msgchannel = message.guild?.channels.cache.get(channelid) as TextChannel;
     let voicechannel = getchannel(message);
     if (voicechannel) {
@@ -141,7 +283,7 @@ export default class Music {
       }
       if (!ytsource) {
         connection.destroy();
-        await this.stopPlayer();
+        this.stopPlayer();
         msgchannel.send({ embeds: [
           client.mkembed({
             title: `오류발생`,
@@ -298,8 +440,7 @@ export default class Music {
   
   async getarea(url: string): Promise<boolean> {
     const info = await ytdl.getInfo(url, {
-      lang: "KR",
-      requestOptions: { agent }
+      lang: "KR"
     }).catch((err) => {
       return undefined;
     });
