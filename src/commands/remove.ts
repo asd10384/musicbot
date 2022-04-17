@@ -3,9 +3,6 @@ import { check_permission as ckper, embed_permission as emper } from "../functio
 import { Command } from "../interfaces/Command";
 import { I, D, M } from "../aliases/discord.js.js";
 import { MessageActionRow, MessageButton, MessageEmbed } from "discord.js";
-import MDB from "../database/Mongodb";
-import { music, nowplay } from "../database/obj/guild";
-import setmsg from "../music/msg";
 
 /**
  * DB
@@ -49,7 +46,7 @@ export default class RemoveCommand implements Command {
         if (i !== number-1) list.push(num);
       });
       mc.setqueuenumber(list);
-      setmsg(message.guild!);
+      mc.setmsg(message.guild!);
       return client.mkembed({
         title: `${number}번 노래 제거 완료`,
         description: `/queue 로 번호를 확인해주세요.`,

@@ -1,11 +1,10 @@
 import { client } from "../index";
 import { PM, M } from "../aliases/discord.js.js"
-import setmsg from "./msg";
 
 export default async function shuffle(message: M | PM) {
   const mc = client.getmc(message.guild!);
   mc.setqueuenumber(await fshuffle(mc.queuenumber));
-  setmsg(message.guild!);
+  mc.setmsg(message.guild!);
 }
 
 export async function fshuffle(list: any[]) {

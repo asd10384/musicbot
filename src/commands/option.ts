@@ -5,7 +5,6 @@ import { I, D, M } from "../aliases/discord.js";
 import { Message, MessageActionRow, MessageButton, MessageEmbed } from "discord.js";
 import MDB from "../database/Mongodb";
 import { guild_type } from "../database/obj/guild";
-import setmsg from "../music/msg";
 
 /**
  * DB
@@ -109,8 +108,9 @@ export default class OptionCommand implements Command {
       return true;
     });
     if (suc) {
-      client.getmc(message.guild!).setVolume(number);
-      setmsg(message.guild!);
+      const mc = client.getmc(message.guild!);
+      mc.setVolume(number);
+      mc.setmsg(message.guild!);
       return client.mkembed({
         title: `**볼륨 설정완료**`,
         description: `**현재 볼륨: ${guildDB.options.volume}%**`,
@@ -167,7 +167,7 @@ export default class OptionCommand implements Command {
       return true;
     });
     if (suc) {
-      setmsg(message.guild!);
+      client.getmc(message.guild!).setmsg(message.guild!);
       return client.mkembed({
         title: `**자동재생 설정완료**`,
         description: `**자동재생: ${guildDB.options.recommend ? "True" : "False"}**`,
