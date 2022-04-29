@@ -272,8 +272,6 @@ export default class Music {
         channelId: voicechannel.id
       });
       const Player = createAudioPlayer();
-      connection.setMaxListeners(0);
-      Player.setMaxListeners(0);
       let ytsource: internal.Readable | undefined = undefined;
       try {
         ytsource = ytdl(data.url, {
@@ -291,7 +289,6 @@ export default class Music {
       }
       if (!ytsource) {
         connection.destroy();
-        this.stopPlayer();
         msgchannel.send({ embeds: [
           client.mkembed({
             title: `오류발생`,
@@ -448,7 +445,8 @@ export default class Music {
   
   async getarea(url: string): Promise<boolean> {
     const info = await ytdl.getInfo(url, {
-      lang: "KR"
+      lang: "KR",
+      requestOptions: { agent }
     }).catch((err) => {
       return undefined;
     });

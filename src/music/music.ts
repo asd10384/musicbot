@@ -7,7 +7,7 @@ export type parmas = {
 }
 
 export default async function music(message: M, text: string) {
-  let args = text.split(' -');
+  let args = text.trim().replace(/ +/g," ").split(" -");
   if (args.length === 0) return;
   const searchtext = args.shift()!.trim();
   args = args.map(val => val.trim().toUpperCase());
