@@ -17,6 +17,7 @@ import checkurl from "./checkurl";
 
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
+const LOGSC = process.env.LOGSC ? process.env.LOGSC.trim().split(",").length === 2 ? process.env.LOGSC.trim().split(",") : undefined : undefined;
 
 export interface nowplay {
   title: string;
@@ -50,7 +51,7 @@ export default class Music {
     this.queuenumber = [];
     this.players = [ undefined, undefined ];
     this.timeout = undefined;
-    this.timeout = undefined;
+    this.notleave = undefined;
     this.checkautopause = false;
     this.inputplaylist = false;
   }
@@ -108,6 +109,7 @@ export default class Music {
       addedembed?.delete().catch((err) => {});
       if (list && list.items && list.items.length > 0) {
         if (client.debug) console.log(message.guild?.name, list.title, list.items.length, (guildDB.options.listlimit) ? guildDB.options.listlimit : 300);
+        this.sendlog(`${list.title}: ${list.items.length}`);
         const addembed = await message.channel.send({ embeds: [
           client.mkembed({
             title: `\` ${list.title} \` 플레이리스트 추가중...`,
@@ -316,6 +318,7 @@ export default class Music {
       resource.volume?.setVolumeDecibels(5);
       resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 100 : 0.7);
       Player.play(resource);
+      this.sendlog(`${this.nowplaying.title}\n${this.nowplaying.url}\n재생 시작`);
       const subscription = connection.subscribe(Player);
       this.players = [ subscription, resource ];
       Player.on(AudioPlayerStatus.Idle, async (P) => {
@@ -326,6 +329,7 @@ export default class Music {
       });
       connection.on('error', (err) => {
         if (client.debug) console.log('connection오류:', err);
+        this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(connection error)`);
         msgchannel.send({ embeds: [
           client.mkembed({
             title: `오류발생`,
@@ -338,6 +342,7 @@ export default class Music {
       });
       Player.on('error', (err) => {
         if (client.debug) console.log('Player오류:', err);
+        this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(Player error)`);
         msgchannel.send({ embeds: [
           client.mkembed({
             title: `오류발생`,
@@ -432,7 +437,10 @@ export default class Music {
     this.queue = [];
     this.queuenumber = [];
     this.nowplaying = null;
+    if (this.notleave) clearTimeout(this.notleave);
+    if (this.timeout) clearTimeout(this.timeout);
     this.setmsg(guild);
+    this.sendlog(`stop 명령어 실행`);
     if (leave) getVoiceConnection(guild.id)?.disconnect();
   }
   
@@ -571,5 +579,23 @@ export default class Music {
 
   az(n: number): string {
     return (n < 10) ? '0' + n : '' + n;
+  }
+
+  sendlog(text: string) {
+    if (!LOGSC) return;
+    const guild = client.guilds.cache.get(LOGSC[0]);
+    if (!guild) return;
+    const channel = guild.channels.cache.get(LOGSC[1]);
+    if (!channel) return;
+    if (channel.type !== "GUILD_TEXT") return;
+    channel.send({ embeds: [ client.mkembed({
+      author: {
+        name: guild.name,
+        iconURL: `${guild.iconURL({ dynamic: true })}`
+      },
+      title: `${client.user?.username}`,
+      description: `${text}`,
+      timestamp: new Date()
+    }) ] }).catch((err) => {});
   }
 }
