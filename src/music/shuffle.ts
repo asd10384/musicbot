@@ -4,7 +4,7 @@ import { PM, M } from "../aliases/discord.js.js"
 export default async function shuffle(message: M | PM) {
   const mc = client.getmc(message.guild!);
   mc.setqueuenumber(await fshuffle(mc.queuenumber));
-  mc.setmsg(message.guild!);
+  mc.setmsg();
 }
 
 export async function fshuffle(list: any[]) {

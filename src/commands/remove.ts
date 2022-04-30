@@ -46,7 +46,7 @@ export default class RemoveCommand implements Command {
         if (i !== number-1) list.push(num);
       });
       mc.setqueuenumber(list);
-      mc.setmsg(message.guild!);
+      mc.setmsg();
       return client.mkembed({
         title: `${number}번 노래 제거 완료`,
         description: `/queue 로 번호를 확인해주세요.`,

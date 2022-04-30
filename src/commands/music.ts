@@ -145,7 +145,7 @@ export default class MusicCommand implements Command {
     msg?.react('⏹️');
     msg?.react('⏭️');
     msg?.react('🔀');
-    client.getmc(msg.guild!).stop(msg.guild!, true);
+    client.getmc(msg.guild!).stop(true);
     return `Error correction completed!`;
   }
 }

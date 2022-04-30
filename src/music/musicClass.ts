@@ -87,7 +87,7 @@ export default class Music {
         return [ undefined, { type: "video", err: "notfound" } ];
       }
     } else if (url.list) {
-      let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
+      let guildDB = await MDB.module.guild.findOne({ id: this.guild.id });
       if (!guildDB) return [ undefined, { type: "database", err: "notfound" } ];
       this.inputplaylist = true;
       const addedembed = await message.channel.send({ embeds: [
@@ -108,7 +108,7 @@ export default class Music {
       });
       addedembed?.delete().catch((err) => {});
       if (list && list.items && list.items.length > 0) {
-        if (client.debug) console.log(message.guild?.name, list.title, list.items.length, (guildDB.options.listlimit) ? guildDB.options.listlimit : 300);
+        if (client.debug) console.log(this.guild.name, list.title, list.items.length, (guildDB.options.listlimit) ? guildDB.options.listlimit : 300);
         this.sendlog(`${list.title}: ${list.items.length}`);
         const addembed = await message.channel.send({ embeds: [
           client.mkembed({
@@ -134,7 +134,7 @@ export default class Music {
               player: `<@${message.author.id}>`
             }
           }));
-          this.setmsg(message.guild!);
+          this.setmsg();
           this.inputplaylist = false;
           return [ undefined, { type: "playlist", addembed: addembed } ];
         } else {
@@ -205,7 +205,7 @@ export default class Music {
       image: (getinfo.thumbnails.length > 0 && getinfo.thumbnails[getinfo.thumbnails.length-1]?.url) ? getinfo.thumbnails[getinfo.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
       player: `<@${message.author.id}>`
     });
-    this.setmsg(message.guild!);
+    this.setmsg();
   }
 
   async getdata(message: M | PM, guildDB: guild_type, getsearch?: ytdl.videoInfo): Promise<nowplay | undefined> {
@@ -224,7 +224,7 @@ export default class Music {
       let num = this.queuenumber.shift();
       if (num === undefined || num === null || num === NaN) {
         if (guildDB.options.recommend) {
-          data = await this.getrecommend(message, guildDB);
+          data = await this.getrecommend(guildDB);
         } else {
           data = undefined;
         }
@@ -236,13 +236,13 @@ export default class Music {
   }
 
   async play(message: M | PM, getsearch?: ytdl.videoInfo) {
-    let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
-    if (!guildDB) return this.stop(message.guild!, true);
+    let guildDB = await MDB.module.guild.findOne({ id: this.guild });
+    if (!guildDB) return this.stop(true);
     const channelid = guildDB.channelId;
-    const msgchannel = message.guild?.channels.cache.get(channelid) as TextChannel;
+    const msgchannel = this.guild.channels.cache.get(channelid) as TextChannel;
     let voicechannel = getchannel(message);
     if (voicechannel) {
-      if (getVoiceConnection(message.guildId!)) await entersState(getVoiceConnection(message.guildId!)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
+      if (getVoiceConnection(this.guild.id)) await entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
       let data: nowplay | undefined = await this.getdata(message, guildDB, getsearch);
       if (this.timeout) clearTimeout(this.timeout);
       if (data) {
@@ -264,13 +264,13 @@ export default class Music {
         }
         this.nowplaying = data;
       } else {
-        return this.waitend(message.guild!);
+        return this.waitend();
       }
       this.playing = true;
-      this.setmsg(message.guild!);
+      this.setmsg();
       const connection = joinVoiceChannel({
-        adapterCreator: message.guild?.voiceAdapterCreator! as DiscordGatewayAdapterCreator,
-        guildId: message.guildId!,
+        adapterCreator: this.guild.voiceAdapterCreator! as DiscordGatewayAdapterCreator,
+        guildId: this.guild.id,
         channelId: voicechannel.id
       });
       const Player = createAudioPlayer();
@@ -364,41 +364,41 @@ export default class Music {
     }
   }
 
-  pause(guild: Guild) {
+  pause() {
     if (this.players[0]) {
       if (this.players[0].player.state.status === AudioPlayerStatus.Playing) {
         this.players[0].player.pause();
-        entersState(getVoiceConnection(guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+        entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
         if (this.notleave) clearInterval(this.notleave);
         this.notleave = setInterval(() => {
           if (this.players[0]?.player.state.status === AudioPlayerStatus.Paused) {
-            entersState(getVoiceConnection(guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+            entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
           } else {
             if (this.notleave) clearInterval(this.notleave);
           }
         }, 1000*60);
-        this.setmsg(guild, true);
+        this.setmsg(true);
       } else {
         this.players[0].player.unpause();
         if (this.notleave) {
           clearInterval(this.notleave);
           this.notleave = undefined;
         }
-        this.setmsg(guild);
+        this.setmsg();
       }
     }
   }
 
-  autopause(guild: Guild) {
+  autopause() {
     if (this.checkautopause) {
       if (this.players[0]?.player.state.status === AudioPlayerStatus.Paused) {
         this.checkautopause = false;
-        this.pause(guild);
+        this.pause();
       }
     } else {
       if (this.players[0]?.player.state.status === AudioPlayerStatus.Playing) {
         this.checkautopause = true;
-        this.pause(guild);
+        this.pause();
       }
     }
   }
@@ -413,25 +413,25 @@ export default class Music {
     if (this.players[0]) this.players[0].player.stop();
   }
   
-  async waitend(guild: Guild) {
-    if (!client.getmc(guild).playing) return;
+  async waitend() {
+    if (!client.getmc(this.guild).playing) return;
     this.waitPlayer();
-    this.stop(guild, false);
+    this.stop(false);
     this.timeout = setTimeout(() => {
-      if (!client.getmc(guild).playing) return this.stop(guild, true);
+      if (!client.getmc(this.guild).playing) return this.stop(true);
     }, BOT_LEAVE_TIME);
     return;
   }
 
   async skipPlayer(message: M | PM) {
-    if (getVoiceConnection(message.guildId!)) {
-      await entersState(getVoiceConnection(message.guildId!)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
+    if (getVoiceConnection(this.guild.id)) {
+      await entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
       this.play(message, undefined);
     }
   }
 
-  async stop(guild: Guild, leave: boolean) {
-    let guildDB = await MDB.module.guild.findOne({ id: guild.id });
+  async stop(leave: boolean) {
+    let guildDB = await MDB.module.guild.findOne({ id: this.guild.id });
     if (!guildDB) return;
     this.playing = false;
     this.queue = [];
@@ -439,9 +439,9 @@ export default class Music {
     this.nowplaying = null;
     if (this.notleave) clearTimeout(this.notleave);
     if (this.timeout) clearTimeout(this.timeout);
-    this.setmsg(guild);
+    this.setmsg();
     this.sendlog(`stop 명령어 실행`);
-    if (leave) getVoiceConnection(guild.id)?.disconnect();
+    if (leave) getVoiceConnection(this.guild.id)?.disconnect();
   }
   
   stopPlayer() {
@@ -464,9 +464,9 @@ export default class Music {
     return false;
   }
   
-  async getrecommend(message: M | PM, guildDB: guild_type): Promise<nowplay | undefined> {
+  async getrecommend(guildDB: guild_type): Promise<nowplay | undefined> {
     if (guildDB.options.recommend) {
-      const mc = client.getmc(message.guild!);
+      const mc = client.getmc(this.guild);
       if (mc.nowplaying && mc.nowplaying.url.length > 0) {
         const recommend = await ytdl.getInfo(mc.nowplaying.url, {
           lang: "KR",
@@ -497,13 +497,13 @@ export default class Music {
     return undefined;
   }
 
-  setmsg(guild: Guild, pause?: boolean) {
+  setmsg(pause?: boolean) {
     setTimeout(() => {
-      MDB.module.guild.findOne({ id: guild.id }).then((guildDB) => {
+      MDB.module.guild.findOne({ id: this.guild.id }).then((guildDB) => {
         if (guildDB) {
           let text = this.setlist(guildDB);
           let embed = this.setembed(guildDB, pause);
-          let channel = guild.channels.cache.get(guildDB.channelId);
+          let channel = this.guild.channels.cache.get(guildDB.channelId);
           (channel as TextChannel).messages.cache.get(guildDB.msgId)?.edit({ content: text, embeds: [embed] }).catch((err) => {});
         }
       });
@@ -590,8 +590,8 @@ export default class Music {
     if (channel.type !== "GUILD_TEXT") return;
     channel.send({ embeds: [ client.mkembed({
       author: {
-        name: guild.name,
-        iconURL: `${guild.iconURL({ dynamic: true })}`
+        name: this.guild.name,
+        iconURL: `${this.guild.iconURL({ dynamic: true })}`
       },
       title: `${client.user?.username}`,
       description: `${text}`,

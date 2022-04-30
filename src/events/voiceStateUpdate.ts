@@ -14,7 +14,7 @@ export default function voiceStateUpdate(oldState: VoiceState, newState: VoiceSt
         });
       }
     } else {
-      mc.stop(newState.guild, true);
+      mc.stop(true);
       mc.stopPlayer();
     }
   } else {
@@ -28,8 +28,8 @@ function botautopause(guild: Guild) {
   const channel = member.voice.channel;
   const mc = client.getmc(guild);
   if (channel && channel.members.filter((member) => !member.user.bot).size === 0) {
-    if (!mc.checkautopause) mc.autopause(guild);
+    if (!mc.checkautopause) mc.autopause();
   } else {
-    if (mc.checkautopause) mc.autopause(guild);
+    if (mc.checkautopause) mc.autopause();
   }
 }
