@@ -236,7 +236,7 @@ export default class Music {
   }
 
   async play(message: M | PM, getsearch?: ytdl.videoInfo) {
-    let guildDB = await MDB.module.guild.findOne({ id: this.guild });
+    let guildDB = await MDB.module.guild.findOne({ id: this.guild.id });
     if (!guildDB) return this.stop(true);
     const channelid = guildDB.channelId;
     const msgchannel = this.guild.channels.cache.get(channelid) as TextChannel;

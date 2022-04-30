@@ -20,7 +20,6 @@ export default async function music(message: M, text: string) {
   const options = searching[1];
   if (options.addembed) options.addembed.delete().catch((err) => { if (client.debug) console.log('addembed 메세지 삭제 오류') });
   if (getsearch) {
-    const mc = client.getmc(message.guild!);
     let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
     if (guildDB) {
       if (mc.playing) {
