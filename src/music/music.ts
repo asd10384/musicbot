@@ -1,6 +1,5 @@
 import { client } from "../index";
 import { M } from "../aliases/discord.js.js";
-import MDB from "../database/Mongodb";
 
 export type parmas = {
   shuffle?: boolean;
@@ -20,23 +19,10 @@ export default async function music(message: M, text: string) {
   const options = searching[1];
   if (options.addembed) options.addembed.delete().catch((err) => { if (client.debug) console.log('addembed 메세지 삭제 오류') });
   if (getsearch) {
-    let guildDB = await MDB.module.guild.findOne({ id: message.guildId! });
-    if (guildDB) {
-      if (mc.playing) {
-        mc.addqueue(message, getsearch);
-      } else {
-        mc.play(message, getsearch);
-      }
+    if (mc.playing) {
+      mc.addqueue(message, getsearch);
     } else {
-      return message.channel?.send({
-        embeds: [
-          client.mkembed({
-            title: `데이터베이스 오류발생`,
-            description: '다시 시도해주세요.',
-            color: "DARK_RED"
-          })
-        ]
-      }).then(m => client.msgdelete(m, 0.5));
+      mc.play(message, getsearch);
     }
   } else {
     if (options.type === "playlist") {

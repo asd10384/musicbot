@@ -2,13 +2,13 @@ import "dotenv/config";
 import { client } from '../index';
 import { MessageReaction, PartialMessageReaction, PartialUser, User } from 'discord.js';
 import shuffle from '../music/shuffle';
-import MDB from "../database/Mongodb";
+import MDB from "../database/Mysql";
 
 export default async function onmessageReactionAdd (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) {
   if (user.bot) return;
   if (!reaction.message.guildId) return;
 
-  let guildDB = await MDB.module.guild.findOne({ id: reaction.message.guildId });
+  let guildDB = await MDB.get.guild(reaction.message.guild!);
   if (!guildDB) return console.log('reaction 데이터베이스 검색 실패');
   const mc = client.getmc(reaction.message.guild!);
 

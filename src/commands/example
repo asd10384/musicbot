@@ -3,11 +3,11 @@ import { check_permission as ckper, embed_permission as emper } from "../functio
 import { Command } from "../interfaces/Command";
 import { I, D } from "../aliases/discord.js";
 import { Message, MessageActionRow, MessageButton, MessageEmbed } from "discord.js";
-import MDB from "../database/Mongodb";
+import MDB from "../database/Mysql";
 
 /**
  * DB
- * let guildDB = await MDB.get.guild(interaction);
+ * let guildDB = await MDB.get.guild(interaction.guild!);
  * 
  * check permission(role)
  * if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });

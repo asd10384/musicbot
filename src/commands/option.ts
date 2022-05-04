@@ -2,9 +2,8 @@ import { client } from "../index";
 import { check_permission as ckper, embed_permission as emper } from "../function/permission";
 import { Command } from "../interfaces/Command";
 import { I, D, M } from "../aliases/discord.js";
-import { Message, MessageActionRow, MessageButton, MessageEmbed } from "discord.js";
-import MDB from "../database/Mongodb";
-import { guild_type } from "../database/obj/guild";
+import { Message, MessageEmbed } from "discord.js";
+import MDB, { guild_type } from "../database/Mysql";
 
 /**
  * DB
@@ -66,7 +65,7 @@ export default class OptionCommand implements Command {
   /** 실행되는 부분 */
   async slashrun(interaction: I) {
     if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
-    const guildDB = await MDB.get.guild(interaction);
+    const guildDB = await MDB.get.guild(interaction.guild!);
     if (!guildDB) return;
     const cmd = interaction.options.getSubcommand();
     if (cmd === "volume") {
@@ -99,15 +98,12 @@ export default class OptionCommand implements Command {
       footer: { text: "기본 볼륨: 70%" }
     });
     guildDB.options.volume = number;
-    let suc = false;
-    suc = await guildDB.save().catch(() => {
-      if (client.debug) console.log("볼륨 설정 실패");
-      return false;
-    }).then(() => {
-      suc = true;
-      return true;
-    });
-    if (suc) {
+    return await MDB.update.guild(guildDB.id, { options: JSON.stringify(guildDB.options) }).then((val) => {
+      if (!val) return client.mkembed({
+        title: `**볼륨 설정 실패**`,
+        description: `설정 중 오류가 발생했습니다.`,
+        color: "DARK_RED"
+      });
       const mc = client.getmc(message.guild!);
       mc.setVolume(number);
       mc.setmsg();
@@ -116,11 +112,12 @@ export default class OptionCommand implements Command {
         description: `**현재 볼륨: ${guildDB.options.volume}%**`,
         footer: { text: "기본 볼륨: 70%" }
       });
-    }
-    return client.mkembed({
-      title: `**볼륨 설정 실패**`,
-      description: `설정 중 오류가 발생했습니다.`,
-      color: "DARK_RED"
+    }).catch((err) => {
+      return client.mkembed({
+        title: `**볼륨 설정 실패**`,
+        description: `설정 중 오류가 발생했습니다.`,
+        color: "DARK_RED"
+      });
     });
   }
 
@@ -130,25 +127,23 @@ export default class OptionCommand implements Command {
       footer: { text: "기본 플레이어 표시: True" }
     });
     guildDB.options.player = boolean;
-    let suc = false;
-    suc = await guildDB.save().catch(() => {
-      if (client.debug) console.log("플레이어 표시 설정 실패");
-      return false;
-    }).then(() => {
-      suc = true;
-      return true;
-    });
-    if (suc) {
+    return await MDB.update.guild(guildDB.id, { options: JSON.stringify(guildDB.options) }).then((val) => {
+      if (!val) return client.mkembed({
+        title: `**플레이어 표시 설정 실패**`,
+        description: `설정 중 오류가 발생했습니다.`,
+        color: "DARK_RED"
+      });
       return client.mkembed({
         title: `**플레이어 표시 설정완료**`,
         description: `**플레이어 표시: ${guildDB.options.player ? "True" : "False"}**`,
         footer: { text: "기본 플레이어 표시: True" }
       });
-    }
-    return client.mkembed({
-      title: `**플레이어 표시 설정 실패**`,
-      description: `설정 중 오류가 발생했습니다.`,
-      color: "DARK_RED"
+    }).catch((err) => {
+      return client.mkembed({
+        title: `**플레이어 표시 설정 실패**`,
+        description: `설정 중 오류가 발생했습니다.`,
+        color: "DARK_RED"
+      });
     });
   }
 
@@ -158,26 +153,24 @@ export default class OptionCommand implements Command {
       footer: { text: "기본 자동재생: False" }
     });
     guildDB.options.recommend = boolean;
-    let suc = false;
-    suc = await guildDB.save().catch(() => {
-      if (client.debug) console.log("자동재생 설정 실패");
-      return false;
-    }).then(() => {
-      suc = true;
-      return true;
-    });
-    if (suc) {
+    return await MDB.update.guild(guildDB.id, { options: JSON.stringify(guildDB.options) }).then((val) => {
+      if (!val) return client.mkembed({
+        title: `**자동재생 설정 실패**`,
+        description: `설정 중 오류가 발생했습니다.`,
+        color: "DARK_RED"
+      });
       client.getmc(message.guild!).setmsg();
       return client.mkembed({
         title: `**자동재생 설정완료**`,
         description: `**자동재생: ${guildDB.options.recommend ? "True" : "False"}**`,
         footer: { text: "기본 자동재생: False" }
       });
-    }
-    return client.mkembed({
-      title: `**자동재생 설정 실패**`,
-      description: `설정 중 오류가 발생했습니다.`,
-      color: "DARK_RED"
+    }).catch((err) => {
+      return client.mkembed({
+        title: `**자동재생 설정 실패**`,
+        description: `설정 중 오류가 발생했습니다.`,
+        color: "DARK_RED"
+      });
     });
   }
 }

@@ -1,9 +1,7 @@
 import { client } from "../index";
-import { check_permission as ckper, embed_permission as emper } from "../function/permission";
 import { Command } from "../interfaces/Command";
 import { I, D } from "../aliases/discord.js";
 import { Message, MessageActionRow, MessageButton, MessageEmbed } from "discord.js";
-import MDB from "../database/Mongodb";
 
 /**
  * DB

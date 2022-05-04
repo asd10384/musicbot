@@ -1,6 +1,6 @@
 import { client, handler } from '..';
 import { Message } from 'discord.js';
-import MDB from "../database/Mongodb";
+import MDB from "../database/Mysql";
 import music from '../music/music';
 
 export default async function onMessageCreate (message: Message) {
@@ -20,7 +20,8 @@ export default async function onMessageCreate (message: Message) {
       client.msgdelete(message, 0);
     }
   } else {
-    const guildDB = await MDB.get.guild(message);
+    const guildDB = await MDB.get.guild(message.guild!);
+    if (!guildDB) return;
     if (guildDB.channelId === message.channelId) {
       const getcooldown = handler.cooldown.get(`${message.guildId!}.${message.author.id}`);
       if (getcooldown && getcooldown > Date.now()) {

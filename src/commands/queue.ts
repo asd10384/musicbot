@@ -1,10 +1,8 @@
 import { client } from "../index";
-import { check_permission as ckper, embed_permission as emper } from "../function/permission";
 import { Command } from "../interfaces/Command";
 import { I, D } from "../aliases/discord.js";
-import { CacheType, Guild, MessageActionRow, MessageButton, MessageSelectMenu, SelectMenuInteraction } from "discord.js";
-import MDB from "../database/Mongodb";
-import { guild_type, music } from "../database/obj/guild";
+import { Guild } from "discord.js";
+import MDB, { guild_type } from "../database/Mysql";
 
 /**
  * DB
@@ -37,7 +35,7 @@ export default class QueueCommand implements Command {
   /** 실행되는 부분 */
   async slashrun(interaction: I) {
     const getnumber = interaction.options.getInteger('number');
-    let guildDB = await MDB.get.guild(interaction);
+    let guildDB = await MDB.get.guild(interaction.guild!);
     return await interaction.editReply({ embeds: [ this.list(interaction.guild!, guildDB, getnumber) ] });
   }
 

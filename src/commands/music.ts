@@ -3,9 +3,8 @@ import { client } from "../index";
 import { check_permission as ckper, embed_permission as emper } from "../function/permission";
 import { Command } from "../interfaces/Command";
 import { I, D, M } from "../aliases/discord.js.js";
-import { MessageActionRow, MessageButton, MessageEmbed, TextChannel } from "discord.js";
-import MDB from "../database/Mongodb";
-import { guild_type } from "../database/obj/guild";
+import { TextChannel } from "discord.js";
+import MDB, { guild_type } from "../database/Mysql";
 import { DiscordGatewayAdapterCreator, joinVoiceChannel } from "@discordjs/voice";
 
 /**
@@ -64,12 +63,12 @@ export default class MusicCommand implements Command {
     const cmd = interaction.options.getSubcommand();
     if (cmd === 'create_channel') {
       if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
-      let guildDB = await MDB.get.guild(interaction);
+      let guildDB = await MDB.get.guild(interaction.guild!);
       return await interaction.editReply({ content: await this.create_channel(interaction, guildDB!) });
     }
     if (cmd === 'fix') {
       if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
-      let guildDB = await MDB.get.guild(interaction);
+      let guildDB = await MDB.get.guild(interaction.guild!);
       if (guildDB) {
         return await interaction.editReply({ content: await this.fix(interaction, guildDB) });
       }
@@ -87,6 +86,7 @@ export default class MusicCommand implements Command {
   }
 
   async create_channel(message: M | I, guildDB: guild_type): Promise<string> {
+    if (!guildDB) return `데이터베이스 오류\n다시시도해주세요.`;
     const channel = await message.guild?.channels.create(`MUSIC_CHANNEL${(process.env.BOT_NUMBER) ? process.env.BOT_NUMBER : ''}`, {
       type: 'GUILD_TEXT',
       topic: `Type in chat to play`
@@ -102,14 +102,18 @@ export default class MusicCommand implements Command {
         })
       ]
     });
-    guildDB!.channelId = channel?.id!;
-    guildDB!.msgId = msg?.id!;
-    await guildDB!.save().catch((err) => { if (client.debug) console.log('데이터베이스오류:', err) });
-    msg?.react('⏯️');
-    msg?.react('⏹️');
-    msg?.react('⏭️');
-    msg?.react('🔀');
-    return `<#${channel?.id!}> creation complete!`;
+    guildDB.channelId = channel?.id ? channel.id : "null";
+    guildDB.msgId = msg?.id ? msg.id : "null";
+    return await MDB.update.guild(guildDB.id, { channelId: guildDB.channelId, msgId: guildDB.msgId }).then((val) => {
+      if (!val) return `데이터베이스 오류\n다시시도해주세요.`;
+      msg?.react('⏯️');
+      msg?.react('⏹️');
+      msg?.react('⏭️');
+      msg?.react('🔀');
+      return `<#${channel?.id!}> creation complete!`;
+    }).catch((err) => {
+      return `데이터베이스 오류\n다시시도해주세요.`;
+    });
   }
 
   async fix(message: M | I, guildDB: guild_type): Promise<string> {
@@ -138,14 +142,18 @@ export default class MusicCommand implements Command {
         })
       ]
     });
-    guildDB!.channelId = channel?.id!;
-    guildDB!.msgId = msg?.id!;
-    await guildDB!.save().catch((err) => { if (client.debug) console.log('데이터베이스오류:', err) });
-    msg?.react('⏯️');
-    msg?.react('⏹️');
-    msg?.react('⏭️');
-    msg?.react('🔀');
-    client.getmc(msg.guild!).stop(true);
-    return `Error correction completed!`;
+    guildDB.channelId = channel?.id ? channel.id : "null";
+    guildDB.msgId = msg?.id ? msg.id : "null";
+    return await MDB.update.guild(guildDB.id, { channelId: guildDB.channelId, msgId: guildDB.msgId }).then((val) => {
+      if (!val) return `데이터베이스 오류\n다시시도해주세요.`;
+      msg?.react('⏯️');
+      msg?.react('⏹️');
+      msg?.react('⏭️');
+      msg?.react('🔀');
+      client.getmc(msg.guild!).stop(true);
+      return `Error correction completed!`;
+    }).catch((err) => {
+      return `데이터베이스 오류\n다시시도해주세요.`;
+    });
   }
 }

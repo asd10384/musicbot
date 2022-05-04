@@ -1,7 +1,7 @@
 import "dotenv/config"; // .env 불러오기
 import { ChatInputApplicationCommandData, Client, ClientEvents, ColorResolvable, EmbedFieldData, Guild, Message, MessageEmbed } from 'discord.js';
 import _ from '../consts';
-import { music } from "../database/obj/guild";
+import { music } from "../database/Mysql";
 import Music from "../music/musicClass";
 
 /**

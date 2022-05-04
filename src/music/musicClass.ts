@@ -7,8 +7,7 @@ import ytdl from "ytdl-core";
 import ytpl from "ytpl";
 import ytsr from "ytsr";
 import internal from "stream";
-import MDB from "../database/Mongodb";
-import { guild_type } from "../database/obj/guild";
+import MDB, { guild_type } from "../database/Mysql";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import { fshuffle } from "./shuffle";
 import { parmas } from "./music";
@@ -87,7 +86,7 @@ export default class Music {
         return [ undefined, { type: "video", err: "notfound" } ];
       }
     } else if (url.list) {
-      let guildDB = await MDB.module.guild.findOne({ id: this.guild.id });
+      let guildDB = await MDB.get.guild(this.guild);
       if (!guildDB) return [ undefined, { type: "database", err: "notfound" } ];
       this.inputplaylist = true;
       const addedembed = await message.channel.send({ embeds: [
@@ -236,7 +235,7 @@ export default class Music {
   }
 
   async play(message: M | PM, getsearch?: ytdl.videoInfo) {
-    let guildDB = await MDB.module.guild.findOne({ id: this.guild.id });
+    let guildDB = await MDB.get.guild(this.guild);
     if (!guildDB) return this.stop(true);
     const channelid = guildDB.channelId;
     const msgchannel = this.guild.channels.cache.get(channelid) as TextChannel;
@@ -431,7 +430,7 @@ export default class Music {
   }
 
   async stop(leave: boolean) {
-    let guildDB = await MDB.module.guild.findOne({ id: this.guild.id });
+    let guildDB = await MDB.get.guild(this.guild);
     if (!guildDB) return;
     this.playing = false;
     this.queue = [];
@@ -499,7 +498,7 @@ export default class Music {
 
   setmsg(pause?: boolean) {
     setTimeout(() => {
-      MDB.module.guild.findOne({ id: this.guild.id }).then((guildDB) => {
+      MDB.get.guild(this.guild).then((guildDB) => {
         if (guildDB) {
           let text = this.setlist(guildDB);
           let embed = this.setembed(guildDB, pause);
