@@ -150,7 +150,7 @@ export default class MusicCommand implements Command {
       msg?.react('⏹️');
       msg?.react('⏭️');
       msg?.react('🔀');
-      client.getmc(msg.guild!).stop(true);
+      client.getmc(msg.guild!).stop(true, "command-music-fix");
       return `Error correction completed!`;
     }).catch((err) => {
       return `데이터베이스 오류\n다시시도해주세요.`;

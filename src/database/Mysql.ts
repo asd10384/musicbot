@@ -3,7 +3,7 @@ import { Guild, GuildMember } from "discord.js";
 import mysql from "mysql";
 import { client } from "../index.js";
 
-const BOT_NUMBER = (process.env.BOT_NUMBER) ? process.env.BOT_NUMBER : '';
+export const BOT_NUMBER = (process.env.BOT_NUMBER) ? process.env.BOT_NUMBER : '';
 
 const db = mysql.createConnection({
   host: process.env.MYSQL_HOST ? process.env.MYSQL_HOST : 'localhost',

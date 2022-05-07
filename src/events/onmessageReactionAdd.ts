@@ -22,7 +22,8 @@ export default async function onmessageReactionAdd (reaction: MessageReaction | 
       if (mc.playing) mc.pause();
     }
     if (name === '⏹️') {
-      await mc.waitend();
+      mc.setqueue([], []);
+      mc.players[0]?.player.stop();
     }
     if (name === '⏭️') {
       if (mc.playing) await mc.skipPlayer(reaction.message);

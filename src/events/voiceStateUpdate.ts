@@ -14,8 +14,9 @@ export default function voiceStateUpdate(oldState: VoiceState, newState: VoiceSt
         });
       }
     } else {
-      mc.stop(true);
+      mc.stop(false, "voiceStateUpdate");
       mc.stopPlayer();
+      oldState.guild.me?.voice?.disconnect();
     }
   } else {
     botautopause(oldState.guild);

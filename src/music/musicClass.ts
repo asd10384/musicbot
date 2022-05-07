@@ -7,6 +7,7 @@ import ytdl from "ytdl-core";
 import ytpl from "ytpl";
 import ytsr from "ytsr";
 import internal from "stream";
+import nowdate from "../function/nowdate";
 import MDB, { guild_type } from "../database/Mysql";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import { fshuffle } from "./shuffle";
@@ -236,7 +237,7 @@ export default class Music {
 
   async play(message: M | PM, getsearch?: ytdl.videoInfo) {
     let guildDB = await MDB.get.guild(this.guild);
-    if (!guildDB) return this.stop(true);
+    if (!guildDB) return this.stop(true, "play-notfoundguildDB");
     const channelid = guildDB.channelId;
     const msgchannel = this.guild.channels.cache.get(channelid) as TextChannel;
     let voicechannel = getchannel(message);
@@ -316,7 +317,7 @@ export default class Music {
       const resource = createAudioResource(ytsource, { inlineVolume: true, inputType: StreamType.Arbitrary });
       resource.volume?.setVolumeDecibels(5);
       resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 100 : 0.7);
-      Player.play(resource);
+      Player.setMaxListeners(0).play(resource);
       this.sendlog(`${this.nowplaying.title}\n${this.nowplaying.url}\n재생 시작`);
       const subscription = connection.subscribe(Player);
       this.players = [ subscription, resource ];
@@ -407,17 +408,13 @@ export default class Music {
       this.players[1].volume?.setVolume(number / 100);
     }
   }
-
-  waitPlayer() {
-    if (this.players[0]) this.players[0].player.stop();
-  }
   
   async waitend() {
-    if (!client.getmc(this.guild).playing) return;
-    this.waitPlayer();
-    this.stop(false);
+    if (!this.playing) return;
+    await this.stop(false, "waitend");
+    this.players[0]?.player.stop();
     this.timeout = setTimeout(() => {
-      if (!client.getmc(this.guild).playing) return this.stop(true);
+      if (!this.playing && this.queuenumber.length === 0) return this.stop(true, `${BOT_LEAVE_TIME}지남`);
     }, BOT_LEAVE_TIME);
     return;
   }
@@ -429,9 +426,7 @@ export default class Music {
     }
   }
 
-  async stop(leave: boolean) {
-    let guildDB = await MDB.get.guild(this.guild);
-    if (!guildDB) return;
+  async stop(leave: boolean, text: string) {
     this.playing = false;
     this.queue = [];
     this.queuenumber = [];
@@ -439,8 +434,11 @@ export default class Music {
     if (this.notleave) clearTimeout(this.notleave);
     if (this.timeout) clearTimeout(this.timeout);
     this.setmsg();
-    this.sendlog(`stop 명령어 실행`);
-    if (leave) getVoiceConnection(this.guild.id)?.disconnect();
+    if (leave) {
+      this.guild.me?.voice?.disconnect();
+    } else {
+      this.sendlog(`stop 명령어 실행: ${text}`);
+    }
   }
   
   stopPlayer() {
@@ -465,9 +463,8 @@ export default class Music {
   
   async getrecommend(guildDB: guild_type): Promise<nowplay | undefined> {
     if (guildDB.options.recommend) {
-      const mc = client.getmc(this.guild);
-      if (mc.nowplaying && mc.nowplaying.url.length > 0) {
-        const recommend = await ytdl.getInfo(mc.nowplaying.url, {
+      if (this.nowplaying && this.nowplaying.url.length > 0) {
+        const recommend = await ytdl.getInfo(this.nowplaying.url, {
           lang: "KR",
           requestOptions: { agent }
         });
@@ -501,64 +498,74 @@ export default class Music {
       MDB.get.guild(this.guild).then((guildDB) => {
         if (guildDB) {
           let text = this.setlist(guildDB);
+          if (!text) return;
           let embed = this.setembed(guildDB, pause);
+          if (!embed) return;
           let channel = this.guild.channels.cache.get(guildDB.channelId);
-          (channel as TextChannel).messages.cache.get(guildDB.msgId)?.edit({ content: text, embeds: [embed] }).catch((err) => {});
+          if (channel && channel.type === "GUILD_TEXT") channel.messages.cache.get(guildDB.msgId)?.edit({ content: text, embeds: [embed] }).catch((err) => {});
         }
-      });
+      }).catch((err) => {});
     }, 50);
   }
-  setlist(guildDB: guild_type): string {
-    var output = '__**대기열 목록:**__';
-    var list: string[] = [];
-    var length = output.length + 20;
-    if (this.queuenumber.length > 0) {
-      for (let i=0; i<this.queuenumber.length; i++) {
-        let data = this.queue[this.queuenumber[i]];
-        let text = `\n${i+1}. ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title} [${this.settime(data.duration)}]${(guildDB.options.player) ? ` ~ ${data.player}` : ''}`;
-        if (length+text.length > 2000) {
-          output += `\n+ ${this.queue.length-list.length}곡`;
-          break;
+  setlist(guildDB: guild_type): string | undefined {
+    try {
+      var output = '__**대기열 목록:**__';
+      var list: string[] = [];
+      var length = output.length + 20;
+      if (this.queuenumber.length > 0) {
+        for (let i=0; i<this.queuenumber.length; i++) {
+          let data = this.queue[this.queuenumber[i]];
+          let text = `\n${i+1}. ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title} [${this.settime(data.duration)}]${(guildDB.options.player) ? ` ~ ${data.player}` : ''}`;
+          if (length+text.length > 2000) {
+            output += `\n+ ${this.queue.length-list.length}곡`;
+            break;
+          }
+          length = length + text.length;
+          list.push(text);
         }
-        length = length + text.length;
-        list.push(text);
+        output += list.reverse().join('');
+      } else {
+        output += `\n음성 채널에 참여한 후 노래제목 혹은 url로 노래를 대기열에 추가하세요.`;
       }
-      output += list.reverse().join('');
-    } else {
-      output += `\n음성 채널에 참여한 후 노래제목 혹은 url로 노래를 대기열에 추가하세요.`;
+      return output;
+    } catch (err) {
+      return undefined;
     }
-    return output;
   }
 
-  setembed(guildDB: guild_type, pause?: boolean): MessageEmbed {
-    let data: nowplay = this.nowplaying ? this.nowplaying : {
-      author: "",
-      duration: "",
-      image: "",
-      player: "",
-      title: "",
-      url: ""
-    };
-    var title = '';
-    if (this.playing && data.url.length > 0) {
-      title = `**[${this.settime(data.duration)}] - ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title}**`;
-    } else {
-      title = `**현재 노래가 재생되지 않았습니다**.`;
-      data.image = 'https://cdn.hydra.bot/hydra_no_music.png';
+  setembed(guildDB: guild_type, pause?: boolean): MessageEmbed | undefined {
+    try {
+      let data: nowplay = this.nowplaying ? this.nowplaying : {
+        author: "",
+        duration: "",
+        image: "",
+        player: "",
+        title: "",
+        url: ""
+      };
+      var title = '';
+      if (this.playing && data.url.length > 0) {
+        title = `**[${this.settime(data.duration)}] - ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title}**`;
+      } else {
+        title = `**현재 노래가 재생되지 않았습니다**.`;
+        data.image = 'https://cdn.hydra.bot/hydra_no_music.png';
+      }
+      let em = client.mkembed({
+        title: title,
+        image: data.image,
+        url: data.url,
+        color: client.embedcolor
+      });
+      if (this.playing && guildDB.options.player) em.setDescription(`노래 요청자: ${data.player}`);
+      if (this.playing) {
+        em.setFooter({ text: `대기열: ${this.queuenumber.length}개 | Volume: ${guildDB.options.volume}%${guildDB.options.recommend ? " | 자동재생: 활성화" : ""}${(pause) ? ` | 노래가 일시중지 되었습니다.` : ''}` });
+      } else {
+        em.setFooter({ text: `Volume: ${guildDB.options.volume}%${guildDB.options.recommend ? " | 자동재생: 활성화" : ""}` });
+      }
+      return em;
+    } catch (err) {
+      return undefined;
     }
-    let em = client.mkembed({
-      title: title,
-      image: data.image,
-      url: data.url,
-      color: client.embedcolor
-    });
-    if (this.playing && guildDB.options.player) em.setDescription(`노래 요청자: ${data.player}`);
-    if (this.playing) {
-      em.setFooter({ text: `대기열: ${this.queuenumber.length}개 | Volume: ${guildDB.options.volume}%${guildDB.options.recommend ? " | 자동재생: 활성화" : ""}${(pause) ? ` | 노래가 일시중지 되었습니다.` : ''}` });
-    } else {
-      em.setFooter({ text: `Volume: ${guildDB.options.volume}%${guildDB.options.recommend ? " | 자동재생: 활성화" : ""}` });
-    }
-    return em;
   }
   
   settime(time: string | number): string {
@@ -587,6 +594,7 @@ export default class Music {
     const channel = guild.channels.cache.get(LOGSC[1]);
     if (!channel) return;
     if (channel.type !== "GUILD_TEXT") return;
+    const d = new Date();
     channel.send({ embeds: [ client.mkembed({
       author: {
         name: this.guild.name,
@@ -594,7 +602,7 @@ export default class Music {
       },
       title: `${client.user?.username}`,
       description: `${text}`,
-      timestamp: new Date()
+      footer: { text: nowdate() }
     }) ] }).catch((err) => {});
   }
 }
