@@ -282,7 +282,7 @@ export default class Music {
           highWaterMark: 1 << 25,
           dlChunkSize: 0,
           requestOptions: { agent }
-        }).on('error', (err) => {
+        }).once('error', (err) => {
           if (client.debug) console.log('ytdl-core오류1:', err);
           return undefined;
         });
@@ -317,42 +317,56 @@ export default class Music {
       const resource = createAudioResource(ytsource, { inlineVolume: true, inputType: StreamType.Arbitrary });
       resource.volume?.setVolumeDecibels(5);
       resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 100 : 0.7);
-      Player.setMaxListeners(0).play(resource);
-      this.sendlog(`${this.nowplaying.title}\n${this.nowplaying.url}\n재생 시작`);
-      const subscription = connection.subscribe(Player);
-      this.players = [ subscription, resource ];
-      Player.on(AudioPlayerStatus.Idle, async (P) => {
-        // 봇 노래 재생 끝났을때
-        Player.stop();
-        await entersState(connection, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
-        return this.play(message, undefined);
-      });
-      connection.on('error', (err) => {
-        if (client.debug) console.log('connection오류:', err);
-        this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(connection error)`);
+      try {
+        Player.setMaxListeners(Player.getMaxListeners()+5).play(resource);
+        this.sendlog(`${this.nowplaying.title}\n${this.nowplaying.url}\n재생 시작`);
+        const subscription = connection.subscribe(Player);
+        this.players = [ subscription, resource ];
+        Player.on(AudioPlayerStatus.Idle, async (P) => {
+          // 봇 노래 재생 끝났을때
+          Player.stop();
+          await entersState(connection, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
+          return this.play(message, undefined);
+        });
+        connection.once('error', (err) => {
+          if (client.debug) console.log('connection오류:', err);
+          this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(connection error)`);
+          msgchannel.send({ embeds: [
+            client.mkembed({
+              title: `오류발생`,
+              description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
+              footer: { text: `connection error` },
+              color: "DARK_RED"
+            })
+          ] }).then(m => client.msgdelete(m, 3000, true));
+          return this.stopPlayer();
+        });
+        Player.once('error', (err) => {
+          if (client.debug) console.log('Player오류:', err);
+          this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(Player error)`);
+          msgchannel.send({ embeds: [
+            client.mkembed({
+              title: `오류발생`,
+              description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
+              footer: { text: `Player error` },
+              color: "DARK_RED"
+            })
+          ] }).then(m => client.msgdelete(m, 3000, true));
+          return this.stopPlayer();
+        });
+      } catch (err) {
+        if (client.debug) console.log('Catch오류:', err);
+        this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(Catch error)`);
         msgchannel.send({ embeds: [
           client.mkembed({
             title: `오류발생`,
-            description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
-            footer: { text: `connection error` },
+            description: '영상 재생중 오류발생\n다시 시도해주세요.',
+            footer: { text: `Catch error` },
             color: "DARK_RED"
           })
         ] }).then(m => client.msgdelete(m, 3000, true));
         return this.stopPlayer();
-      });
-      Player.on('error', (err) => {
-        if (client.debug) console.log('Player오류:', err);
-        this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(Player error)`);
-        msgchannel.send({ embeds: [
-          client.mkembed({
-            title: `오류발생`,
-            description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
-            footer: { text: `Player error` },
-            color: "DARK_RED"
-          })
-        ] }).then(m => client.msgdelete(m, 3000, true));
-        return this.stopPlayer();
-      });
+      }
     } else {
       return message.channel.send({ embeds: [
         client.mkembed({
@@ -368,11 +382,11 @@ export default class Music {
     if (this.players[0]) {
       if (this.players[0].player.state.status === AudioPlayerStatus.Playing) {
         this.players[0].player.pause();
-        entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+        if (getVoiceConnection(this.guild.id)) entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
         if (this.notleave) clearInterval(this.notleave);
         this.notleave = setInterval(() => {
           if (this.players[0]?.player.state.status === AudioPlayerStatus.Paused) {
-            entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+            if (this.guild.me?.voice.channelId) entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
           } else {
             if (this.notleave) clearInterval(this.notleave);
           }

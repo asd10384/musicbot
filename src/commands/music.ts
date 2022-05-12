@@ -6,6 +6,7 @@ import { I, D, M } from "../aliases/discord.js.js";
 import { TextChannel } from "discord.js";
 import MDB, { guild_type } from "../database/Mysql";
 import { DiscordGatewayAdapterCreator, joinVoiceChannel } from "@discordjs/voice";
+import { BOT_NUMBER } from "../database/Mysql";
 
 /**
  * DB
@@ -87,7 +88,7 @@ export default class MusicCommand implements Command {
 
   async create_channel(message: M | I, guildDB: guild_type): Promise<string> {
     if (!guildDB) return `데이터베이스 오류\n다시시도해주세요.`;
-    const channel = await message.guild?.channels.create(`MUSIC_CHANNEL${(process.env.BOT_NUMBER) ? process.env.BOT_NUMBER : ''}`, {
+    const channel = await message.guild?.channels.create(`MUSIC_CHANNEL${BOT_NUMBER}`, {
       type: 'GUILD_TEXT',
       topic: `Type in chat to play`
     });
@@ -126,7 +127,7 @@ export default class MusicCommand implements Command {
         } catch (err) {}
       });
     } else {
-      channel = await message.guild?.channels.create(`MUSIC_CHANNEL${(process.env.BOT_NUMBER) ? process.env.BOT_NUMBER : ''}`, {
+      channel = await message.guild?.channels.create(`MUSIC_CHANNEL${BOT_NUMBER}`, {
         type: 'GUILD_TEXT',
         topic: `Type in chat to play`
       });

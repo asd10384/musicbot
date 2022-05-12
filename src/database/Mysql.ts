@@ -10,7 +10,7 @@ const db = mysql.createConnection({
   port: parseInt(process.env.MYSQL_PORT ? process.env.MYSQL_PORT : "3306"),
   user: process.env.MYSQL_USER ? process.env.MYSQL_USER : "root",
   password: process.env.MYSQL_PASSWORD ? process.env.MYSQL_PASSWORD : "",
-  database: process.env.MYSQL_DATABASE ? process.env.MYSQL_DATABASE : ""
+  database: process.env.MYSQL_DATABASE ? process.env.MYSQL_DATABASE+BOT_NUMBER : ""
 });
 try {
   db.connect();
@@ -96,7 +96,7 @@ export interface user_type {
 }
 
 async function get_guildDB(guild: Guild): Promise<guild_type | undefined> {
-  const guildDBlist = await command(`select * from guild${BOT_NUMBER} where id='${guild.id}'`);
+  const guildDBlist = await command(`select * from guild where id='${guild.id}'`);
   if (guildDBlist.length > 0) {
     let guildDB: guild_first_type = guildDBlist[0];
     if (guildDB.name !== guild.name) guildDB.name = guild.name;
@@ -110,7 +110,7 @@ async function get_guildDB(guild: Guild): Promise<guild_type | undefined> {
       options: JSON.parse(guildDB.options)
     };
   } else {
-    return await command(`insert into \`guild${BOT_NUMBER}\` (${[
+    return await command(`insert into \`guild\` (${[
       "id",
       "name",
       "prefix",
@@ -156,7 +156,7 @@ async function get_guildDB(guild: Guild): Promise<guild_type | undefined> {
 }
 
 async function get_userDB(member: GuildMember): Promise<user_type | undefined> {
-  const userDBlist = await command(`select * from user${BOT_NUMBER} where id='${member.user.id}'`);
+  const userDBlist = await command(`select * from user where id='${member.user.id}'`);
   if (userDBlist.length > 0) {
     let userDB: user_first_type = userDBlist[0];
     if (userDB.tag !== member.user.tag) userDB.tag = member.user.tag;
@@ -166,7 +166,7 @@ async function get_userDB(member: GuildMember): Promise<user_type | undefined> {
       canplay: userDB.canplay
     };
   } else {
-    return await command(`insert into \`user${BOT_NUMBER}\` (${[
+    return await command(`insert into \`user\` (${[
       "id",
       "tag",
       "canplay"
@@ -196,7 +196,7 @@ async function update_guildDB(guildId: string, data: guild_list_type): Promise<b
       typeof(values[i]) === "string" ? `'${values[i]}'` : values[i]
     }`);
   }
-  return await command(`update guild${BOT_NUMBER} set ${addlist.join(",")} where id='${guildId}'`).then((val) => {
+  return await command(`update guild set ${addlist.join(",")} where id='${guildId}'`).then((val) => {
     return true;
   }).catch((err) => {
     return false;
@@ -212,7 +212,7 @@ async function update_userDB(userId: string, data: user_list_type): Promise<bool
       typeof(values[i]) === "string" ? `'${values[i]}'` : values[i]
     }`);
   }
-  return await command(`update user${BOT_NUMBER} set ${addlist.join(",")} where id='${userId}'`).then((val) => {
+  return await command(`update user set ${addlist.join(",")} where id='${userId}'`).then((val) => {
     return true;
   }).catch((err) => {
     return false;

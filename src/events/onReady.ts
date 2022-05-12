@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { client, handler } from "../index";
-import MDB, { BOT_NUMBER, guild_type } from "../database/Mysql";
+import MDB, { guild_type } from "../database/Mysql";
 
 /** onReady 핸들러 */
 export default function onReady() {
@@ -32,7 +32,7 @@ export default function onReady() {
 }
 
 function musicfix() {
-  MDB.command(`select * from guild${BOT_NUMBER}`).then((val: guild_type[]) => {
+  MDB.command(`select * from guild`).then((val: guild_type[]) => {
     val.forEach((guildDB) => {
       if (guildDB.id && guildDB.channelId) {
         const channel = client.guilds.cache.get(guildDB.id)?.channels.cache.get(guildDB.channelId);
