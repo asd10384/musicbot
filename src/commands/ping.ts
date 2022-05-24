@@ -50,9 +50,9 @@ export default class PingCommand implements Command {
 
   ping(): { embeds: [ MessageEmbed ], components: [ MessageActionRow ] } {
     const id = Math.random().toString(36).substring(2, 5);
-    const actionRow = new MessageActionRow({ components: [
+    const actionRow = new MessageActionRow().addComponents(
       new MessageButton({ customId: id, label: '다시 측정', style: 'SUCCESS' })
-    ] });
+    );
     const embed = client.mkembed({
       title: `Pong!`,
       description: `**${client.ws.ping}ms**`,

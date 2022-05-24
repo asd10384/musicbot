@@ -1,8 +1,8 @@
 import "dotenv/config";
 import { client } from "../index";
 import { Guild, MessageEmbed, TextChannel } from "discord.js";
-import { M, PM } from "../aliases/discord.js.js";
-import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
+import { I, M, PM } from "../aliases/discord.js.js";
+import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, demuxProbe, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
 import ytdl from "ytdl-core";
 import ytpl from "ytpl";
 import ytsr from "ytsr";
@@ -18,6 +18,7 @@ import checkurl from "./checkurl";
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
 const LOGSC = process.env.LOGSC ? process.env.LOGSC.trim().split(",").length === 2 ? process.env.LOGSC.trim().split(",") : undefined : undefined;
+
 
 export interface nowplay {
   title: string;
@@ -208,7 +209,7 @@ export default class Music {
     this.setmsg();
   }
 
-  async getdata(message: M | PM, guildDB: guild_type, getsearch?: ytdl.videoInfo): Promise<nowplay | undefined> {
+  async getdata(message: M | PM | I, guildDB: guild_type, getsearch?: ytdl.videoInfo, checktime?: boolean): Promise<nowplay | undefined> {
     let data: nowplay | undefined = undefined;
     if (getsearch) {
       var getinfo = getsearch.videoDetails;
@@ -216,11 +217,12 @@ export default class Music {
         title: getinfo.title,
         author: getinfo.author!.name,
         duration: getinfo.lengthSeconds,
-        player: `<@${message.author!.id}>`,
+        player: `<@${message.member?.user.id}>`,
         url: getinfo.video_url,
         image: (getinfo.thumbnails[0].url) ? getinfo.thumbnails[0].url : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`
       };
     } else {
+      if (checktime) return this.nowplaying ? this.nowplaying : undefined;
       let num = this.queuenumber.shift();
       if (num === undefined || num === null || num === NaN) {
         if (guildDB.options.recommend) {
@@ -234,8 +236,8 @@ export default class Music {
     }
     return data;
   }
-
-  async play(message: M | PM, getsearch?: ytdl.videoInfo) {
+  
+  async play(message: M | PM | I, getsearch?: ytdl.videoInfo, time?: number) {
     let guildDB = await MDB.get.guild(this.guild);
     if (!guildDB) return this.stop(true, "play-notfoundguildDB");
     const channelid = guildDB.channelId;
@@ -243,7 +245,7 @@ export default class Music {
     let voicechannel = getchannel(message);
     if (voicechannel) {
       if (getVoiceConnection(this.guild.id)) await entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
-      let data: nowplay | undefined = await this.getdata(message, guildDB, getsearch);
+      let data: nowplay | undefined = await this.getdata(message, guildDB, getsearch, !!time);
       if (this.timeout) clearTimeout(this.timeout);
       if (data) {
         const getq = [ "maxresdefault", "sddefault", "hqdefault", "mqdefault", "default", "0", "1", "2", "3" ];
@@ -281,6 +283,7 @@ export default class Music {
           quality: "highestaudio",
           highWaterMark: 1 << 25,
           dlChunkSize: 0,
+          begin: time ? time+"s" : undefined,
           requestOptions: { agent }
         }).once('error', (err) => {
           if (client.debug) console.log('ytdl-core오류1:', err);
@@ -301,6 +304,7 @@ export default class Music {
         ] }).then(m => client.msgdelete(m, 3000, true));
         return this.skipPlayer(message);
       }
+      ytsource.setMaxListeners(0);
       try {
         await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
       } catch {
@@ -314,11 +318,11 @@ export default class Music {
         ] }).then(m => client.msgdelete(m, 3000, true));
         return this.skipPlayer(message);
       }
-      const resource = createAudioResource(ytsource, { inlineVolume: true, inputType: StreamType.Arbitrary });
-      resource.volume?.setVolumeDecibels(5);
+      const { stream, type } = await demuxProbe(ytsource);
+      const resource = createAudioResource(stream, { inlineVolume: true, inputType: type });
       resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 100 : 0.7);
       try {
-        Player.setMaxListeners(Player.getMaxListeners()+5).play(resource);
+        Player.setMaxListeners(0).play(resource);
         this.sendlog(`${this.nowplaying.title}\n${this.nowplaying.url}\n재생 시작`);
         const subscription = connection.subscribe(Player);
         this.players = [ subscription, resource ];
@@ -368,13 +372,15 @@ export default class Music {
         return this.stopPlayer();
       }
     } else {
-      return message.channel.send({ embeds: [
-        client.mkembed({
-          title: '음성채널을 찾을수 없습니다.',
-          description: '음성채널에 들어가서 사용해주세요.',
-          color: "DARK_RED"
-        })
-      ] }).then(m => client.msgdelete(m, 1));
+      return message instanceof I
+        ? undefined
+        : message.channel.send({ embeds: [
+          client.mkembed({
+            title: '음성채널을 찾을수 없습니다.',
+            description: '음성채널에 들어가서 사용해주세요.',
+            color: "DARK_RED"
+          })
+        ] }).then(m => client.msgdelete(m, 1));
     }
   }
 
@@ -433,7 +439,7 @@ export default class Music {
     return;
   }
 
-  async skipPlayer(message: M | PM) {
+  async skipPlayer(message: M | PM | I) {
     if (getVoiceConnection(this.guild.id)) {
       await entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
       this.play(message, undefined);

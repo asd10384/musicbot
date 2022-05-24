@@ -5,27 +5,51 @@ import { client } from "../index.js";
 
 export const BOT_NUMBER = (process.env.BOT_NUMBER) ? process.env.BOT_NUMBER : '';
 
-const db = mysql.createConnection({
+const pool = mysql.createPool({
   host: process.env.MYSQL_HOST ? process.env.MYSQL_HOST : 'localhost',
   port: parseInt(process.env.MYSQL_PORT ? process.env.MYSQL_PORT : "3306"),
   user: process.env.MYSQL_USER ? process.env.MYSQL_USER : "root",
   password: process.env.MYSQL_PASSWORD ? process.env.MYSQL_PASSWORD : "",
-  database: process.env.MYSQL_DATABASE ? process.env.MYSQL_DATABASE+BOT_NUMBER : ""
+  database: process.env.MYSQL_DATABASE ? process.env.MYSQL_DATABASE+BOT_NUMBER : "",
+  waitForConnections: true
 });
-try {
-  db.connect();
-  console.log(`MYSQL 데이터베이스 연결 성공`);
-} catch (err) {
-  if (client.debug) console.log(err);
-  throw "\nMYSQL 데이터베이스 연결 실패";
-}
+
+let db: mysql.PoolConnection | undefined = undefined;
+
+pool.getConnection((err, connection) => {
+  db = connection;
+  if (err) {
+    if (client.debug) console.log(err);
+    throw "\nMYSQL 데이터베이스 연결 실패";
+  }
+  console.log(`MYSQL 데이터베이스 연결 확인`);
+  connection.release();
+});
 
 async function command(text: string): Promise<any> {
-  return new Promise((res, rej) => {
-    db.query(text, (err, ret) => {
-      if (err) return rej(err);
-      return res(ret);
+  return new Promise((suc, unsuc) => {
+    pool.getConnection((err, connection) => {
+      // db = connection;
+      if (err) {
+        if (client.debug) console.log(err);
+        throw "\nMYSQL 데이터베이스 연결 실패";
+      }
+      connection.query(text, (err2, res) => {
+        if (err2) {
+          if (client.debug) console.log(err2);
+          throw "\nMYSQL 데이터베이스 연결 실패2";
+        }
+        connection.release();
+        if (err2) return unsuc(err2);
+        return suc(res);
+      });
     });
+    // if (!db) return unsuc("데이터베이스를 찾을수없음");
+    // db.query(text, (err, res) => {
+    //   if (!db) return unsuc("데이터베이스를 찾을수없음");
+    //   if (err) return unsuc(err);
+    //   return suc(res);
+    // });
   });
 }
 
