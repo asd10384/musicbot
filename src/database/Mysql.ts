@@ -14,10 +14,7 @@ const pool = mysql.createPool({
   waitForConnections: true
 });
 
-let db: mysql.PoolConnection | undefined = undefined;
-
 pool.getConnection((err, connection) => {
-  db = connection;
   if (err) {
     if (client.debug) console.log(err);
     throw "\nMYSQL 데이터베이스 연결 실패";
@@ -29,7 +26,6 @@ pool.getConnection((err, connection) => {
 async function command(text: string): Promise<any> {
   return new Promise((suc, unsuc) => {
     pool.getConnection((err, connection) => {
-      // db = connection;
       if (err) {
         if (client.debug) console.log(err);
         throw "\nMYSQL 데이터베이스 연결 실패";
@@ -44,12 +40,6 @@ async function command(text: string): Promise<any> {
         return suc(res);
       });
     });
-    // if (!db) return unsuc("데이터베이스를 찾을수없음");
-    // db.query(text, (err, res) => {
-    //   if (!db) return unsuc("데이터베이스를 찾을수없음");
-    //   if (err) return unsuc(err);
-    //   return suc(res);
-    // });
   });
 }
 
