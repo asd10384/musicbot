@@ -11,7 +11,7 @@ const pool = mysql.createPool({
   user: process.env.MYSQL_USER ? process.env.MYSQL_USER : "root",
   password: process.env.MYSQL_PASSWORD ? process.env.MYSQL_PASSWORD : "",
   database: process.env.MYSQL_DATABASE ? process.env.MYSQL_DATABASE+BOT_NUMBER : "",
-  waitForConnections: true
+  connectTimeout: 1000*60*60*24
 });
 
 pool.getConnection((err, connection) => {
@@ -20,7 +20,7 @@ pool.getConnection((err, connection) => {
     throw "\nMYSQL 데이터베이스 연결 실패";
   }
   console.log(`MYSQL 데이터베이스 연결 확인`);
-  connection.release();
+  connection.destroy();
 });
 
 async function command(text: string): Promise<any> {
@@ -35,7 +35,7 @@ async function command(text: string): Promise<any> {
           if (client.debug) console.log(err2);
           throw "\nMYSQL 데이터베이스 연결 실패2";
         }
-        connection.release();
+        connection.destroy();
         if (err2) return unsuc(err2);
         return suc(res);
       });
