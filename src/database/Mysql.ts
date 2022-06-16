@@ -5,40 +5,41 @@ import { client } from "../index.js";
 
 export const BOT_NUMBER = (process.env.BOT_NUMBER) ? process.env.BOT_NUMBER : '';
 
-const pool = mysql.createPool({
-  host: process.env.MYSQL_HOST ? process.env.MYSQL_HOST : 'localhost',
-  port: parseInt(process.env.MYSQL_PORT ? process.env.MYSQL_PORT : "3306"),
-  user: process.env.MYSQL_USER ? process.env.MYSQL_USER : "root",
-  password: process.env.MYSQL_PASSWORD ? process.env.MYSQL_PASSWORD : "",
-  database: process.env.MYSQL_DATABASE ? process.env.MYSQL_DATABASE+BOT_NUMBER : "",
-  connectTimeout: 1000*60*60*24
-});
+var connection: mysql.Connection | undefined = undefined;
 
-pool.getConnection((err, connection) => {
-  if (err) {
-    if (client.debug) console.log(err);
-    throw "\nMYSQL 데이터베이스 연결 실패";
-  }
-  console.log(`MYSQL 데이터베이스 연결 확인`);
-  connection.destroy();
-});
+Connect();
+function Connect() {
+  if (connection) connection.end();
+  connection = mysql.createConnection({
+    host: process.env.MYSQL_HOST ? process.env.MYSQL_HOST : 'localhost',
+    port: parseInt(process.env.MYSQL_PORT ? process.env.MYSQL_PORT : "3306"),
+    user: process.env.MYSQL_USER ? process.env.MYSQL_USER : "root",
+    password: process.env.MYSQL_PASSWORD ? process.env.MYSQL_PASSWORD : "",
+    database: process.env.MYSQL_DATABASE ? process.env.MYSQL_DATABASE+BOT_NUMBER : ""
+  });
+  
+  connection.connect((err) => {
+    if (err) {
+      console.log(`데이터베이스 오류, 2초후 재접속\n오류코드:`, err);
+      setTimeout(Connect, 2000);
+    }
+    console.log(`MYSQL 데이터베이스 연결 성공`);
+  });
+
+  connection.on("error", (err) => {
+    if (client.debug) console.log("데이터베이스 오류:", err);
+    Connect();
+  });
+}
 
 async function command(text: string): Promise<any> {
   return new Promise((suc, unsuc) => {
-    pool.getConnection((err, connection) => {
-      if (err) {
-        if (client.debug) console.log(err);
-        throw "\nMYSQL 데이터베이스 연결 실패";
-      }
-      connection.query(text, (err2, res) => {
-        if (err2) {
-          if (client.debug) console.log(err2);
-          throw "\nMYSQL 데이터베이스 연결 실패2";
-        }
-        connection.destroy();
-        if (err2) return unsuc(err2);
-        return suc(res);
-      });
+    if (!connection) {
+      return unsuc("데이터베이스를 찾을수없음");
+    }
+    connection.query(text, (err, res) => {
+      if (err) return unsuc(err);
+      return suc(res);
     });
   });
 }

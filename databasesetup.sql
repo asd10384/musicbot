@@ -2,29 +2,29 @@
 SHOW DATABASES;
 
 -- 데이터베이스 생성
-CREATE DATABASE example;
+CREATE DATABASE example default character set utf8 collate utf8_general_ci;
 
 -- 데이터 베이스 선택
 USE example;
 
 -- 테이블 생성
-CREATE TABLE `guild1` (
-	`id` CHAR(18) NOT NULL,
-  `name` TEXT NOT NULL,
-  `prefix` TEXT NOT NULL,
-  `role` TEXT NOT NULL,
-  `channelId` CHAR(18) NOT NULL,
-  `msgId` CHAR(18) NOT NULL,
-  `options` TEXT NOT NULL,
+CREATE TABLE `guild` (
+	`id` CHAR(18) NOT NULL COLLATE utf8_general_ci,
+  `name` TEXT NOT NULL COLLATE utf8_general_ci,
+  `prefix` TEXT NOT NULL COLLATE utf8_general_ci,
+  `role` TEXT NOT NULL COLLATE utf8_general_ci,
+  `channelId` CHAR(18) NOT NULL COLLATE utf8_general_ci,
+  `msgId` CHAR(18) NOT NULL COLLATE utf8_general_ci,
+  `options` TEXT NOT NULL COLLATE utf8_general_ci,
   PRIMARY KEY (`id`)
-);
+) default charset=utf8 COLLATE=utf8_general_ci;
 
-CREATE TABLE `user1` (
-	`id` CHAR(18) NOT NULL,
-  `tag` TEXT NOT NULL,
-  `canplay` BOOLEAN not null,
+CREATE TABLE `user` (
+	`id` CHAR(18) NOT NULL COLLATE utf8_general_ci,
+  `tag` TEXT NOT NULL COLLATE utf8_general_ci,
+  `canplay` BOOLEAN not null COLLATE utf8_general_ci,
   primary key (`id`)
-);
+) default charset=utf8 COLLATE=utf8_general_ci;
 
 -- 테이블 확인
 SHOW TABLES;
