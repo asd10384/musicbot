@@ -262,6 +262,7 @@ export default class Music {
               color: "DARK_RED"
             })
           ] }).then(m => client.msgdelete(m, 3000, true));
+          this.sendlog(`오류발생\n현재 지역에서 영상을 재생할 수 없습니다.\n${data.url}`);
           return this.skipPlayer(message);
         }
         this.nowplaying = data;
@@ -293,7 +294,7 @@ export default class Music {
         ytsource = undefined;
       }
       if (!ytsource) {
-        connection.destroy();
+        // connection.destroy();
         msgchannel.send({ embeds: [
           client.mkembed({
             title: `오류발생`,
@@ -302,6 +303,7 @@ export default class Music {
             color: "DARK_RED"
           })
         ] }).then(m => client.msgdelete(m, 3000, true));
+        this.sendlog(`오류발생\n영상을 찾을수 없습니다.\n${data.url}`);
         return this.skipPlayer(message);
       }
       ytsource.setMaxListeners(0);
@@ -316,6 +318,7 @@ export default class Music {
             color: "DARK_RED"
           })
         ] }).then(m => client.msgdelete(m, 3000, true));
+        this.sendlog(`오류발생\n재생시도중 오류발생\n${data.url}`);
         return this.skipPlayer(message);
       }
       const { stream, type } = await demuxProbe(ytsource);
@@ -334,7 +337,6 @@ export default class Music {
         });
         connection.once('error', (err) => {
           if (client.debug) console.log('connection오류:', err);
-          this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(connection error)`);
           msgchannel.send({ embeds: [
             client.mkembed({
               title: `오류발생`,
@@ -343,11 +345,11 @@ export default class Music {
               color: "DARK_RED"
             })
           ] }).then(m => client.msgdelete(m, 3000, true));
-          return this.stopPlayer();
+          this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(connection error)`);
+          return this.skipPlayer(message);
         });
         Player.once('error', (err) => {
           if (client.debug) console.log('Player오류:', err);
-          this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(Player error)`);
           msgchannel.send({ embeds: [
             client.mkembed({
               title: `오류발생`,
@@ -356,11 +358,11 @@ export default class Music {
               color: "DARK_RED"
             })
           ] }).then(m => client.msgdelete(m, 3000, true));
-          return this.stopPlayer();
+          this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(Player error)`);
+          return this.skipPlayer(message);
         });
       } catch (err) {
         if (client.debug) console.log('Catch오류:', err);
-        this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(Catch error)`);
         msgchannel.send({ embeds: [
           client.mkembed({
             title: `오류발생`,
@@ -369,7 +371,8 @@ export default class Music {
             color: "DARK_RED"
           })
         ] }).then(m => client.msgdelete(m, 3000, true));
-        return this.stopPlayer();
+        this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(Catch error)`);
+        return this.skipPlayer(message);
       }
     } else {
       return message instanceof I
