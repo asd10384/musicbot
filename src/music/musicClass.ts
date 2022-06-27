@@ -14,6 +14,7 @@ import { fshuffle } from "./shuffle";
 import { parmas } from "./music";
 import getchannel from "./getchannel";
 import checkurl from "./checkurl";
+import checkvideo from "./checkvideo";
 
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
@@ -70,26 +71,17 @@ export default class Music {
     this.inputplaylist = getinputplaylist;
   }
 
-  async search(message: M, text: string, parmas?: parmas): Promise<[ytdl.videoInfo | undefined, { type?: Vtype, err?: Etype, addembed?: M }]> {
-    if (this.inputplaylist) return [ undefined, { type: "playlist", err: "added" } ];
+  async search(message: M, text: string, parmas?: parmas): Promise<[ytdl.videoInfo, Vtype, M | undefined ] | [ undefined, string, M | undefined ]> {
+    if (this.inputplaylist) return [ undefined, `현재 플레이리스트를 추가하는중입니다.\n잠시뒤 사용해주세요.`, undefined ];
     let url = checkurl(text);
     if (url.video) {
       let yid = url.video[1].replace(/\&.+/g,'');
-      let getinfo = await ytdl.getInfo(`https://www.youtube.com/watch?v=${yid}`, {
-        lang: "KR",
-        requestOptions: { agent }
-      }).catch((err) => {
-        return undefined;
-      });
-      if (getinfo && getinfo.videoDetails) {
-        if (getinfo.videoDetails.lengthSeconds === "0") return [ undefined, { type: "video", err: "livestream" } ];
-        return [ getinfo, { type: "video" } ];
-      } else {
-        return [ undefined, { type: "video", err: "notfound" } ];
-      }
+      let checkv = await checkvideo({ url: `https://www.youtube.com/watch?v=${yid}` });
+      if (checkv[0]) return [ checkv[1], "video", undefined ];
+      return [ undefined, checkv[1], undefined ];
     } else if (url.list) {
       let guildDB = await MDB.get.guild(this.guild);
-      if (!guildDB) return [ undefined, { type: "database", err: "notfound" } ];
+      if (!guildDB) return [ undefined, `데이터베이스 오류\n다시시도해주세요.`, undefined ];
       this.inputplaylist = true;
       const addedembed = await message.channel.send({ embeds: [
         client.mkembed({
@@ -137,7 +129,7 @@ export default class Music {
           }));
           this.setmsg();
           this.inputplaylist = false;
-          return [ undefined, { type: "playlist", addembed: addembed } ];
+          return [ undefined, `플레이리스트를 찾을수 없습니다.`, addembed ];
         } else {
           const output = list.items.shift()!;
           this.queuenumber = this.queuenumber.concat(list.items.map((data, i) => {
@@ -153,21 +145,14 @@ export default class Music {
               player: `<@${message.author.id}>`
             }
           }));
-          let getyt = await ytdl.getInfo(output.shortUrl, {
-            lang: "KR",
-            requestOptions: { agent }
-          });
+          let checkv = await checkvideo({ url: output.shortUrl });
           this.inputplaylist = false;
-          if (getyt && getyt.videoDetails) {
-            if (getyt.videoDetails.lengthSeconds === "0") return [ undefined, { type: "video", err: "livestream" } ];
-            return [ getyt, { type: "video", addembed: addembed } ];
-          } else {
-            return [ undefined, { type: "video", err: "notfound" } ];
-          }
+          if (checkv[0]) return [ checkv[1], "video", addembed ];
+          return [ undefined, checkv[1], addembed ];
         }
       } else {
         this.inputplaylist = false;
-        return [ undefined, { type: "playlist", err: "notfound" } ];
+        return [ undefined, `플레이리스트를 찾을수 없습니다.`, undefined ];
       }
     } else {
       let list = await ytsr(text, {
@@ -178,23 +163,16 @@ export default class Music {
       if (list && list.items && list.items.length > 0) {
         list.items = list.items.filter((item) => item.type === "video");
         if (list.items.length > 0 && list.items[0].type === "video") {
-          let getinfo = await ytdl.getInfo(list.items[0].url, {
-            lang: "KR"
-          });
-          this.inputplaylist = false;
-          if (getinfo && getinfo.videoDetails) {
-            if (getinfo.videoDetails.lengthSeconds === "0") return [ undefined, { type: "video", err: "livestream" } ]
-            return [ getinfo, { type: "video" } ];
-          } else {
-            return [ undefined, { type: "video", err: "notfound" } ];
-          }
+          let checkv = await checkvideo({ url: list.items[0].url });
+          if (checkv[0]) return [ checkv[1], "video", undefined ];
+          return [ undefined, checkv[1], undefined ];
         }
       }
       this.inputplaylist = false;
-      return [ undefined, { type: "video", err: "notfound" } ];
+      return [ undefined, `검색한 영상을 찾을수 없습니다.`, undefined ];
     }
   }
-  
+
   async addqueue(message: M, getsearch: ytdl.videoInfo) {
     let getinfo = getsearch.videoDetails;
     this.queuenumber.push(this.queue.length);
@@ -211,7 +189,7 @@ export default class Music {
 
   async getdata(message: M | PM | I, guildDB: guild_type, getsearch?: ytdl.videoInfo, checktime?: boolean): Promise<nowplay | undefined> {
     let data: nowplay | undefined = undefined;
-    if (getsearch) {
+    if (getsearch && getsearch.videoDetails) {
       var getinfo = getsearch.videoDetails;
       data = {
         title: getinfo.title,
@@ -225,11 +203,7 @@ export default class Music {
       if (checktime) return this.nowplaying ? this.nowplaying : undefined;
       let num = this.queuenumber.shift();
       if (num === undefined || num === null || num === NaN) {
-        if (guildDB.options.recommend) {
-          data = await this.getrecommend(guildDB);
-        } else {
-          data = undefined;
-        }
+        data = undefined;
       } else {
         data = this.queue[num];
       }
@@ -250,19 +224,18 @@ export default class Music {
       if (data) {
         const getq = [ "maxresdefault", "sddefault", "hqdefault", "mqdefault", "default", "0", "1", "2", "3" ];
         data.image = data.image.replace(new RegExp(`${getq.join('\\.|')}\\.`, 'g'), 'hqdefault.').replace(/\?.+/g,"").trim();
-        const checkarea = await this.getarea(data.url);
-        if (checkarea) {
+        const checkv = await checkvideo({ url: data.url });
+        if (checkv[0]) {
           this.nowplaying = data;
         } else {
           msgchannel.send({ embeds: [
             client.mkembed({
               title: `오류발생`,
-              description: '현재 지역에서 영상을 재생할 수 없습니다.',
-              footer: { text: `Area error` },
+              description: `${checkv[1]}`,
               color: "DARK_RED"
             })
-          ] }).then(m => client.msgdelete(m, 3000, true));
-          this.sendlog(`오류발생\n현재 지역에서 영상을 재생할 수 없습니다.\n${data.url}`);
+          ] }).then(m => client.msgdelete(m, 1000*10, true));
+          this.sendlog(`오류발생\n${checkv[1]}\n${data.url}`);
           return this.skipPlayer(message);
         }
         this.nowplaying = data;
@@ -454,6 +427,7 @@ export default class Music {
     this.queue = [];
     this.queuenumber = [];
     this.nowplaying = null;
+    this.inputplaylist = false;
     if (this.notleave) clearTimeout(this.notleave);
     if (this.timeout) clearTimeout(this.timeout);
     this.setmsg();
@@ -469,51 +443,6 @@ export default class Music {
       this.players[0].player.stop();
       this.players = [ undefined, undefined ];
     }
-  }
-  
-  async getarea(url: string): Promise<boolean> {
-    const info = await ytdl.getInfo(url, {
-      lang: "KR",
-      requestOptions: { agent }
-    }).catch((err) => {
-      return undefined;
-    });
-    if (info && info.videoDetails) {
-      return info.videoDetails.availableCountries.includes('KR');
-    }
-    return false;
-  }
-  
-  async getrecommend(guildDB: guild_type): Promise<nowplay | undefined> {
-    if (guildDB.options.recommend) {
-      if (this.nowplaying && this.nowplaying.url.length > 0) {
-        const recommend = await ytdl.getInfo(this.nowplaying.url, {
-          lang: "KR",
-          requestOptions: { agent }
-        });
-        if (recommend && recommend.related_videos && recommend.related_videos.length > 0) {
-          recommend.related_videos.sort((a, b) => {
-            if (a.isLive) return 1;
-            let c1 = a.length_seconds! - b.length_seconds!;
-            let c2 = Number(b.view_count!) - Number(a.view_count!);
-            if (c1 < 0 && c2 < 0) return -1;
-            if (c1 >= 0 || c2 < 0) return 0;
-            return 1;
-          });
-          let data = recommend.related_videos[Math.round(Math.random()*2)];
-          var output: nowplay = {
-            title: data.title!,
-            duration: data.length_seconds!.toString(),
-            author: (data.author as ytdl.Author).name ? (data.author as ytdl.Author).name : (data.author as String).toString(),
-            image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
-            player: `자동재생으로 재생됨`,
-            url: `https://www.youtube.com/watch?v=` + data.id!
-          }
-          return output;
-        }
-      }
-    }
-    return undefined;
   }
 
   setmsg(pause?: boolean) {
