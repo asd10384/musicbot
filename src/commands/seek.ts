@@ -1,7 +1,7 @@
 import { client } from "../index";
 import { Command } from "../interfaces/Command";
 import { I, D, M } from "../aliases/discord.js.js";
-import { MessageEmbed } from "discord.js";
+import { ApplicationCommandOptionType, EmbedBuilder } from "discord.js";
 import { entersState, getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 
 /**
@@ -19,12 +19,12 @@ export default class SeekCommand implements Command {
   visible = true;
   description = "move to time";
   information = "설정한 시간으로 이동";
-  aliases = [];
-  metadata = <D>{
+  aliases: string[] = [  ];
+  metadata: D = {
     name: this.name,
     description: this.description,
     options: [{
-      type: "STRING",
+      type: ApplicationCommandOptionType.String,
       name: "time",
       description: "00:00 or 00:00:00",
       required: true
@@ -34,14 +34,14 @@ export default class SeekCommand implements Command {
 
   /** 실행되는 부분 */
   async slashrun(interaction: I) {
-    let time = interaction.options.getString('time', true);
+    let time = interaction.options.get('time', true).value as string;
     return await interaction.editReply({ embeds: [ await this.seek(interaction, time) ] });
   }
   async msgrun(message: M, args: string[]) {
     return await message.channel.send({ embeds: [ await this.seek(message, args.join(":")) ] });
   }
 
-  async seek(message: M | I, time: string): Promise<MessageEmbed> {
+  async seek(message: M | I, time: string): Promise<EmbedBuilder> {
     const mc = client.getmc(message.guild!);
     if (!mc.playing || !mc.nowplaying?.duration) return this.err(`재생중인 노래가 없습니다.`);
     const timelist = time.replace(/ +/g,"").split(":");
@@ -66,11 +66,11 @@ export default class SeekCommand implements Command {
     return -1;
   }
 
-  err(text: string): MessageEmbed {
+  err(text: string): EmbedBuilder {
     return client.mkembed({
       title: `\` SEEK 오류 \``,
       description: `${text}`,
-      color: "DARK_RED"
+      color: "DarkRed"
     });
   }
 }

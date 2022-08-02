@@ -1,6 +1,9 @@
 import "dotenv/config";
 import { client, handler } from "../index";
 import MDB, { guild_type } from "../database/Mysql";
+import { ChannelType } from "discord.js";
+
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 /** onReady 핸들러 */
 export default function onReady() {
@@ -36,19 +39,19 @@ function musicfix() {
     val.forEach((guildDB) => {
       if (guildDB.id && guildDB.channelId) {
         const channel = client.guilds.cache.get(guildDB.id)?.channels.cache.get(guildDB.channelId);
-        if (channel && channel.type === "GUILD_TEXT") {
+        if (channel && channel.type === ChannelType.GuildText) {
           channel.messages.fetch().then(async (msgs) => {
             try {
               if (msgs.size > 0) channel.bulkDelete(msgs.size).catch((err) => { if (client.debug) console.log('메세지 전체 삭제 오류'); });
             } catch (err) {}
+            await sleep(500);
             const msg = await channel.send({
               content: `__**대기열 목록:**__\n음성 채널에 참여한 후 노래제목 혹은 url로 노래를 대기열에 추가하세요.`,
               embeds: [
                 client.mkembed({
                   title: `**현재 노래가 재생되지 않았습니다**`,
                   image: `https://cdn.hydra.bot/hydra_no_music.png`,
-                  footer: { text: `PREFIX: ${client.prefix}` },
-                  color: client.embedcolor
+                  footer: { text: `PREFIX: ${client.prefix}` }
                 })
               ]
             });

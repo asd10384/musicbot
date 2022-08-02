@@ -1,7 +1,6 @@
 import "dotenv/config"; // .env 불러오기
-import { ChatInputApplicationCommandData, Client, ClientEvents, ColorResolvable, EmbedFieldData, Guild, Message, MessageEmbed } from 'discord.js';
+import { ChatInputApplicationCommandData, Client, ClientEvents, ColorResolvable, Guild, Message, EmbedBuilder, EmbedField, ApplicationCommandOptionType } from 'discord.js';
 import _ from '../consts';
-import { music } from "../database/Mysql";
 import Music from "../music/musicClass";
 
 /**
@@ -50,7 +49,9 @@ export default class BotClient extends Client {
     };
     this.ttstimer = new Map<string, { start: boolean, time: number }>();
     this.ttstimertime = (60) * 45; //분
-    this.embedcolor = process.env.EMBED_COLOR ? process.env.EMBED_COLOR.trim().toUpperCase() as ColorResolvable : "ORANGE";
+    this.embedcolor = process.env.EMBED_COLOR
+      ? process.env.EMBED_COLOR.trim().charAt(0).toLocaleUpperCase() + process.env.EMBED_COLOR.trim().slice(1).toLocaleLowerCase() as ColorResolvable
+      : "Orange";
     this.maxqueue = 30;
     this.musicClass = new Map();
   }
@@ -85,20 +86,18 @@ export default class BotClient extends Client {
     image?: string,
     thumbnail?: string,
     author?: { name: string, iconURL?: string, url?: string },
-    addField?: { name: string, value: string, inline?: boolean },
-    addFields?: EmbedFieldData[],
+    addFields?: EmbedField[],
     timestamp?: number | Date | undefined | null,
     footer?: { text: string, iconURL?: string },
     color?: ColorResolvable
-  }): MessageEmbed {
-    const embed = new MessageEmbed();
+  }): EmbedBuilder {
+    const embed = new EmbedBuilder();
     if (data.title) embed.setTitle(data.title);
     if (data.description) embed.setDescription(data.description);
     if (data.url) embed.setURL(data.url);
     if (data.image) embed.setImage(data.image);
     if (data.thumbnail) embed.setThumbnail(data.thumbnail);
     if (data.author) embed.setAuthor({ name: data.author.name, iconURL: data.author.iconURL, url: data.author.url });
-    if (data.addField) embed.addField(data.addField.name, data.addField.value, data.addField.inline);
     if (data.addFields) embed.addFields(data.addFields);
     if (data.timestamp) embed.setTimestamp(data.timestamp);
     if (data.footer) embed.setFooter({ text: data.footer.text, iconURL: data.footer.iconURL });
@@ -110,12 +109,12 @@ export default class BotClient extends Client {
     return embed;
   }
 
-  help(name: string, metadata: ChatInputApplicationCommandData, msgmetadata?: { name: string, des: string }[]): MessageEmbed | undefined {
+  help(name: string, metadata: ChatInputApplicationCommandData, msgmetadata?: { name: string, des: string }[]): EmbedBuilder | undefined {
     const prefix = this.prefix;
     var text = "";
     metadata.options?.forEach((opt) => {
       text += `/${name} ${opt.name}`;
-      if (opt.type === "SUB_COMMAND" && opt.options) {
+      if (opt.type === ApplicationCommandOptionType.Subcommand && opt.options) {
         if (opt.options.length > 1) {
           text = "";
           opt.options.forEach((opt2) => {

@@ -2,7 +2,7 @@ import "dotenv/config";
 import { client } from "../index";
 import MDB from "../database/Mysql";
 import { I, M } from "../aliases/discord.js";
-import { GuildMemberRoleManager, MessageEmbed, Permissions } from "discord.js";
+import { EmbedBuilder, GuildMemberRoleManager, PermissionsBitField } from "discord.js";
 
 /**
  * DB
@@ -11,8 +11,8 @@ import { GuildMemberRoleManager, MessageEmbed, Permissions } from "discord.js";
 
 export async function check_permission(msg: I | M): Promise<boolean> {
   if (process.env.ADMINID && (process.env.ADMINID === msg.member?.user.id)) return true;
-  let userper = msg.member?.permissions as Permissions;
-  if (userper) if (userper.has('ADMINISTRATOR')) return true;
+  let userper = msg.member?.permissions as PermissionsBitField;
+  if (userper) if (userper.has('Administrator')) return true;
   let guildDB = await MDB.get.guild(msg.guild!);
   if (!guildDB) return false;
   let guildrole = guildDB.role;
@@ -21,7 +21,7 @@ export async function check_permission(msg: I | M): Promise<boolean> {
   return false;
 }
 
-export const embed_permission: MessageEmbed = client.mkembed({
+export const embed_permission: EmbedBuilder = client.mkembed({
   description: `이 명령어를 사용할\n권한이 없습니다.`,
-  color: 'DARK_RED'
+  color: 'DarkRed'
 });

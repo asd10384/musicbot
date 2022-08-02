@@ -27,7 +27,7 @@ export default async function music(message: M, text: string) {
     embeds: [
       client.mkembed({
         title: `${searching[1]}`,
-        color: "DARK_RED"
+        color: "DarkRed"
       })
     ]
   }).then(m => client.msgdelete(m, 1000*10, true));

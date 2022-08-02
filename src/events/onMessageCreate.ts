@@ -1,10 +1,10 @@
 import { client, handler } from '..';
-import { Message } from 'discord.js';
+import { ChannelType, Message } from 'discord.js';
 import MDB from "../database/Mysql";
 import music from '../music/music';
 
 export default async function onMessageCreate (message: Message) {
-  if (message.author.bot || message.channel.type === 'DM') return;
+  if (message.author.bot || message.channel.type === ChannelType.DM) return;
   if (message.content.startsWith(client.prefix)) {
     const content = message.content.slice(client.prefix.length).trim();
     const args = content.split(/ +/g);
@@ -28,7 +28,7 @@ export default async function onMessageCreate (message: Message) {
         message.channel.send({ embeds: [
           client.mkembed({
             description: `**<@${message.author.id}>님 너무 빠르게 입력했습니다.**\n${((getcooldown - Date.now())/1000).toFixed(2)}초 뒤에 다시 사용해주세요.`,
-            color: "DARK_RED"
+            color: "DarkRed"
           })
         ] }).then(m => client.msgdelete(m, 0.75));
       } else {

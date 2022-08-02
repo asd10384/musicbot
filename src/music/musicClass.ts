@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { client } from "../index";
-import { Guild, MessageEmbed, TextChannel } from "discord.js";
+import { Guild, EmbedBuilder, TextChannel, ChannelType } from "discord.js";
 import { I, M, PM } from "../aliases/discord.js.js";
 import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, demuxProbe, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
 import ytdl from "ytdl-core";
@@ -155,6 +155,12 @@ export default class Music {
         return [ undefined, `플레이리스트를 찾을수 없습니다.`, undefined ];
       }
     } else {
+      // let filters = await ytsr.getFilters(text, {
+      //   gl: 'KO',
+      //   requestOptions: { agent }
+      // });
+      // let searchurl = filters.get("Type")?.get("Video")?.url;
+      // if (!searchurl) return [ undefined, "video", undefined ];
       let list = await ytsr(text, {
         gl: 'KO',
         requestOptions: { agent },
@@ -216,7 +222,7 @@ export default class Music {
     if (!guildDB) return this.stop(true, "play-notfoundguildDB");
     const channelid = guildDB.channelId;
     const msgchannel = this.guild.channels.cache.get(channelid) as TextChannel;
-    let voicechannel = getchannel(message);
+    let voicechannel = await getchannel(message);
     if (voicechannel) {
       if (getVoiceConnection(this.guild.id)) await entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
       let data: nowplay | undefined = await this.getdata(message, guildDB, getsearch, !!time);
@@ -232,7 +238,7 @@ export default class Music {
             client.mkembed({
               title: `오류발생`,
               description: `${checkv[1]}`,
-              color: "DARK_RED"
+              color: "DarkRed"
             })
           ] }).then(m => client.msgdelete(m, 1000*10, true));
           this.sendlog(`오류발생\n${checkv[1]}\n${data.url}`);
@@ -273,7 +279,7 @@ export default class Music {
             title: `오류발생`,
             description: '영상을 찾을수 없습니다.',
             footer: { text: `not found ytsource` },
-            color: "DARK_RED"
+            color: "DarkRed"
           })
         ] }).then(m => client.msgdelete(m, 3000, true));
         this.sendlog(`오류발생\n영상을 찾을수 없습니다.\n${data.url}`);
@@ -288,7 +294,7 @@ export default class Music {
             title: `오류발생`,
             description: '재생시도중 오류발생',
             footer: { text: `not set entersState` },
-            color: "DARK_RED"
+            color: "DarkRed"
           })
         ] }).then(m => client.msgdelete(m, 3000, true));
         this.sendlog(`오류발생\n재생시도중 오류발생\n${data.url}`);
@@ -315,7 +321,7 @@ export default class Music {
               title: `오류발생`,
               description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
               footer: { text: `connection error` },
-              color: "DARK_RED"
+              color: "DarkRed"
             })
           ] }).then(m => client.msgdelete(m, 3000, true));
           this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(connection error)`);
@@ -328,7 +334,7 @@ export default class Music {
               title: `오류발생`,
               description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
               footer: { text: `Player error` },
-              color: "DARK_RED"
+              color: "DarkRed"
             })
           ] }).then(m => client.msgdelete(m, 3000, true));
           this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(Player error)`);
@@ -341,7 +347,7 @@ export default class Music {
             title: `오류발생`,
             description: '영상 재생중 오류발생\n다시 시도해주세요.',
             footer: { text: `Catch error` },
-            color: "DARK_RED"
+            color: "DarkRed"
           })
         ] }).then(m => client.msgdelete(m, 3000, true));
         this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(Catch error)`);
@@ -354,7 +360,7 @@ export default class Music {
           client.mkembed({
             title: '음성채널을 찾을수 없습니다.',
             description: '음성채널에 들어가서 사용해주세요.',
-            color: "DARK_RED"
+            color: "DarkRed"
           })
         ] }).then(m => client.msgdelete(m, 1));
     }
@@ -368,7 +374,9 @@ export default class Music {
         if (this.notleave) clearInterval(this.notleave);
         this.notleave = setInterval(() => {
           if (this.players[0]?.player.state.status === AudioPlayerStatus.Paused) {
-            if (this.guild.me?.voice.channelId) entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+            this.guild.members.fetchMe({ cache: true }).then((me) => {
+              if (me?.voice.channelId) entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+            });
           } else {
             if (this.notleave) clearInterval(this.notleave);
           }
@@ -432,7 +440,9 @@ export default class Music {
     if (this.timeout) clearTimeout(this.timeout);
     this.setmsg();
     if (leave) {
-      this.guild.me?.voice?.disconnect();
+      this.guild.members.fetchMe({ cache: true }).then((me) => {
+        me?.voice?.disconnect();
+      });
     } else {
       this.sendlog(`stop 명령어 실행: ${text}`);
     }
@@ -454,7 +464,7 @@ export default class Music {
           let embed = this.setembed(guildDB, pause);
           if (!embed) return;
           let channel = this.guild.channels.cache.get(guildDB.channelId);
-          if (channel && channel.type === "GUILD_TEXT") channel.messages.cache.get(guildDB.msgId)?.edit({ content: text, embeds: [embed] }).catch((err) => {});
+          if (channel && channel.type === ChannelType.GuildText) channel.messages.cache.get(guildDB.msgId)?.edit({ content: text, embeds: [embed] }).catch((err) => {});
         }
       }).catch((err) => {});
     }, 50);
@@ -485,7 +495,7 @@ export default class Music {
     }
   }
 
-  setembed(guildDB: guild_type, pause?: boolean): MessageEmbed | undefined {
+  setembed(guildDB: guild_type, pause?: boolean): EmbedBuilder | undefined {
     try {
       let data: nowplay = this.nowplaying ? this.nowplaying : {
         author: "",
@@ -545,12 +555,11 @@ export default class Music {
     if (!guild) return;
     const channel = guild.channels.cache.get(LOGSC[1]);
     if (!channel) return;
-    if (channel.type !== "GUILD_TEXT") return;
-    const d = new Date();
+    if (channel.type !== ChannelType.GuildText) return;
     channel.send({ embeds: [ client.mkembed({
       author: {
         name: this.guild.name,
-        iconURL: `${this.guild.iconURL({ dynamic: true })}`
+        iconURL: `${this.guild.iconURL({ extension: "gif" }) || this.guild.iconURL({ extension: "webp" }) || this.guild.iconURL({ extension: "png" }) || this.guild.iconURL({ extension: "jpg" })}`
       },
       title: `${client.user?.username}`,
       description: `${text}`,

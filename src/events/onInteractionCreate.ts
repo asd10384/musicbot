@@ -1,4 +1,4 @@
-import { client, handler } from '..';
+import { client, handler } from '../index';
 import { Interaction } from 'discord.js';
 
 export default async function onInteractionCreate (interaction: Interaction) {

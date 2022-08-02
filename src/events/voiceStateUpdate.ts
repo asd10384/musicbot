@@ -16,7 +16,9 @@ export default function voiceStateUpdate(oldState: VoiceState, newState: VoiceSt
     } else {
       mc.stop(false, "voiceStateUpdate");
       mc.stopPlayer();
-      oldState.guild.me?.voice?.disconnect();
+      oldState.guild.members.fetchMe({ cache: true }).then((me) => {
+        me?.voice?.disconnect();
+      });
     }
   } else {
     botautopause(oldState.guild);

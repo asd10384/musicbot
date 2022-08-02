@@ -2,7 +2,7 @@ import { client } from "../index";
 import { check_permission as ckper, embed_permission as emper } from "../function/permission";
 import { Command } from "../interfaces/Command";
 import { I, D, M } from "../aliases/discord.js";
-import { Message, MessageEmbed } from "discord.js";
+import { Message, EmbedBuilder, ApplicationCommandOptionType } from "discord.js";
 import MDB, { guild_type } from "../database/Mysql";
 
 /**
@@ -21,17 +21,17 @@ export default class OptionCommand implements Command {
   visible = true;
   description = "set options";
   information = "설정";
-  aliases = [ "옵션", "setting" ];
-  metadata = <D>{
+  aliases: string[] = [ "옵션", "setting" ];
+  metadata: D = {
     name: this.name,
     description: this.description,
     options: [
       {
-        type: "SUB_COMMAND",
+        type: ApplicationCommandOptionType.Subcommand,
         name: "volume",
         description: "볼륨",
         options: [{
-          type: "INTEGER",
+          type: ApplicationCommandOptionType.Integer,
           name: "number",
           description: "값 (기본: 70)",
           minValue: 1,
@@ -39,21 +39,21 @@ export default class OptionCommand implements Command {
         }]
       },
       {
-        type: "SUB_COMMAND",
+        type: ApplicationCommandOptionType.Subcommand,
         name: "player",
         description: "노래를 누가 넣었는지 표시",
         options: [{
-          type: "BOOLEAN",
+          type: ApplicationCommandOptionType.Boolean,
           name: "boolean",
           description: "값 (기본: True)"
         }]
       },
       {
-        type: "SUB_COMMAND",
+        type: ApplicationCommandOptionType.Subcommand,
         name: "recommend",
         description: "노래가 다끝나면 자동으로 노래 재생",
         options: [{
-          type: "BOOLEAN",
+          type: ApplicationCommandOptionType.Boolean,
           name: "boolean",
           description: "값 (기본: False)"
         }]
@@ -67,17 +67,17 @@ export default class OptionCommand implements Command {
     if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
     const guildDB = await MDB.get.guild(interaction.guild!);
     if (!guildDB) return;
-    const cmd = interaction.options.getSubcommand();
-    if (cmd === "volume") {
-      const number = interaction.options.getInteger("number");
+    const cmd = interaction.options.data[0];
+    if (cmd.name === "volume") {
+      const number = cmd.options ? cmd.options[0]?.value as number : null;
       return await interaction.editReply({ embeds: [ await this.volume(interaction, guildDB, number) ] });
     }
-    if (cmd === "player") {
-      const boolean = interaction.options.getBoolean("boolean");
+    if (cmd.name === "player") {
+      const boolean = cmd.options ? cmd.options[0]?.value as boolean : null;
       return await interaction.editReply({ embeds: [ await this.player(interaction, guildDB, boolean) ] });
     }
-    if (cmd === "recommend") {
-      const boolean = interaction.options.getBoolean("boolean");
+    if (cmd.name === "recommend") {
+      const boolean = cmd.options ? cmd.options[0]?.value as boolean : null;
       return await interaction.editReply({ embeds: [ await this.recommend(interaction, guildDB, boolean) ] });
     }
   }
@@ -92,7 +92,7 @@ export default class OptionCommand implements Command {
     ] }).then(m => client.msgdelete(m, 2));
   }
 
-  async volume(message: M | I, guildDB: guild_type, number: number | null): Promise<MessageEmbed> {
+  async volume(message: M | I, guildDB: guild_type, number: number | null): Promise<EmbedBuilder> {
     if (number == null) return client.mkembed({
       title: `**현재 볼륨: ${guildDB.options.volume}%**`,
       footer: { text: "기본 볼륨: 70%" }
@@ -102,7 +102,7 @@ export default class OptionCommand implements Command {
       if (!val) return client.mkembed({
         title: `**볼륨 설정 실패**`,
         description: `설정 중 오류가 발생했습니다.`,
-        color: "DARK_RED"
+        color: "DarkRed"
       });
       const mc = client.getmc(message.guild!);
       mc.setVolume(number);
@@ -116,12 +116,12 @@ export default class OptionCommand implements Command {
       return client.mkembed({
         title: `**볼륨 설정 실패**`,
         description: `설정 중 오류가 발생했습니다.`,
-        color: "DARK_RED"
+        color: "DarkRed"
       });
     });
   }
 
-  async player(message: M | I, guildDB: guild_type, boolean: boolean | null): Promise<MessageEmbed> {
+  async player(message: M | I, guildDB: guild_type, boolean: boolean | null): Promise<EmbedBuilder> {
     if (boolean == null) return client.mkembed({
       title: `**현재 플레이어 표시: ${guildDB.options.player ? "True" : "False"}**`,
       footer: { text: "기본 플레이어 표시: True" }
@@ -131,7 +131,7 @@ export default class OptionCommand implements Command {
       if (!val) return client.mkembed({
         title: `**플레이어 표시 설정 실패**`,
         description: `설정 중 오류가 발생했습니다.`,
-        color: "DARK_RED"
+        color: "DarkRed"
       });
       return client.mkembed({
         title: `**플레이어 표시 설정완료**`,
@@ -142,12 +142,12 @@ export default class OptionCommand implements Command {
       return client.mkembed({
         title: `**플레이어 표시 설정 실패**`,
         description: `설정 중 오류가 발생했습니다.`,
-        color: "DARK_RED"
+        color: "DarkRed"
       });
     });
   }
 
-  async recommend(message: M | I, guildDB: guild_type, boolean: boolean | null): Promise<MessageEmbed> {
+  async recommend(message: M | I, guildDB: guild_type, boolean: boolean | null): Promise<EmbedBuilder> {
     if (boolean == null) return client.mkembed({
       title: `**현재 자동재생: ${guildDB.options.recommend ? "True" : "False"}**`,
       footer: { text: "기본 자동재생: False" }
@@ -157,7 +157,7 @@ export default class OptionCommand implements Command {
       if (!val) return client.mkembed({
         title: `**자동재생 설정 실패**`,
         description: `설정 중 오류가 발생했습니다.`,
-        color: "DARK_RED"
+        color: "DarkRed"
       });
       client.getmc(message.guild!).setmsg();
       return client.mkembed({
@@ -169,7 +169,7 @@ export default class OptionCommand implements Command {
       return client.mkembed({
         title: `**자동재생 설정 실패**`,
         description: `설정 중 오류가 발생했습니다.`,
-        color: "DARK_RED"
+        color: "DarkRed"
       });
     });
   }

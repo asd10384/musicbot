@@ -3,7 +3,7 @@ import { client } from "../index";
 import { check_permission as ckper, embed_permission as emper } from "../function/permission";
 import { Command } from "../interfaces/Command";
 import { I, D, M } from "../aliases/discord.js.js";
-import { TextChannel } from "discord.js";
+import { ApplicationCommandOptionType, ChannelType, TextChannel } from "discord.js";
 import MDB, { guild_type } from "../database/Mysql";
 import { DiscordGatewayAdapterCreator, joinVoiceChannel } from "@discordjs/voice";
 import { BOT_NUMBER } from "../database/Mysql";
@@ -23,33 +23,33 @@ export default class MusicCommand implements Command {
   visible = true;
   description = "play music";
   information = "디스코드에서 노래 재생";
-  aliases = [ "음악" ];
-  metadata = <D>{
+  aliases: string[] = [ "음악" ];
+  metadata: D = {
     name: this.name,
     description: this.description,
     options: [
       {
-        type: 'SUB_COMMAND',
+        type: ApplicationCommandOptionType.Subcommand,
         name: 'create_channel',
         description: 'Create a channel for the bot to use'
       },
       {
-        type: 'SUB_COMMAND',
+        type: ApplicationCommandOptionType.Subcommand,
         name: 'fix',
         description: 'error resolution'
       },
       {
-        type: 'SUB_COMMAND',
+        type: ApplicationCommandOptionType.Subcommand,
         name: 'search',
         description: 'search soung'
       },
       {
-        type: "SUB_COMMAND",
+        type: ApplicationCommandOptionType.Subcommand,
         name: "join",
         description: "bot join voice channel",
         options: [{
-          type: "CHANNEL",
-          channelTypes: [ "GUILD_VOICE", "GUILD_STAGE_VOICE" ],
+          type: ApplicationCommandOptionType.Channel,
+          channelTypes: [ ChannelType.GuildVoice, ChannelType.GuildStageVoice ],
           name: "channel",
           description: "set channel",
           required: true
@@ -61,13 +61,13 @@ export default class MusicCommand implements Command {
 
   /** 실행되는 부분 */
   async slashrun(interaction: I) {
-    const cmd = interaction.options.getSubcommand();
-    if (cmd === 'create_channel') {
+    const cmd = interaction.options.data[0];
+    if (cmd.name === 'create_channel') {
       if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
       let guildDB = await MDB.get.guild(interaction.guild!);
       return await interaction.editReply({ content: await this.create_channel(interaction, guildDB!) });
     }
-    if (cmd === 'fix') {
+    if (cmd.name === 'fix') {
       if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
       let guildDB = await MDB.get.guild(interaction.guild!);
       if (guildDB) {
@@ -75,8 +75,8 @@ export default class MusicCommand implements Command {
       }
       return await interaction.editReply({ content: "데이터베이스를 찾을수 없습니다." })
     }
-    if (cmd === "join") {
-      const channel = interaction.options.getChannel("channel", true);
+    if (cmd.name === "join") {
+      const channel = cmd.options![0].channel!;
       joinVoiceChannel({
         adapterCreator: interaction.guild!.voiceAdapterCreator as DiscordGatewayAdapterCreator,
         channelId: channel.id,
@@ -88,8 +88,9 @@ export default class MusicCommand implements Command {
 
   async create_channel(message: M | I, guildDB: guild_type): Promise<string> {
     if (!guildDB) return `데이터베이스 오류\n다시시도해주세요.`;
-    const channel = await message.guild?.channels.create(`MUSIC_CHANNEL${BOT_NUMBER}`, {
-      type: 'GUILD_TEXT',
+    const channel = await message.guild?.channels.create({
+      name: `MUSIC_CHANNEL${BOT_NUMBER}`,
+      type: ChannelType.GuildText,
       topic: `Type in chat to play`
     });
     const msg = await channel?.send({
@@ -127,8 +128,9 @@ export default class MusicCommand implements Command {
         } catch (err) {}
       });
     } else {
-      channel = await message.guild?.channels.create(`MUSIC_CHANNEL${BOT_NUMBER}`, {
-        type: 'GUILD_TEXT',
+      channel = await message.guild?.channels.create({
+        name: `MUSIC_CHANNEL${BOT_NUMBER}`,
+        type: ChannelType.GuildText,
         topic: `Type in chat to play`
       });
     }
