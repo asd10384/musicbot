@@ -6,11 +6,17 @@ export default function voiceStateUpdate(oldState: VoiceState, newState: VoiceSt
   if (newState.member!.id === client.user!.id && !newState.channelId) {
     const mc = client.getmc(oldState.guild);
     if (oldState.channelId && mc.players[0]?.player.state.status === AudioPlayerStatus.Paused) {
-      if (mc.checkautopause) {
+      if (mc.checkautopause && mc.setVoiceChannel && mc.lastpausetime+(1000*60*58) <= Date.now()) {
         joinVoiceChannel({
           guildId: oldState.guild.id,
           channelId: oldState.channelId!,
           adapterCreator: oldState.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator
+        });
+      } else {
+        mc.stop(false, "voiceStateUpdate");
+        mc.stopPlayer();
+        oldState.guild.members.fetchMe({ cache: true }).then((me) => {
+          me?.voice?.disconnect();
         });
       }
     } else {

@@ -1,8 +1,8 @@
 import "dotenv/config";
 import { client } from "../index";
-import { Guild, EmbedBuilder, TextChannel, ChannelType } from "discord.js";
+import { Guild, EmbedBuilder, TextChannel, ChannelType, VoiceBasedChannel } from "discord.js";
 import { I, M, PM } from "../aliases/discord.js.js";
-import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, demuxProbe, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, demuxProbe, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, VoiceConnectionStatus } from "@discordjs/voice";
 import ytdl from "ytdl-core";
 import ytpl from "ytpl";
 import ytsr from "ytsr";
@@ -41,9 +41,11 @@ export default class Music {
   queuenumber: number[];
   players: [ PlayerSubscription | undefined | null, AudioResource<any> | undefined | null ];
   timeout: NodeJS.Timeout | undefined;
+  setVoiceChannel: VoiceBasedChannel | undefined;
   notleave: NodeJS.Timeout | undefined;
   checkautopause: boolean;
   inputplaylist: boolean;
+  lastpausetime: number;
 
   constructor(guild: Guild) {
     this.guild = guild;
@@ -54,8 +56,10 @@ export default class Music {
     this.players = [ undefined, undefined ];
     this.timeout = undefined;
     this.notleave = undefined;
+    this.setVoiceChannel = undefined;
     this.checkautopause = false;
     this.inputplaylist = false;
+    this.lastpausetime = 0;
   }
 
   setqueuenumber(getqueuenumber: number[]) {
@@ -251,7 +255,7 @@ export default class Music {
       this.playing = true;
       this.setmsg();
       const connection = joinVoiceChannel({
-        adapterCreator: this.guild.voiceAdapterCreator! as DiscordGatewayAdapterCreator,
+        adapterCreator: this.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator,
         guildId: this.guild.id,
         channelId: voicechannel.id
       });
@@ -372,18 +376,34 @@ export default class Music {
         this.players[0].player.pause();
         if (getVoiceConnection(this.guild.id)) entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
         if (this.notleave) clearInterval(this.notleave);
+        this.guild.members.fetchMe({ cache: true }).then((me) => {
+          this.setVoiceChannel = me?.voice.channel || undefined;
+        });
+        this.lastpausetime = Date.now();
         this.notleave = setInterval(() => {
           if (this.players[0]?.player.state.status === AudioPlayerStatus.Paused) {
             this.guild.members.fetchMe({ cache: true }).then((me) => {
-              if (me?.voice.channelId) entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+              if (me?.voice.channelId) {
+                entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+              } else {
+                if (this.setVoiceChannel) try {
+                  joinVoiceChannel({
+                    guildId: this.guild.id,
+                    channelId: this.setVoiceChannel.id,
+                    adapterCreator: this.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator
+                  });
+                  entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+                } catch {}
+              }
             });
           } else {
             if (this.notleave) clearInterval(this.notleave);
           }
-        }, 1000*60);
+        }, 1000*30);
         this.setmsg(true);
       } else {
         this.players[0].player.unpause();
+        this.setVoiceChannel = undefined;
         if (this.notleave) {
           clearInterval(this.notleave);
           this.notleave = undefined;
@@ -418,7 +438,10 @@ export default class Music {
     await this.stop(false, "waitend");
     this.players[0]?.player.stop();
     this.timeout = setTimeout(() => {
-      if (!this.playing && this.queuenumber.length === 0) return this.stop(true, `${BOT_LEAVE_TIME}지남`);
+      if (!this.playing && this.queuenumber.length === 0) {
+        if (this.players[0]?.player.state.status === AudioPlayerStatus.Paused) return;
+        return this.stop(true, `${BOT_LEAVE_TIME}지남`);
+      }
     }, BOT_LEAVE_TIME);
     return;
   }
@@ -436,7 +459,9 @@ export default class Music {
     this.queuenumber = [];
     this.nowplaying = null;
     this.inputplaylist = false;
-    if (this.notleave) clearTimeout(this.notleave);
+    this.setVoiceChannel = undefined;
+    this.lastpausetime = 0;
+    if (this.notleave) clearInterval(this.notleave);
     if (this.timeout) clearTimeout(this.timeout);
     this.setmsg();
     if (leave) {
