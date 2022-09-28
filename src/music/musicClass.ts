@@ -158,6 +158,97 @@ export default class Music {
         this.inputplaylist = false;
         return [ undefined, `플레이리스트를 찾을수 없습니다.`, undefined ];
       }
+    } else if (url.billboardoo) {
+      let yid = url.billboardoo[1];
+      let checkv = await checkvideo({ url: `https://www.youtube.com/watch?v=${yid}` });
+      if (checkv[0]) return [ checkv[1], "video", undefined ];
+      return [ undefined, checkv[1], undefined ];
+    } else if (url.billboardoolist) {
+      let guildDB = await MDB.get.guild(this.guild);
+      if (!guildDB) return [ undefined, `데이터베이스 오류\n다시시도해주세요.`, undefined ];
+      this.inputplaylist = true;
+      const addedembed = await message.channel.send({ embeds: [
+        client.mkembed({
+          description: `<@${message.author.id}> 빌보두 플레이리스트 확인중...\n(노래가 많으면 많을수록 오래걸립니다.)`,
+          color: client.embedcolor
+        })
+      ] }).catch((err) => {
+        return undefined;
+      });
+      let getlist: (string|undefined)[] = [ url.billboardoolist[1] || undefined ];
+      getlist = getlist.concat(url.billboardoolist.input ? url.billboardoolist.input.replace(url.billboardoolist[0],"").trim().split(",") : [ undefined ]);
+      let list: {
+        title: string;
+        items: ytdl.videoInfo[]
+      } = {
+        title: "빌보두",
+        items: []
+      };
+      for (let yid of getlist) {
+        if (yid) {
+          let checkv = await checkvideo({ url: `https://www.youtube.com/watch?v=${yid}` });
+          if (checkv[0]) {
+            list.items.push(checkv[1]);
+          }
+        }
+      }
+      addedembed?.delete().catch((err) => {});
+      if (list && list.items && list.items.length > 0) {
+        if (client.debug) console.log(this.guild.name, list.title, list.items.length, (guildDB.options.listlimit) ? guildDB.options.listlimit : 300);
+        this.sendlog(`${list.title}: ${list.items.length}`);
+        const addembed = await message.channel.send({ embeds: [
+          client.mkembed({
+            title: `\` ${list.title} \` 플레이리스트 추가중...`,
+            description: `재생목록에 \` ${list.items.length} \` 곡 ${parmas?.shuffle ? "섞어서 " : ""}추가중`,
+            color: client.embedcolor
+          })
+        ] }).catch((err) => {
+          return undefined;
+        });
+        if (parmas?.shuffle) list.items = await fshuffle(list.items);
+        if (this.playing) {
+          this.queuenumber = this.queuenumber.concat(list.items.map((data, i) => {
+            return this.queue.length+i;
+          }));
+          this.queue = this.queue.concat(list.items.map((getdata) => {
+            let data = getdata.videoDetails;
+            return {
+              title: data.title,
+              duration: data.lengthSeconds,
+              author: data.author.name,
+              url: "https://youtu.be/"+data.videoId,
+              image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+              player: `<@${message.author.id}>`
+            }
+          }));
+          this.setmsg();
+          this.inputplaylist = false;
+          return [ undefined, `플레이리스트를 찾을수 없습니다.`, addembed ];
+        } else {
+          const output = list.items.shift()!;
+          this.queuenumber = this.queuenumber.concat(list.items.map((data, i) => {
+            return this.queue.length+i;
+          }));
+          this.queue = this.queue.concat(list.items.map((getdata) => {
+            let data = getdata.videoDetails;
+            return {
+              title: data.title,
+              duration: data.lengthSeconds,
+              author: data.author.name,
+              url: "https://youtu.be/"+data.videoId,
+              image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+              player: `<@${message.author.id}>`
+            }
+          }));
+          let checkv = await checkvideo({ url: output.videoDetails.video_url });
+          this.inputplaylist = false;
+          if (checkv[0]) return [ checkv[1], "video", addembed ];
+          return [ undefined, checkv[1], addembed ];
+        }
+      } else {
+        this.inputplaylist = false;
+        return [ undefined, `플레이리스트를 찾을수 없습니다.`, undefined ];
+      }
     } else {
       // let filters = await ytsr.getFilters(text, {
       //   gl: 'KO',
