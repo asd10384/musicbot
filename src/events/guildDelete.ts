@@ -1,11 +1,11 @@
 import "dotenv/config";
 import { Guild } from "discord.js";
 import { client } from "../index";
-import MDB from "../database/Mysql";
+import QDB from "../database/Quickdb";
 
 /** onReady 핸들러 */
 export default function guildDelete(guild: Guild) {
-  MDB.get.guild(guild).then((guildDB) => {
+  QDB.get(guild).then((guildDB) => {
     if (client.debug) {
       if (guildDB) {
         console.log(`서버 삭제 성공: ${guildDB.name}`);

@@ -5,10 +5,10 @@ import { CacheType, Message, ActionRowBuilder, EmbedBuilder, SelectMenuBuilder, 
 
 /**
  * DB
- * let guildDB = await MDB.get.guild(interaction);
+ * let guildDB = await QDB.get(interaction);
  * 
  * check permission(role)
- * if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
+ * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
  */
 
 /** help 명령어 */
@@ -26,7 +26,7 @@ export default class HelpCommand implements Command {
 
   /** 실행되는 부분 */
   async slashrun(interaction: I) {
-    return await interaction.editReply(this.gethelp());
+    return await interaction.followUp(this.gethelp());
   }
   async msgrun(message: Message, args: string[]) {
     return message.channel.send(this.gethelp()).then(m => client.msgdelete(m, 5));
@@ -45,8 +45,8 @@ export default class HelpCommand implements Command {
         .setFooter({ text: `도움말: /help` })
         .setColor('DarkRed');
     }
-    if (embed2) return await interaction.editReply({ embeds: [ embed, embed2 ] });
-    return await interaction.editReply({ embeds: [ embed ] });
+    if (embed2) return await interaction.followUp({ embeds: [ embed, embed2 ] });
+    return await interaction.followUp({ embeds: [ embed ] });
   }
 
   gethelp(): { embeds: EmbedBuilder[], components: ActionRowBuilder<SelectMenuBuilder>[] } {

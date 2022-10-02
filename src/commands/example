@@ -3,14 +3,14 @@ import { check_permission as ckper, embed_permission as emper } from "../functio
 import { Command } from "../interfaces/Command";
 import { I, D } from "../aliases/discord.js";
 import { Message, ActionRowBuilder, ButtonBuilder, EmbedBuilder, ApplicationCommandOptionType } from "discord.js";
-import MDB from "../database/Mysql";
+import QDB from "../database/Quickdb";
 
 /**
  * DB
- * let guildDB = await MDB.get.guild(interaction.guild!);
+ * let guildDB = await QDB.get(interaction.guild!);
  * 
  * check permission(role)
- * if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
+ * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
  * if (!(await ckper(message))) return message.channel.send({ embeds: [ emper ] }).then(m => client.msgdelete(m, 1));
  */
 
@@ -45,7 +45,7 @@ export default class ExampleCommand implements Command {
     const cmd = interaction.options.data[0];
     if (cmd.name === "test") {
       const data = cmd.options ? cmd.options[0]?.value : undefined;
-      if (data) return await interaction.editReply({ embeds: [
+      if (data) return await interaction.followUp({ embeds: [
         client.mkembed({
           title: data as string,
           description: data as string,
@@ -53,7 +53,7 @@ export default class ExampleCommand implements Command {
         })
       ] });
     }
-    return await interaction.editReply({ embeds: [
+    return await interaction.followUp({ embeds: [
       client.mkembed({
         title: `example`,
         description: `example`,

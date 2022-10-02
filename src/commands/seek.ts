@@ -9,7 +9,7 @@ import { entersState, getVoiceConnection, VoiceConnectionStatus } from "@discord
  * let guildDB = await MDB.get.guild(interaction);
  * 
  * check permission(role)
- * if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
+ * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
  */
 
 /** Seek 명령어 */
@@ -35,7 +35,7 @@ export default class SeekCommand implements Command {
   /** 실행되는 부분 */
   async slashrun(interaction: I) {
     let time = interaction.options.get('time', true).value as string;
-    return await interaction.editReply({ embeds: [ await this.seek(interaction, time) ] });
+    return await interaction.followUp({ embeds: [ await this.seek(interaction, time) ] });
   }
   async msgrun(message: M, args: string[]) {
     return await message.channel.send({ embeds: [ await this.seek(message, args.join(":")) ] });

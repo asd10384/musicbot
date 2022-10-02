@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { client, handler } from "../index";
-import MDB, { guild_type } from "../database/Mysql";
+import QDB, { guilddata } from "../database/Quickdb";
 import { ChannelType } from "discord.js";
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
@@ -35,7 +35,7 @@ export default function onReady() {
 }
 
 function musicfix() {
-  MDB.command(`select * from guild`).then((val: guild_type[]) => {
+  QDB.all().then((val: guilddata[]) => {
     val.forEach((guildDB) => {
       if (guildDB.id && guildDB.channelId) {
         const channel = client.guilds.cache.get(guildDB.id)?.channels.cache.get(guildDB.channelId);
@@ -56,7 +56,7 @@ function musicfix() {
               ]
             });
             guildDB.msgId = msg?.id ? msg.id : "null";
-            return await MDB.update.guild(guildDB.id, { channelId: guildDB.channelId, msgId: guildDB.msgId }).then((val) => {
+            return await QDB.set(guildDB.id, { channelId: guildDB.channelId, msgId: guildDB.msgId }).then((val) => {
               if (!val) return `데이터베이스 오류\n다시시도해주세요.`;
               msg?.react('⏯️');
               msg?.react('⏹️');

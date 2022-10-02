@@ -2,14 +2,14 @@ import { client } from "../index";
 import { Command } from "../interfaces/Command";
 import { I, D } from "../aliases/discord.js";
 import { ApplicationCommandOptionType, Guild } from "discord.js";
-import MDB, { guild_type } from "../database/Mysql";
+import QDB, { guilddata } from "../database/Quickdb";
 
 /**
  * DB
  * let guildDB = await MDB.get.guild(interaction);
  * 
  * check permission(role)
- * if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
+ * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
  */
 
 /** queue 명령어 */
@@ -35,15 +35,16 @@ export default class QueueCommand implements Command {
   /** 실행되는 부분 */
   async slashrun(interaction: I) {
     const getnumber = interaction.options.get('number') ? interaction.options.get('number')?.value as number : null;
-    let guildDB = await MDB.get.guild(interaction.guild!);
-    return await interaction.editReply({ embeds: [ this.list(interaction.guild!, guildDB, getnumber) ] });
+    let guildDB = await QDB.get(interaction.guild!);
+    return await interaction.followUp({ embeds: [ await this.list(interaction.guild!, guildDB, getnumber) ] });
   }
 
-  list(guild: Guild, guildDB: guild_type | void, getnumber: number | null) {
+  async list(guild: Guild, guildDB: guilddata, getnumber: number | null) {
     const mc = client.getmc(guild);
-    if (guildDB && mc.playing) {
+    const queue = await QDB.queue(guild.id);
+    if (mc.playing) {
       var list: { label: string, description: string, value: string }[] = [];
-      const number = Math.ceil(mc.queue.length / client.maxqueue);
+      const number = Math.ceil(queue.length / client.maxqueue);
       for (let i=0; i<number; i++) {
         list.push({ label: `${i+1}번`, description: `${(i*client.maxqueue)+1} ~ ${(i*client.maxqueue)+client.maxqueue}`, value: `${i}` });
       }
@@ -61,9 +62,8 @@ export default class QueueCommand implements Command {
           });
           let options = guildDB.options;
           var list2: string[] = [];
-          mc.queuenumber.forEach((num, i) => {
+          queue.forEach((data, i) => {
             if (!list2[Math.floor(i/client.maxqueue)]) list2[Math.floor(i/client.maxqueue)] = '';
-            let data = mc.queue[num-1];
             list2[Math.floor(i/client.maxqueue)] += `${i+1}. ${data.title} [${data.duration}]${(options.player) ? ` ~ ${data.player}` : ''}\n`;
           });
           return client.mkembed({

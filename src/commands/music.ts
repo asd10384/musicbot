@@ -4,16 +4,16 @@ import { check_permission as ckper, embed_permission as emper } from "../functio
 import { Command } from "../interfaces/Command";
 import { I, D, M } from "../aliases/discord.js.js";
 import { ApplicationCommandOptionType, ChannelType, TextChannel } from "discord.js";
-import MDB, { guild_type } from "../database/Mysql";
+import QDB, { guilddata } from "../database/Quickdb";
 import { DiscordGatewayAdapterCreator, joinVoiceChannel } from "@discordjs/voice";
-import { BOT_NUMBER } from "../database/Mysql";
+import { BOT_NUMBER } from "../database/Quickdb";
 
 /**
  * DB
  * let guildDB = await MDB.get.guild(interaction);
  * 
  * check permission(role)
- * if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
+ * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
  */
 
 /** Music 명령어 */
@@ -40,11 +40,6 @@ export default class MusicCommand implements Command {
       },
       {
         type: ApplicationCommandOptionType.Subcommand,
-        name: 'search',
-        description: 'search soung'
-      },
-      {
-        type: ApplicationCommandOptionType.Subcommand,
         name: "join",
         description: "bot join voice channel",
         options: [{
@@ -63,17 +58,12 @@ export default class MusicCommand implements Command {
   async slashrun(interaction: I) {
     const cmd = interaction.options.data[0];
     if (cmd.name === 'create_channel') {
-      if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
-      let guildDB = await MDB.get.guild(interaction.guild!);
-      return await interaction.editReply({ content: await this.create_channel(interaction, guildDB!) });
+      if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
+      return await interaction.followUp({ content: await this.create_channel(interaction, await QDB.get(interaction.guild!)) });
     }
     if (cmd.name === 'fix') {
-      if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
-      let guildDB = await MDB.get.guild(interaction.guild!);
-      if (guildDB) {
-        return await interaction.editReply({ content: await this.fix(interaction, guildDB) });
-      }
-      return await interaction.editReply({ content: "데이터베이스를 찾을수 없습니다." })
+      if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
+      return await interaction.followUp({ content: await this.fix(interaction, await QDB.get(interaction.guild!)) });
     }
     if (cmd.name === "join") {
       const channel = cmd.options![0].channel!;
@@ -82,11 +72,11 @@ export default class MusicCommand implements Command {
         channelId: channel.id,
         guildId: interaction.guildId!
       });
-      return await interaction.editReply({ content: "done!" });
+      return await interaction.followUp({ content: "done!" });
     }
   }
 
-  async create_channel(message: M | I, guildDB: guild_type): Promise<string> {
+  async create_channel(message: M | I, guildDB: guilddata): Promise<string> {
     if (!guildDB) return `데이터베이스 오류\n다시시도해주세요.`;
     const channel = await message.guild?.channels.create({
       name: `MUSIC_CHANNEL${BOT_NUMBER}`,
@@ -106,7 +96,7 @@ export default class MusicCommand implements Command {
     });
     guildDB.channelId = channel?.id ? channel.id : "null";
     guildDB.msgId = msg?.id ? msg.id : "null";
-    return await MDB.update.guild(guildDB.id, { channelId: guildDB.channelId, msgId: guildDB.msgId }).then((val) => {
+    return await QDB.set(guildDB.id, { channelId: guildDB.channelId, msgId: guildDB.msgId }).then((val) => {
       if (!val) return `데이터베이스 오류\n다시시도해주세요.`;
       msg?.react('⏯️');
       msg?.react('⏹️');
@@ -118,7 +108,7 @@ export default class MusicCommand implements Command {
     });
   }
 
-  async fix(message: M | I, guildDB: guild_type): Promise<string> {
+  async fix(message: M | I, guildDB: guilddata): Promise<string> {
     client.getmc(message.guild!).setinputplaylist(false);
     let channel = message.guild?.channels.cache.get(guildDB.channelId);
     if (channel) {
@@ -147,7 +137,7 @@ export default class MusicCommand implements Command {
     });
     guildDB.channelId = channel?.id ? channel.id : "null";
     guildDB.msgId = msg?.id ? msg.id : "null";
-    return await MDB.update.guild(guildDB.id, { channelId: guildDB.channelId, msgId: guildDB.msgId }).then((val) => {
+    return await QDB.set(guildDB.id, { channelId: guildDB.channelId, msgId: guildDB.msgId }).then((val) => {
       if (!val) return `데이터베이스 오류\n다시시도해주세요.`;
       msg?.react('⏯️');
       msg?.react('⏹️');

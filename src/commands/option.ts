@@ -3,14 +3,14 @@ import { check_permission as ckper, embed_permission as emper } from "../functio
 import { Command } from "../interfaces/Command";
 import { I, D, M } from "../aliases/discord.js";
 import { Message, EmbedBuilder, ApplicationCommandOptionType } from "discord.js";
-import MDB, { guild_type } from "../database/Mysql";
+import QDB, { guilddata } from "../database/Quickdb";
 
 /**
  * DB
- * let guildDB = await MDB.get.guild(interaction);
+ * let guildDB = await QDB.get(interaction);
  * 
  * check permission(role)
- * if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
+ * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
  * if (!(await ckper(message))) return message.channel.send({ embeds: [ emper ] }).then(m => client.msgdelete(m, 1));
  */
 
@@ -64,21 +64,20 @@ export default class OptionCommand implements Command {
 
   /** 실행되는 부분 */
   async slashrun(interaction: I) {
-    if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
-    const guildDB = await MDB.get.guild(interaction.guild!);
-    if (!guildDB) return;
+    if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
+    const guildDB = await QDB.get(interaction.guild!);
     const cmd = interaction.options.data[0];
     if (cmd.name === "volume") {
       const number = cmd.options ? cmd.options[0]?.value as number : null;
-      return await interaction.editReply({ embeds: [ await this.volume(interaction, guildDB, number) ] });
+      return await interaction.followUp({ embeds: [ await this.volume(interaction, guildDB, number) ] });
     }
     if (cmd.name === "player") {
       const boolean = cmd.options ? cmd.options[0]?.value as boolean : null;
-      return await interaction.editReply({ embeds: [ await this.player(interaction, guildDB, boolean) ] });
+      return await interaction.followUp({ embeds: [ await this.player(interaction, guildDB, boolean) ] });
     }
     if (cmd.name === "recommend") {
       const boolean = cmd.options ? cmd.options[0]?.value as boolean : null;
-      return await interaction.editReply({ embeds: [ await this.recommend(interaction, guildDB, boolean) ] });
+      return await interaction.followUp({ embeds: [ await this.recommend(interaction, guildDB, boolean) ] });
     }
   }
   async msgrun(message: Message, args: string[]) {
@@ -92,13 +91,13 @@ export default class OptionCommand implements Command {
     ] }).then(m => client.msgdelete(m, 2));
   }
 
-  async volume(message: M | I, guildDB: guild_type, number: number | null): Promise<EmbedBuilder> {
+  async volume(message: M | I, guildDB: guilddata, number: number | null): Promise<EmbedBuilder> {
     if (number == null) return client.mkembed({
       title: `**현재 볼륨: ${guildDB.options.volume}%**`,
       footer: { text: "기본 볼륨: 70%" }
     });
     guildDB.options.volume = number;
-    return await MDB.update.guild(guildDB.id, { options: JSON.stringify(guildDB.options) }).then((val) => {
+    return await QDB.set(guildDB.id, { options: guildDB.options }).then((val) => {
       if (!val) return client.mkembed({
         title: `**볼륨 설정 실패**`,
         description: `설정 중 오류가 발생했습니다.`,
@@ -121,13 +120,13 @@ export default class OptionCommand implements Command {
     });
   }
 
-  async player(message: M | I, guildDB: guild_type, boolean: boolean | null): Promise<EmbedBuilder> {
+  async player(message: M | I, guildDB: guilddata, boolean: boolean | null): Promise<EmbedBuilder> {
     if (boolean == null) return client.mkembed({
       title: `**현재 플레이어 표시: ${guildDB.options.player ? "True" : "False"}**`,
       footer: { text: "기본 플레이어 표시: True" }
     });
     guildDB.options.player = boolean;
-    return await MDB.update.guild(guildDB.id, { options: JSON.stringify(guildDB.options) }).then((val) => {
+    return await QDB.set(guildDB.id, { options: guildDB.options }).then((val) => {
       if (!val) return client.mkembed({
         title: `**플레이어 표시 설정 실패**`,
         description: `설정 중 오류가 발생했습니다.`,
@@ -147,13 +146,13 @@ export default class OptionCommand implements Command {
     });
   }
 
-  async recommend(message: M | I, guildDB: guild_type, boolean: boolean | null): Promise<EmbedBuilder> {
+  async recommend(message: M | I, guildDB: guilddata, boolean: boolean | null): Promise<EmbedBuilder> {
     if (boolean == null) return client.mkembed({
       title: `**현재 자동재생: ${guildDB.options.recommend ? "True" : "False"}**`,
       footer: { text: "기본 자동재생: False" }
     });
     guildDB.options.recommend = boolean;
-    return await MDB.update.guild(guildDB.id, { options: JSON.stringify(guildDB.options) }).then((val) => {
+    return await QDB.set(guildDB.id, { options: guildDB.options }).then((val) => {
       if (!val) return client.mkembed({
         title: `**자동재생 설정 실패**`,
         description: `설정 중 오류가 발생했습니다.`,

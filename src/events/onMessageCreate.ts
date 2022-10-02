@@ -1,6 +1,6 @@
 import { client, handler } from '..';
 import { ChannelType, Message } from 'discord.js';
-import MDB from "../database/Mysql";
+import QDB from "../database/Quickdb";
 import music from '../music/music';
 
 export default async function onMessageCreate (message: Message) {
@@ -20,8 +20,7 @@ export default async function onMessageCreate (message: Message) {
       client.msgdelete(message, 0);
     }
   } else {
-    const guildDB = await MDB.get.guild(message.guild!);
-    if (!guildDB) return;
+    const guildDB = await QDB.get(message.guild!);
     if (guildDB.channelId === message.channelId) {
       const getcooldown = handler.cooldown.get(`${message.guildId!}.${message.author.id}`);
       if (getcooldown && getcooldown > Date.now()) {

@@ -8,7 +8,7 @@ import { Message, ActionRowBuilder, ButtonBuilder, EmbedBuilder, ButtonStyle, Ac
  * let guildDB = await MDB.get.guild(interaction);
  * 
  * check permission(role)
- * if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
+ * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
  */
 
 /** 핑 명령어 */
@@ -27,13 +27,13 @@ export default class PingCommand implements Command {
 
   /** 실행되는 부분 */
   async slashrun(interaction: I) {
-    return await interaction.editReply(this.ping());
+    return await interaction.followUp(this.ping());
   }
   async msgrun(message: Message, args: string[]) {
     return message.channel.send(this.ping()).then(m => client.msgdelete(m, 3));
   }
   async buttonrun(interaction: B, args: string[]) {
-    return await interaction.editReply(this.ping());
+    return await interaction.followUp(this.ping());
   }
 
   ping(): { embeds: [ EmbedBuilder ], components: [ ActionRowBuilder<ButtonBuilder> ] } {

@@ -2,13 +2,14 @@ import { client } from "../index";
 import { Command } from "../interfaces/Command";
 import { I, D, M } from "../aliases/discord.js.js";
 import { ApplicationCommandOptionType, EmbedBuilder } from "discord.js";
+import QDB, { nowplay } from "../database/Quickdb";
 
 /**
  * DB
  * let guildDB = await MDB.get.guild(interaction);
  * 
  * check permission(role)
- * if (!(await ckper(interaction))) return await interaction.editReply({ embeds: [ emper ] });
+ * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
  */
 
 /** Remove 명령어 */
@@ -34,17 +35,18 @@ export default class RemoveCommand implements Command {
   /** 실행되는 부분 */
   async slashrun(interaction: I) {
     let number = interaction.options.get('number', true).value as number;
-    return await interaction.editReply({ embeds: [ this.remove(interaction, number) ] });
+    return await interaction.followUp({ embeds: [ await this.remove(interaction, number) ] });
   }
 
-  remove(message: M | I, number: number): EmbedBuilder {
+  async remove(message: M | I, number: number): Promise<EmbedBuilder> {
+    const queue = await QDB.queue(message.guildId!);
     const mc = client.getmc(message.guild!);
-    if (number > 0 && mc.queuenumber.length >= number) {
-      let list: number[] = [];
-      mc.queuenumber.forEach((num, i) => {
-        if (i !== number-1) list.push(num);
+    if (number > 0 && queue.length >= number) {
+      let list: nowplay[] = [];
+      queue.forEach((data, i) => {
+        if (i !== number-1) list.push(data);
       });
-      mc.setqueuenumber(list);
+      await QDB.setqueue(message.guildId!, list);
       mc.setmsg();
       return client.mkembed({
         title: `${number}번 노래 제거 완료`,
