@@ -7,6 +7,7 @@ import onMessageCreate from "./events/onMessageCreate";
 import onmessageReactionAdd from "./events/onmessageReactionAdd";
 import guildDelete from "./events/guildDelete";
 import voiceStateUpdate from "./events/voiceStateUpdate";
+import { existsSync, mkdirSync, readdirSync, unlink, unlinkSync } from "fs";
 
 // 봇 클라이언트 생성
 export const client = new BotClient();
@@ -17,4 +18,16 @@ client.onEvent('interactionCreate', onInteractionCreate);
 client.onEvent('messageCreate', onMessageCreate);
 client.onEvent('messageReactionAdd', onmessageReactionAdd);
 client.onEvent('guildDelete', guildDelete);
-client.onEvent('voiceStateUpdate', voiceStateUpdate)
+client.onEvent('voiceStateUpdate', voiceStateUpdate);
+
+export const MUSICFOLDER = process.env.MUSICFOLDER ? process.env.MUSICFOLDER.trim().endsWith("/") ? process.env.MUSICFOLDER.trim().slice(0,-1) : process.env.MUSICFOLDER : __dirname;
+
+try {
+  if (!existsSync(MUSICFOLDER)) {
+    mkdirSync(MUSICFOLDER);
+  } else {
+    readdirSync(MUSICFOLDER).forEach((file) => {
+      unlinkSync(MUSICFOLDER+"/"+file);
+    });
+  }
+} catch {};

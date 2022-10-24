@@ -1,8 +1,8 @@
 import "dotenv/config";
-import { client } from "../index";
+import { client, MUSICFOLDER } from "../index";
 import { Guild, EmbedBuilder, TextChannel, ChannelType, VoiceBasedChannel, GuildMember } from "discord.js";
 import { I, M, PM } from "../aliases/discord.js.js";
-import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, demuxProbe, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayer, AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, demuxProbe, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import ytdl from "ytdl-core";
 import ytpl from "ytpl";
 import ytsr from "ytsr";
@@ -14,11 +14,12 @@ import { fshuffle } from "./shuffle";
 import { parmas } from "./music";
 import checkurl from "./checkurl";
 import checkvideo from "./checkvideo";
+import fluentFFmpeg from "fluent-ffmpeg";
+import { createReadStream, unlink, unlinkSync } from "fs";
 
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
 const LOGSC = process.env.LOGSC ? process.env.LOGSC.trim().split(",").length === 2 ? process.env.LOGSC.trim().split(",") : undefined : undefined;
-
 
 export interface nowplay {
   title: string;
@@ -36,6 +37,8 @@ export default class Music {
   guild: Guild;
   playing: boolean;
   nowplaying: nowplay | null;
+  nowduration: number;
+  nowstatus: string;
   players: [ PlayerSubscription | undefined | null, AudioResource<any> | undefined | null ];
   timeout: NodeJS.Timeout | undefined;
   setVoiceChannel: VoiceBasedChannel | undefined;
@@ -48,6 +51,8 @@ export default class Music {
     this.guild = guild;
     this.playing = false;
     this.nowplaying = null;
+    this.nowduration = 0;
+    this.nowstatus = "재생되고있지않음";
     this.players = [ undefined, undefined ];
     this.timeout = undefined;
     this.notleave = undefined;
@@ -137,7 +142,7 @@ export default class Music {
         this.inputplaylist = false;
         return [ undefined, `플레이리스트를 찾을수 없습니다.`, undefined ];
       }
-    } else if (url.billboardoo) { // 빌보두 영상
+    } else if (url.billboardoo && !text.includes("?")) { // 빌보두 영상
       let yid = url.billboardoo[1];
       let checkv = await checkvideo({ url: `https://www.youtube.com/watch?v=${yid}` });
       if (checkv[0]) return [ checkv[1], "video", undefined ];
@@ -280,11 +285,110 @@ export default class Music {
     }
   }
 
+  async makefile(msgchannel: TextChannel | undefined, ytsource: internal.Readable, url: string, time?: number) {
+    return new Promise<string | undefined>((res, rej) => {
+      try {
+        const fstream = fluentFFmpeg({ source: ytsource }).toFormat('wav');
+        if (time) fstream.setStartTime(time);
+        fstream.setMaxListeners(0);
+        let name = this.guild.id;
+        // let name = `${this.guild.id}-${this.setfilename(url)}`;
+        fstream.saveToFile(`${MUSICFOLDER}/${name}.wav`);
+        fstream.once("end", () => {
+          return res(name);
+        });
+      } catch {
+        msgchannel?.send({ embeds: [
+          client.mkembed({
+            title: `오류발생`,
+            description: '파일생성중 오류발생',
+            footer: { text: `make file error` },
+            color: "DarkRed"
+          })
+        ] }).then(m => client.msgdelete(m, 3000, true));
+        return res(undefined);
+      }
+    });
+  }
+
+  async getytsource(msgchannel: TextChannel | undefined, data: nowplay, time: number | undefined, livestream: boolean) {
+    return new Promise<[internal.Readable | undefined, string | undefined]>(async (res, rej) => {
+      try {
+        let ytsource: internal.Readable | undefined = undefined;
+        ytsource = ytdl(data.url, {
+          filter: livestream ? undefined : "audioonly",
+          quality: livestream ? undefined : "highestaudio",
+          highWaterMark: 1 << 20,
+          dlChunkSize: 0,
+          liveBuffer: livestream ? 5000 : undefined,
+          requestOptions: { agent }
+        }).once('error', (err) => {
+          if (client.debug) console.log('ytdl-core오류1:', err);
+          return undefined;
+        });
+        if (!ytsource) {
+          msgchannel?.send({ embeds: [
+            client.mkembed({
+              title: `오류발생`,
+              description: '영상을 찾을수 없습니다.',
+              footer: { text: `not found ytsource` },
+              color: "DarkRed"
+            })
+          ] }).then(m => client.msgdelete(m, 3000, true));
+          this.sendlog(`오류발생\n영상을 찾을수 없습니다.\n(ytsource error)\n${data.url}`);
+          return res([ undefined, undefined ]);
+        }
+        ytsource.setMaxListeners(0);
+        if (!time) return res([ ytsource, undefined ]);
+        else {
+          const name = await this.makefile(msgchannel, ytsource, data.url, time);
+          if (!name) {
+            msgchannel?.send({ embeds: [
+              client.mkembed({
+                title: `오류발생`,
+                description: '파일생성 오류',
+                footer: { text: `makefile error` },
+                color: "DarkRed"
+              })
+            ] }).then(m => client.msgdelete(m, 3000, true));
+            this.sendlog(`오류발생\n파일생성 오류\n${data.url}`);
+            return res([ undefined, undefined ]);
+          }
+          const getfile = createReadStream(`${MUSICFOLDER}/${name}.wav`);
+          return res([ getfile, name ]);
+        }
+      } catch {
+        msgchannel?.send({ embeds: [
+          client.mkembed({
+            title: `오류발생`,
+            description: '영상을 찾을수 없습니다.',
+            footer: { text: `ytsource error` },
+            color: "DarkRed"
+          })
+        ] }).then(m => client.msgdelete(m, 3000, true));
+        this.sendlog(`오류발생\n영상을 찾을수 없습니다.\n(ytsource Catch error)\n${data.url}`);
+        return res([ undefined, undefined ]);
+      }
+    });
+  }
+
+  async setconnection(voicechannel: VoiceBasedChannel) {
+    return new Promise<VoiceConnection>((res, rej) => {
+      const connection = joinVoiceChannel({
+        adapterCreator: this.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator,
+        guildId: this.guild.id,
+        channelId: voicechannel.id
+      });
+      return res(connection);
+    })
+  }
+
   async play(message: M | PM | I | undefined, getsearch?: ytdl.videoInfo, time?: number) {
     let guildDB = await QDB.get(this.guild);
     const channelid = guildDB.channelId;
     const msgchannel = this.guild.channels.cache.get(channelid) as TextChannel;
     let voicechannel = await this.getchannel(message);
+    let livestream = false;
     if (voicechannel) {
       if (getVoiceConnection(this.guild.id)) await entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
       let data: nowplay | undefined = await this.getdata(message?.member?.user.id || "", getsearch, !!time);
@@ -294,6 +398,7 @@ export default class Music {
         data.image = data.image.replace(new RegExp(`${getq.join('\\.|')}\\.`, 'g'), 'hqdefault.').replace(/\?.+/g,"").trim();
         const checkv = await checkvideo({ url: data.url });
         if (checkv[0]) {
+          if (checkv[1].videoDetails.isLiveContent || checkv[1].videoDetails.lengthSeconds === "0") livestream = true;
           this.nowplaying = data;
         } else {
           msgchannel.send({ embeds: [
@@ -311,43 +416,18 @@ export default class Music {
         return this.waitend();
       }
       this.playing = true;
-      this.setmsg();
-      const connection = joinVoiceChannel({
-        adapterCreator: this.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator,
-        guildId: this.guild.id,
-        channelId: voicechannel.id
-      });
-      const Player = createAudioPlayer();
-      let ytsource: internal.Readable | undefined = undefined;
-      try {
-        ytsource = ytdl(data.url, {
-          filter: "audioonly",
-          quality: "highestaudio",
-          highWaterMark: 1 << 25,
-          dlChunkSize: 0,
-          begin: time ? time+"s" : undefined,
-          requestOptions: { agent }
-        }).once('error', (err) => {
-          if (client.debug) console.log('ytdl-core오류1:', err);
-          return undefined;
-        });
-      } catch {
-        ytsource = undefined;
-      }
-      if (!ytsource) {
-        // connection.destroy();
-        msgchannel.send({ embeds: [
-          client.mkembed({
-            title: `오류발생`,
-            description: '영상을 찾을수 없습니다.',
-            footer: { text: `not found ytsource` },
-            color: "DarkRed"
-          })
-        ] }).then(m => client.msgdelete(m, 3000, true));
-        this.sendlog(`오류발생\n영상을 찾을수 없습니다.\n${data.url}`);
+
+      this.nowstatus = "재생준비중";
+
+      // 노래 정보 가져오기
+      const ytsource = await this.getytsource(msgchannel, data, time, livestream);
+      if (!ytsource[0]) {
         return this.skipPlayer();
       }
-      ytsource.setMaxListeners(0);
+      const resource = createAudioResource(ytsource[0], { inlineVolume: true, inputType: StreamType.Arbitrary });
+      resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 100 : 0.7);
+      
+      const connection = await this.setconnection(voicechannel);
       try {
         await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
       } catch {
@@ -362,45 +442,115 @@ export default class Music {
         this.sendlog(`오류발생\n재생시도중 오류발생\n${data.url}`);
         return this.skipPlayer();
       }
-      const { stream, type } = await demuxProbe(ytsource);
-      const resource = createAudioResource(stream, { inlineVolume: true, inputType: type });
-      resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 100 : 0.7);
+      this.setmsg();
+
       try {
+        const Player = createAudioPlayer();
         Player.setMaxListeners(0).play(resource);
         this.sendlog(`${this.nowplaying.title}\n${this.nowplaying.url}\n재생 시작`);
         const subscription = connection.subscribe(Player);
         this.players = [ subscription, resource ];
+
+        this.nowduration = 0;
+        if (time) this.nowduration = time;
+        let addduration: NodeJS.Timer | undefined = undefined;
+        Player.on(AudioPlayerStatus.Playing, async (P) => {
+          this.nowstatus = "재생중";
+          if (!livestream) addduration = setInterval(() => {
+            this.nowduration++;
+          }, 1000);
+        });
+        Player.on(AudioPlayerStatus.Paused, async (P) => {
+          this.nowstatus = "일시정지됨";
+          if (addduration) clearInterval(addduration);
+        })
+        Player.on(AudioPlayerStatus.AutoPaused, async (P) => {
+          this.nowstatus = "일시정지됨";
+          if (addduration) clearInterval(addduration);
+        })
         Player.on(AudioPlayerStatus.Idle, async (P) => {
           // 봇 노래 재생 끝났을때
+          this.nowstatus = "재생중지됨";
+          if (addduration) clearInterval(addduration);
           Player.stop();
           await entersState(connection, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
           return this.play(message, undefined);
         });
-        connection.once('error', (err) => {
-          if (client.debug) console.log('connection오류:', err);
-          msgchannel.send({ embeds: [
-            client.mkembed({
-              title: `오류발생`,
-              description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
-              footer: { text: `connection error` },
-              color: "DarkRed"
-            })
-          ] }).then(m => client.msgdelete(m, 3000, true));
-          this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(connection error)`);
-          return this.skipPlayer();
+        connection.once('error', async (err) => {
+          this.nowstatus = "재생중지됨";
+          if (addduration) clearInterval(addduration);
+          if (connection.state.status != VoiceConnectionStatus.Ready && getVoiceConnection(this.guild.id)) {
+            if (client.debug) console.log('connection오류:', err);
+            msgchannel.send({ embeds: [
+              client.mkembed({
+                title: `오류발생`,
+                description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
+                footer: { text: `connection error` },
+                color: "DarkRed"
+              })
+            ] }).then(m => client.msgdelete(m, 3000, true));
+            this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(connection error)`);
+            return this.skipPlayer();
+          } else {
+            const check = await checkvideo({ url: data?.url });
+            if (check) {
+              const info = await ytdl.getInfo(data!.url, {
+                lang: "KR"
+              }).catch((err) => {
+                return undefined;
+              });
+              return this.play(undefined, info);
+            } else {
+              msgchannel.send({ embeds: [
+                client.mkembed({
+                  title: `오류발생`,
+                  description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
+                  footer: { text: `connection checkvideo error` },
+                  color: "DarkRed"
+                })
+              ] }).then(m => client.msgdelete(m, 3000, true));
+              this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(connection checkvideo error)`);
+              return this.skipPlayer();
+            }
+          }
         });
-        Player.once('error', (err) => {
-          if (client.debug) console.log('Player오류:', err);
-          msgchannel.send({ embeds: [
-            client.mkembed({
-              title: `오류발생`,
-              description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
-              footer: { text: `Player error` },
-              color: "DarkRed"
-            })
-          ] }).then(m => client.msgdelete(m, 3000, true));
-          this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(Player error)`);
-          return this.skipPlayer();
+        Player.once('error', async (err) => {
+          this.nowstatus = "재생중지됨";
+          if (addduration) clearInterval(addduration);
+          if (Player.state.status != AudioPlayerStatus.Playing) {
+            if (client.debug) console.log('Player오류:', err);
+            msgchannel.send({ embeds: [
+              client.mkembed({
+                title: `오류발생`,
+                description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
+                footer: { text: `Player error` },
+                color: "DarkRed"
+              })
+            ] }).then(m => client.msgdelete(m, 3000, true));
+            this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(Player error)`);
+            return this.skipPlayer();
+          } else {
+            const check = await checkvideo({ url: data?.url });
+            if (check) {
+              const info = await ytdl.getInfo(data!.url, {
+                lang: "KR"
+              }).catch((err) => {
+                return undefined;
+              });
+              return this.play(undefined, info);
+            } else {
+              msgchannel.send({ embeds: [
+                client.mkembed({
+                  title: `오류발생`,
+                  description: '영상을 재생할 수 없습니다.\n다시 시도해주세요.',
+                  footer: { text: `Player checkvideo error` },
+                  color: "DarkRed"
+                })
+              ] }).then(m => client.msgdelete(m, 3000, true));
+              this.sendlog(`${this.nowplaying?.title}\n${this.nowplaying?.url}\n재생중 오류\n(connection checkvideo error)`);
+              return this.skipPlayer();
+            }
+          }
         });
       } catch (err) {
         if (client.debug) console.log('Catch오류:', err);
@@ -434,7 +584,15 @@ export default class Music {
       this.players[1].volume?.setVolume(number / 100);
     }
   }
-  
+
+  np() {
+    return new Date(this.nowduration * 1000).toISOString().slice(14, 19);
+  }
+
+  playstatus() {
+    return this.nowstatus;
+  }
+
   pause() {
     if (this.players[0]) {
       if (this.players[0].player.state.status === AudioPlayerStatus.Playing) {
@@ -630,6 +788,21 @@ export default class Music {
   }
   az(n: number): string {
     return (n < 10) ? '0' + n : '' + n;
+  }
+
+  setfilename(url: string) {
+    url = url.replace("https://www.youtube.com/watch?v=","");
+    // var r = "000000";
+    // var data = `${this.guild.id}-${url}-${r}`;
+    // while(true) {
+    //   r = Math.floor(Math.random()*1000000).toString().padStart(6,"0");
+    //   data = `${this.guild.id}-${url}-${r}`;
+    //   if (!MUSICFOLDER_FILES.has(data)) {
+    //     MUSICFOLDER_FILES.add(data);
+    //     break;
+    //   }
+    // }
+    return `${this.guild.id}-${url}`;
   }
 
   sendlog(text: string) {

@@ -44,6 +44,7 @@ export default class SeekCommand implements Command {
   async seek(message: M | I, time: string): Promise<EmbedBuilder> {
     const mc = client.getmc(message.guild!);
     if (!mc.playing || !mc.nowplaying?.duration) return this.err(`재생중인 노래가 없습니다.`);
+    if (mc.nowplaying.duration === "0") return this.err(`실시간 영상은 시간을 변경할수 없습니다.`);
     const timelist = time.replace(/ +/g,"").split(":");
     if (timelist.length < 2 || timelist.length > 3) return this.err(`형식이 올바르지않습니다.\n00:00 or 00:00:00`);
     const sec = parseInt(mc.nowplaying.duration);
@@ -56,7 +57,8 @@ export default class SeekCommand implements Command {
     }
     return client.mkembed({
       title: `\` SEEK 실행 \``,
-      description: `노래를 ${time.replace(/ +/g,"")} 시간으로 이동`
+      description: `노래 시간이동 ${time.replace(/ +/g,"")}`,
+      footer: { text: "잠시뒤 설정한 시간으로 이동합니다." }
     });
   }
 

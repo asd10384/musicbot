@@ -14,7 +14,7 @@ import QDB, { guilddata } from "../database/Quickdb";
  * if (!(await ckper(message))) return message.channel.send({ embeds: [ emper ] }).then(m => client.msgdelete(m, 1));
  */
 
-/** 예시 명령어 */
+/** option 명령어 */
 export default class OptionCommand implements Command {
   /** 해당 명령어 설명 */
   name = "option";
