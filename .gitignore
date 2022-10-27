@@ -26,3 +26,7 @@ googlettsapi.json
 sound/ttssound/*
 
 test*.ts
+
+*.sqlite
+
+*.zip

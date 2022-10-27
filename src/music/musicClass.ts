@@ -16,6 +16,7 @@ import checkurl from "./checkurl";
 import checkvideo from "./checkvideo";
 import fluentFFmpeg from "fluent-ffmpeg";
 import { createReadStream, unlink, unlinkSync } from "fs";
+import recommand from "./recommand";
 
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
@@ -250,7 +251,7 @@ export default class Music {
       return [ undefined, `검색한 영상을 찾을수 없습니다.`, undefined ];
     }
   }
-  async getdata(userId: string, getsearch?: ytdl.videoInfo, checktime?: boolean): Promise<nowplay | undefined> {
+  async getdata(userId: string, getsearch?: ytdl.videoInfo, checktime?: boolean, checkskip?: boolean): Promise<nowplay | undefined> {
     let data: nowplay | undefined = undefined;
     if (getsearch && getsearch.videoDetails) {
       var getinfo = getsearch.videoDetails;
@@ -266,8 +267,15 @@ export default class Music {
       if (checktime) return this.nowplaying ? this.nowplaying : undefined;
       let queue = await QDB.queue(this.guild.id);
       let shi = queue.shift();
-      await QDB.setqueue(this.guild.id, queue);
-      if (shi) data = shi;
+      if (shi) {
+        data = shi;
+        await QDB.setqueue(this.guild.id, queue);
+      } else if (checkskip && (await QDB.get(this.guild)).options.recommend) {
+        this.setmsg(undefined, true);
+        let recom = await recommand(this.nowplaying ? this.nowplaying.url.replace("https://www.youtube.com/watch?v=","") : "7n9D8ZeOQv0");
+        // console.log(recom);
+        if (recom[0]) data = recom[0];
+      }
     }
     return data;
   }
@@ -383,7 +391,7 @@ export default class Music {
     })
   }
 
-  async play(message: M | PM | I | undefined, getsearch?: ytdl.videoInfo, time?: number) {
+  async play(message: M | PM | I | undefined, getsearch?: ytdl.videoInfo, time?: number, checkskip?: boolean) {
     let guildDB = await QDB.get(this.guild);
     const channelid = guildDB.channelId;
     const msgchannel = this.guild.channels.cache.get(channelid) as TextChannel;
@@ -391,7 +399,7 @@ export default class Music {
     let livestream = false;
     if (voicechannel) {
       if (getVoiceConnection(this.guild.id)) await entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
-      let data: nowplay | undefined = await this.getdata(message?.member?.user.id || "", getsearch, !!time);
+      let data: nowplay | undefined = await this.getdata(message?.member?.user.id || "", getsearch, !!time, checkskip);
       if (this.timeout) clearTimeout(this.timeout);
       if (data) {
         const getq = [ "maxresdefault", "sddefault", "hqdefault", "mqdefault", "default", "0", "1", "2", "3" ];
@@ -666,7 +674,7 @@ export default class Music {
   async skipPlayer() {
     if (getVoiceConnection(this.guild.id)) {
       await entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
-      this.play(undefined, undefined);
+      this.play(undefined, undefined, undefined, true);
     }
   }
 
@@ -696,19 +704,19 @@ export default class Music {
     }
   }
 
-  setmsg(pause?: boolean) {
+  setmsg(pause?: boolean, waitrecom?: boolean) {
     setTimeout(() => {
       QDB.get(this.guild).then(async (guildDB) => {
         if (guildDB) {
           let text = await this.setlist(guildDB);
           if (!text) return;
-          let embed = await this.setembed(guildDB, pause);
+          let embed = await this.setembed(guildDB, pause, waitrecom);
           if (!embed) return;
           let channel = this.guild.channels.cache.get(guildDB.channelId);
           if (channel && channel.type === ChannelType.GuildText) channel.messages.cache.get(guildDB.msgId)?.edit({ content: text, embeds: [embed] }).catch(() => {});
         }
       }).catch((err) => {});
-    }, 50);
+    }, 15);
   }
   async setlist(guildDB: guilddata): Promise<string | undefined> {
     try {
@@ -737,7 +745,7 @@ export default class Music {
     }
   }
 
-  async setembed(guildDB: guilddata, pause?: boolean): Promise<EmbedBuilder | undefined> {
+  async setembed(guildDB: guilddata, pause?: boolean, waitrecom?: boolean): Promise<EmbedBuilder | undefined> {
     try {
       let data: nowplay = this.nowplaying ? this.nowplaying : {
         author: "",
@@ -761,6 +769,12 @@ export default class Music {
         color: client.embedcolor
       });
       if (this.playing && guildDB.options.player) em.setDescription(`노래 요청자: ${data.player}`);
+      if (waitrecom) {
+        em.setTitle(`**다음노래 자동선택중...**.`)
+          .setDescription(`노래 요청자: 자동재생`)
+          .setURL(this.nowplaying?.url || "")
+          .setImage(this.nowplaying?.image || "");
+      }
       if (this.playing) {
         em.setFooter({ text: `대기열: ${(await QDB.queue(this.guild.id)).length}개 | Volume: ${guildDB.options.volume}%${guildDB.options.recommend ? " | 자동재생: 활성화" : ""}${(pause) ? ` | 노래가 일시중지 되었습니다.` : ''}` });
       } else {
