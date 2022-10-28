@@ -13,15 +13,15 @@ export default function voiceStateUpdate(oldState: VoiceState, newState: VoiceSt
           adapterCreator: oldState.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator
         });
       } else {
-        mc.stop(false, "voiceStateUpdate");
         mc.stopPlayer();
+        mc.stop(false, "voiceStateUpdate");
         oldState.guild.members.fetchMe({ cache: true }).then((me) => {
           me?.voice?.disconnect();
         });
       }
     } else {
-      mc.stop(false, "voiceStateUpdate");
       mc.stopPlayer();
+      mc.stop(false, "voiceStateUpdate");
       oldState.guild.members.fetchMe({ cache: true }).then((me) => {
         me?.voice?.disconnect();
       });

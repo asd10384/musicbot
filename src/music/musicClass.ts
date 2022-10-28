@@ -707,10 +707,8 @@ export default class Music {
   }
 
   stopPlayer() {
-    if (this.players[0]) {
-      this.players[0].player.stop();
-      this.players = [ undefined, undefined ];
-    }
+    this.players[0]?.player.stop();
+    this.players = [ undefined, undefined ];
   }
 
   setmsg(pause?: boolean, waitrecom?: boolean) {
