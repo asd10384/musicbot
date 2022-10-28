@@ -14,10 +14,10 @@ export default async function recommand(recomlist: string[], vid: string): Promi
 
   const getplid = await first(vid);
   if (!getplid[0]) return [ undefined, undefined, getplid[2] ];
-  console.log(getplid);
+  // console.log(getplid);
   const getvid = await second(vid, getplid[0], getplid[1], recomlist);
   if (!getvid[0]) return [ undefined, undefined, getvid[1] ];
-  console.log(getvid);
+  // console.log(getvid);
   let checkv = await checkvideo({ url: `https://www.youtube.com/watch?v=${getvid[0]}` });
   if (checkv[0]) {
     let getinfo = checkv[1].videoDetails;
