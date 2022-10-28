@@ -102,6 +102,7 @@ export default class MusicCommand implements Command {
       msg?.react('⏹️');
       msg?.react('⏭️');
       msg?.react('🔀');
+      msg?.react('<:auto:1035604533532954654>');
       return `<#${channel?.id!}> creation complete!`;
     }).catch((err) => {
       return `데이터베이스 오류\n다시시도해주세요.`;
@@ -143,6 +144,7 @@ export default class MusicCommand implements Command {
       msg?.react('⏹️');
       msg?.react('⏭️');
       msg?.react('🔀');
+      msg?.react('<:auto:1035604533532954654>');
       client.getmc(msg.guild!).stop(true, "command-music-fix");
       return `Error correction completed!`;
     }).catch((err) => {

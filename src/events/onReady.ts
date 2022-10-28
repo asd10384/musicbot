@@ -62,6 +62,7 @@ function musicfix() {
               msg?.react('⏹️');
               msg?.react('⏭️');
               msg?.react('🔀');
+              msg?.react('<:auto:1035604533532954654>');
               if (msg?.guild) {
                 const mc = client.getmc(msg.guild);
                 mc.stop(true, "onReady");

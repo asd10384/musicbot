@@ -33,6 +33,13 @@ export default async function onmessageReactionAdd (reaction: MessageReaction | 
         await shuffle(reaction.message);
       }
     }
+    if (name === 'auto') {
+      await QDB.set(guildDB.id, { options: {
+        ...guildDB.options,
+        recommend: !guildDB.options.recommend
+      } });
+      mc.setmsg();
+    }
     reaction.users.remove(user.id);
   }
 }
