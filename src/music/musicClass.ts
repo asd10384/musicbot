@@ -277,7 +277,7 @@ export default class Music {
         let vid = this.nowplaying ? this.nowplaying.url.replace("https://www.youtube.com/watch?v=","") : "7n9D8ZeOQv0";
         this.recomlist.push(vid);
         let recom = await recommand(this.recomlist, vid);
-        console.log(recom);
+        // console.log(recom);
         if (recom[0]) {
           data = recom[1];
         } else {
