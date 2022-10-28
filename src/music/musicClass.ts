@@ -47,6 +47,7 @@ export default class Music {
   checkautopause: boolean;
   inputplaylist: boolean;
   lastpausetime: number;
+  recomlist: string[];
 
   constructor(guild: Guild) {
     this.guild = guild;
@@ -61,6 +62,7 @@ export default class Music {
     this.checkautopause = false;
     this.inputplaylist = false;
     this.lastpausetime = 0;
+    this.recomlist = [];
   }
 
   setinputplaylist(getinputplaylist: boolean) {
@@ -272,9 +274,15 @@ export default class Music {
         await QDB.setqueue(this.guild.id, queue);
       } else if (checkskip && (await QDB.get(this.guild)).options.recommend) {
         this.setmsg(undefined, true);
-        let recom = await recommand(this.nowplaying ? this.nowplaying.url.replace("https://www.youtube.com/watch?v=","") : "7n9D8ZeOQv0");
-        // console.log(recom);
-        if (recom[0]) data = recom[0];
+        let vid = this.nowplaying ? this.nowplaying.url.replace("https://www.youtube.com/watch?v=","") : "7n9D8ZeOQv0";
+        this.recomlist.push(vid);
+        let recom = await recommand(this.recomlist, vid);
+        console.log(recom);
+        if (recom[0]) {
+          data = recom[1];
+        } else {
+          this.recomlist = [];
+        }
       }
     }
     return data;
@@ -684,6 +692,7 @@ export default class Music {
     this.inputplaylist = false;
     this.setVoiceChannel = undefined;
     this.lastpausetime = 0;
+    this.recomlist = [];
     if (this.notleave) clearInterval(this.notleave);
     if (this.timeout) clearTimeout(this.timeout);
     await QDB.setqueue(this.guild.id, []);

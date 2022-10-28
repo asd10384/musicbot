@@ -34,7 +34,7 @@ export default async function onMessageCreate (message: Message) {
         handler.cooldown.set(`${message.guildId!}.${message.author.id}`, Date.now()+1000*2);
         music(message, message.content.trim());
       }
-      client.msgdelete(message, 350, true);
+      client.msgdelete(message, 400, true);
     }
   }
 }
