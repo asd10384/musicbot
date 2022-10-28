@@ -490,7 +490,7 @@ export default class Music {
           if (addduration) clearInterval(addduration);
           Player.stop();
           await entersState(connection, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
-          return this.play(message, undefined);
+          return this.play(message, undefined, undefined, true);
         });
         connection.once('error', async (err) => {
           this.nowstatus = "재생중지됨";
