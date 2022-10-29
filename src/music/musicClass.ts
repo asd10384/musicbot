@@ -49,6 +49,7 @@ export default class Music {
   inputplaylist: boolean;
   lastpausetime: number;
   recomlist: string[];
+  canrecom: boolean;
 
   constructor(guild: Guild) {
     this.guild = guild;
@@ -64,10 +65,15 @@ export default class Music {
     this.inputplaylist = false;
     this.lastpausetime = 0;
     this.recomlist = [];
+    this.canrecom = true;
   }
 
   setinputplaylist(getinputplaylist: boolean) {
     this.inputplaylist = getinputplaylist;
+  }
+
+  setcanrecom(getcanrecom: boolean) {
+    this.canrecom = getcanrecom;
   }
 
   async search(message: M, text: string, parmas?: parmas): Promise<[ytdl.videoInfo, Vtype, M | undefined ] | [ undefined, string, M | undefined ]> {
@@ -260,7 +266,7 @@ export default class Music {
       return [ undefined, `검색한 영상을 찾을수 없습니다.`, undefined ];
     }
   }
-  async getdata(userId: string, getsearch?: ytdl.videoInfo, checktime?: boolean, checkskip?: boolean): Promise<nowplay | undefined> {
+  async getdata(userId: string, getsearch?: ytdl.videoInfo, checktime?: boolean): Promise<nowplay | undefined> {
     let data: nowplay | undefined = undefined;
     if (getsearch && getsearch.videoDetails) {
       var getinfo = getsearch.videoDetails;
@@ -279,7 +285,7 @@ export default class Music {
       if (shi) {
         data = shi;
         await QDB.setqueue(this.guild.id, queue);
-      } else if (checkskip && (await QDB.get(this.guild)).options.recommend) {
+      } else if (this.canrecom && (await QDB.get(this.guild)).options.recommend) {
         this.setmsg(undefined, true);
         let vid = this.nowplaying ? this.nowplaying.url.replace("https://www.youtube.com/watch?v=","") : "7n9D8ZeOQv0";
         this.recomlist.push(vid);
@@ -406,7 +412,7 @@ export default class Music {
     })
   }
 
-  async play(message: M | PM | I | undefined, getsearch?: ytdl.videoInfo, time?: number, checkskip?: boolean) {
+  async play(message: M | PM | I | undefined, getsearch?: ytdl.videoInfo, time?: number) {
     let guildDB = await QDB.get(this.guild);
     const channelid = guildDB.channelId;
     const msgchannel = this.guild.channels.cache.get(channelid) as TextChannel;
@@ -414,7 +420,8 @@ export default class Music {
     let livestream = false;
     if (voicechannel) {
       if (getVoiceConnection(this.guild.id)) await entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
-      let data: nowplay | undefined = await this.getdata(message?.member?.user.id || "", getsearch, !!time, checkskip);
+      let data: nowplay | undefined = await this.getdata(message?.member?.user.id || "", getsearch, !!time);
+      this.canrecom = true;
       if (this.timeout) clearTimeout(this.timeout);
       if (data) {
         const getq = [ "maxresdefault", "sddefault", "hqdefault", "mqdefault", "default", "0", "1", "2", "3" ];
@@ -478,26 +485,30 @@ export default class Music {
         if (time) this.nowduration = time;
         let addduration: NodeJS.Timer | undefined = undefined;
         Player.on(AudioPlayerStatus.Playing, async (P) => {
+          this.canrecom = true;
           this.nowstatus = "재생중";
           if (!livestream) addduration = setInterval(() => {
             this.nowduration++;
           }, 1000);
         });
         Player.on(AudioPlayerStatus.Paused, async (P) => {
+          this.canrecom = true;
           this.nowstatus = "일시정지됨";
           if (addduration) clearInterval(addduration);
         })
         Player.on(AudioPlayerStatus.AutoPaused, async (P) => {
+          this.canrecom = true;
           this.nowstatus = "일시정지됨";
           if (addduration) clearInterval(addduration);
         })
         Player.on(AudioPlayerStatus.Idle, async (P) => {
           // 봇 노래 재생 끝났을때
+          this.canrecom = true;
           this.nowstatus = "재생중지됨";
           if (addduration) clearInterval(addduration);
           Player.stop();
           await entersState(connection, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
-          return this.play(message, undefined, undefined, true);
+          return this.play(message, undefined, undefined);
         });
         connection.once('error', async (err) => {
           this.nowstatus = "재생중지됨";
@@ -689,7 +700,8 @@ export default class Music {
   async skipPlayer() {
     if (getVoiceConnection(this.guild.id)) {
       await entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
-      this.play(undefined, undefined, undefined, true);
+      this.canrecom = true;
+      this.play(undefined, undefined, undefined);
     }
   }
 
@@ -700,6 +712,7 @@ export default class Music {
     this.setVoiceChannel = undefined;
     this.lastpausetime = 0;
     this.recomlist = [];
+    this.canrecom = true;
     if (this.notleave) clearInterval(this.notleave);
     if (this.timeout) clearTimeout(this.timeout);
     await QDB.setqueue(this.guild.id, []);
@@ -714,6 +727,7 @@ export default class Music {
   }
 
   stopPlayer() {
+    this.canrecom = false;
     this.players[0]?.player.stop();
     this.players = [ undefined, undefined ];
   }

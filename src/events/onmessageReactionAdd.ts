@@ -23,6 +23,7 @@ export default async function onmessageReactionAdd (reaction: MessageReaction | 
     }
     if (name === '⏹️') {
       await QDB.setqueue(reaction.message.guildId, []);
+      mc.setcanrecom(false);
       mc.players[0]?.player.stop();
     }
     if (name === '⏭️') {
