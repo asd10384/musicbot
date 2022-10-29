@@ -30,3 +30,5 @@ test*.ts
 *.sqlite
 
 *.zip
+
+test_file

@@ -17,6 +17,7 @@ import checkvideo from "./checkvideo";
 import fluentFFmpeg from "fluent-ffmpeg";
 import { createReadStream, unlink, unlinkSync } from "fs";
 import recommand from "./recommand";
+import getytmusic from "./getytmusic";
 
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
@@ -236,6 +237,12 @@ export default class Music {
       // });
       // let searchurl = filters.get("Type")?.get("Video")?.url;
       // if (!searchurl) return [ undefined, "video", undefined ];
+      let getytvid = await getytmusic(text);
+      if (getytvid[0]) {
+        let checkv = await checkvideo({ url: `https://www.youtube.com/watch?v=${getytvid[0]}` });
+        if (checkv[0]) return [ checkv[1], "video", undefined ];
+        return [ undefined, checkv[1], undefined ];
+      }
       let list = await ytsr(text, {
         gl: 'KO',
         requestOptions: { agent },
