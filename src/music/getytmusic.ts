@@ -35,12 +35,27 @@ export default async function getytmusic(query: string) {
       let d1 = res2.data?.contents?.tabbedSearchResultsRenderer?.tabs;
       if (d1 && d1[0]) {
         let d2: any[] = d1[0].tabRenderer?.content?.sectionListRenderer?.contents;
-        let d3 = d2.filter(d => d.musicShelfRenderer?.title?.runs[0]?.text === "노래");
+        let d3 = d2.filter(d => d.musicShelfRenderer?.title?.runs[0]?.text === "상위 검색결과");
         if (d3 && d3[0]) {
-          let d4 = d3[0].musicShelfRenderer?.contents
+          let d4 = d3[0].musicShelfRenderer?.contents;
           if (d4 && d4[0]) {
-            let d5 = d4[0].musicResponsiveListItemRenderer?.playlistItemData?.videoId;
-            if (d5) return res([ d5, "" ]);
+            let d5: any[] = d4[0].musicResponsiveListItemRenderer?.flexColumns;
+            let d6 = d5.filter(d => d.musicResponsiveListItemFlexColumnRenderer?.text?.runs[0]?.text === "노래");
+            if (d6 && d6[0]) {
+              let d7 = d3[0].musicShelfRenderer?.contents;
+              if (d7 && d7[0]) {
+                let d8 = d7[0].musicResponsiveListItemRenderer?.playlistItemData?.videoId;
+                if (d8) return res([ d8, "" ]);
+              }
+            }
+          }
+        }
+        let d3_2 = d2.filter(d => d.musicShelfRenderer?.title?.runs[0]?.text === "노래");
+        if (d3_2 && d3_2[0]) {
+          let d4_2 = d3_2[0].musicShelfRenderer?.contents
+          if (d4_2 && d4_2[0]) {
+            let d5_2 = d4_2[0].musicResponsiveListItemRenderer?.playlistItemData?.videoId;
+            if (d5_2) return res([ d5_2, "" ]);
           }
         }
       }

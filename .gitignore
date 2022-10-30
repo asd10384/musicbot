@@ -32,3 +32,5 @@ test*.ts
 *.zip
 
 test_file
+
+src/commands/admin.ts
