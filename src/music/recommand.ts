@@ -64,24 +64,25 @@ async function first(vid: string) {
       },
       responseType: "json"
     }).then(async (res2) => {
-      let d1 = res2.data?.contents?.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer?.watchNextTabbedResultsRenderer?.tabs;
-      if (d1 && d1[0]) {
-        let d2 = d1[0].tabRenderer?.content?.musicQueueRenderer?.content?.playlistPanelRenderer?.contents;
-        if (d2 && d2[0]) {
-          let d3 = d2[0].playlistPanelVideoRenderer?.menu?.menuRenderer?.items;
-          if (!d3) d3 = d2[0].playlistPanelVideoWrapperRenderer?.primaryRenderer?.playlistPanelVideoRenderer?.menu?.menuRenderer?.items;
-          if (d3 && d3[0]) {
-            let d4 = d3[0].menuNavigationItemRenderer?.navigationEndpoint?.watchEndpoint?.playlistId;
-            let d5 = d3[0].menuNavigationItemRenderer?.navigationEndpoint?.watchEndpoint?.params;
-            if (d4) return res([ d4, d5 ? d5 : "wAEB", "" ]);
+      try {
+        let d1 = res2.data?.contents?.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer?.watchNextTabbedResultsRenderer?.tabs[0]?.tabRenderer?.content?.musicQueueRenderer?.content?.playlistPanelRenderer?.contents;
+        if (d1 && d1[0]) {
+          let d2 = d1[0].playlistPanelVideoRenderer?.menu?.menuRenderer?.items;
+          if (!d2) d2 = d1[0].playlistPanelVideoWrapperRenderer?.primaryRenderer?.playlistPanelVideoRenderer?.menu?.menuRenderer?.items;
+          if (d2 && d2[0]) {
+            let d3 = d2[0].menuNavigationItemRenderer?.navigationEndpoint?.watchEndpoint?.playlistId;
+            let d4 = d2[0].menuNavigationItemRenderer?.navigationEndpoint?.watchEndpoint?.params;
+            if (d3) return res([ d3, d4 ? d4 : "wAEB", "" ]);
           }
         }
+        return res([ undefined, "", "추천영상을 찾을수없음1" ]);
+      } catch {
+        return res([ undefined, "", "추천영상을 찾을수없음15" ]);
       }
-      return res([ undefined, "", "추천영상을 찾을수없음1" ]);
     }).catch((err) => {
-      console.log(err);
+      // console.log(err);
       return res([ undefined, "", "키를 찾을수없음1" ]);
-    })
+    });
   });
 }
 async function second(vid: string, plid: string, params: string, recomlist: string[]) {
@@ -116,21 +117,20 @@ async function second(vid: string, plid: string, params: string, recomlist: stri
       },
       responseType: "json"
     }).then(async (res2) => {
-      let d1 = res2.data?.contents?.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer?.watchNextTabbedResultsRenderer?.tabs;
-      if (d1 && d1[0]) {
-        let d2 = d1[0].tabRenderer?.content?.musicQueueRenderer?.content?.playlistPanelRenderer?.contents;
+      try {
+        let d1 = res2.data?.contents?.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer?.watchNextTabbedResultsRenderer?.tabs[0]?.tabRenderer?.content?.musicQueueRenderer?.content?.playlistPanelRenderer?.contents;
         let getvid: string | undefined = undefined;
         let alr: number[] = [];
-        for (let i=1; i<d2.length; i++) {
+        for (let i=1; i<d1.length; i++) {
           let r = i;
           if (r<=3) r = Math.floor((Math.random()*3)+1);
           if (alr.includes(r)) {
             continue;
           } else {
             alr.push(r);
-            if (d2 && d2[r]) {
-              let d3 = d2[r].playlistPanelVideoWrapperRenderer?.primaryRenderer?.playlistPanelVideoRenderer?.videoId;
-              if (!d3) d3 = d2[r].playlistPanelVideoRenderer?.videoId;
+            if (d1 && d1[r]) {
+              let d3 = d1[r].playlistPanelVideoWrapperRenderer?.primaryRenderer?.playlistPanelVideoRenderer?.videoId;
+              if (!d3) d3 = d1[r].playlistPanelVideoRenderer?.videoId;
               if (!d3 || recomlist.includes(d3)) continue;
               getvid = d3;
               break;
@@ -138,10 +138,12 @@ async function second(vid: string, plid: string, params: string, recomlist: stri
           }
         }
         if (getvid) return res([ getvid, getvid ? "" : "추천영상을 찾을수없음25" ]);
+        return res([ undefined, "추천영상을 찾을수없음2" ]);
+      } catch {
+        return res([ undefined, "추천영상을 찾을수없음21" ]);
       }
-      return res([ undefined, "추천영상을 찾을수없음2" ]);
     }).catch((err) => {
-      console.log(err);
+      // console.log(err);
       return res([ undefined, "키를 찾을수없음2" ]);
     })
   });
