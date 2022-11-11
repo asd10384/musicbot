@@ -206,7 +206,7 @@ export default class Music {
       if (shi) {
         data = shi;
         await QDB.setqueue(this.guild.id, queue);
-      } else if (this.canrecom && (await QDB.get(this.guild)).options.recommend) {
+      } else if (this.playing && this.canrecom && (await QDB.get(this.guild)).options.recommend) {
         this.setmsg(undefined, true);
         let vid = this.nowplaying ? this.nowplaying.url.replace("https://www.youtube.com/watch?v=","") : "7n9D8ZeOQv0";
         this.recomlist.push(vid);
