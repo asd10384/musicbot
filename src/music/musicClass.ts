@@ -157,13 +157,7 @@ export default class Music {
       let checkv = await checkvideo({ url: `https://www.youtube.com/watch?v=${yid}` });
       if (checkv[0]) return [ checkv[1], "video", undefined ];
       return [ undefined, checkv[1], undefined ];
-    } else {
-      // let filters = await ytsr.getFilters(text, {
-      //   gl: 'KO',
-      //   requestOptions: { agent }
-      // });
-      // let searchurl = filters.get("Type")?.get("Video")?.url;
-      // if (!searchurl) return [ undefined, "video", undefined ];
+    } else { // TEXT 문자
       let getytvid = await getytmusic(text);
       if (getytvid[0]) {
         let checkv = await checkvideo({ url: `https://www.youtube.com/watch?v=${getytvid[0]}` });
@@ -676,7 +670,7 @@ export default class Music {
       if (queue.length > 0) {
         for (let i in queue) {
           let data = queue[i];
-          let text = `\n${i+1}. ${(guildDB.options.author) ? `${data.author} - ` : ''}${data.title} [${this.settime(data.duration)}]${(guildDB.options.player) ? ` ~ ${data.player}` : ''}`;
+          let text = `\n${i+1}. ${(guildDB.options.author) ? `${data.author.replace(" - Topic","")} - ` : ''}${data.title} [${this.settime(data.duration)}]${(guildDB.options.player) ? ` ~ ${data.player}` : ''}`;
           if (length+text.length > 2000) {
             output += `\n+ ${queue.length-list.length}곡`;
             break;
