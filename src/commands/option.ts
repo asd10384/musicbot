@@ -57,6 +57,16 @@ export default class OptionCommand implements Command {
           name: "boolean",
           description: "값 (기본: False)"
         }]
+      },
+      {
+        type: ApplicationCommandOptionType.Subcommand,
+        name: "author",
+        description: "노래 가수가 누군지 표시",
+        options: [{
+          type: ApplicationCommandOptionType.Boolean,
+          name: "boolean",
+          description: "값 (기본: True)"
+        }]
       }
     ]
   };
@@ -79,16 +89,13 @@ export default class OptionCommand implements Command {
       const boolean = cmd.options ? cmd.options[0]?.value as boolean : null;
       return await interaction.followUp({ embeds: [ await this.recommend(interaction, guildDB, boolean) ] });
     }
+    if (cmd.name === "author") {
+      const boolean = cmd.options ? cmd.options[0]?.value as boolean : null;
+      return await interaction.followUp({ embeds: [ await this.author(interaction, guildDB, boolean) ] });
+    }
   }
   async msgrun(message: Message, args: string[]) {
-    return message.channel.send({ embeds: [
-      client.mkembed({
-        title: `example`,
-        description: `example`,
-        footer: { text: `example` },
-        color: client.embedcolor
-      })
-    ] }).then(m => client.msgdelete(m, 2));
+    return;
   }
 
   async volume(message: M | I, guildDB: guilddata, number: number | null): Promise<EmbedBuilder> {
@@ -167,6 +174,33 @@ export default class OptionCommand implements Command {
     }).catch((err) => {
       return client.mkembed({
         title: `**자동재생 설정 실패**`,
+        description: `설정 중 오류가 발생했습니다.`,
+        color: "DarkRed"
+      });
+    });
+  }
+
+  async author(message: M | I, guildDB: guilddata, boolean: boolean | null): Promise<EmbedBuilder> {
+    if (boolean == null) return client.mkembed({
+      title: `**현재 가수표시: ${guildDB.options.author ? "True" : "False"}**`,
+      footer: { text: "기본 가수표시: True" }
+    });
+    guildDB.options.author = boolean;
+    return await QDB.set(guildDB.id, { options: guildDB.options }).then((val) => {
+      if (!val) return client.mkembed({
+        title: `**가수표시 설정 실패**`,
+        description: `설정 중 오류가 발생했습니다.`,
+        color: "DarkRed"
+      });
+      client.getmc(message.guild!).setmsg();
+      return client.mkembed({
+        title: `**가수표시 설정완료**`,
+        description: `**가수표시: ${guildDB.options.author ? "True" : "False"}**`,
+        footer: { text: "기본 가수표시: True" }
+      });
+    }).catch((err) => {
+      return client.mkembed({
+        title: `**가수표시 설정 실패**`,
         description: `설정 중 오류가 발생했습니다.`,
         color: "DarkRed"
       });

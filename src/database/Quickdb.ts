@@ -87,7 +87,7 @@ function get(guild: Guild) {
             volume: 50,
             player: true,
             listlimit: 300,
-            author: false,
+            author: true,
             recommend: false
           }
         };
