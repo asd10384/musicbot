@@ -69,10 +69,12 @@ function musicfix() {
                 console.log(`${msg.guild.name} : 시작 fix 성공`);
                 mc.sendlog(`시작 fix 성공`);
               }
+              return;
             }).catch((err) => {
               if (msg?.guild) {
                 console.log(`${msg.guild.name} : 시작 fix 실패`);
                 client.getmc(msg.guild).sendlog(`시작 fix 실패`);
+                return;
               }
             });
           }).catch((err) => {});

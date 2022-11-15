@@ -772,7 +772,7 @@ export default class Music {
     channel.send({ embeds: [ client.mkembed({
       author: {
         name: this.guild.name,
-        iconURL: this.guild.iconURL({ extension: "png" }) || ""
+        iconURL: this.guild.iconURL({ forceStatic: true }) || undefined
       },
       title: `${client.user?.username}`,
       description: `${text}`,
