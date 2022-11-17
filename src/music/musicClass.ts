@@ -38,6 +38,7 @@ type Etype = "notfound" | "added" | "livestream";
 export default class Music {
   guild: Guild;
   playing: boolean;
+  checkwaitend: boolean;
   nowplaying: nowplay | null;
   nowduration: number;
   nowstatus: string;
@@ -54,6 +55,7 @@ export default class Music {
   constructor(guild: Guild) {
     this.guild = guild;
     this.playing = false;
+    this.checkwaitend = false;
     this.nowplaying = null;
     this.nowduration = 0;
     this.nowstatus = "재생되고있지않음";
@@ -70,6 +72,10 @@ export default class Music {
 
   setinputplaylist(getinputplaylist: boolean) {
     this.inputplaylist = getinputplaylist;
+  }
+
+  setplaying(getplaying: boolean) {
+    this.playing = getplaying;
   }
 
   setcanrecom(getcanrecom: boolean) {
@@ -333,6 +339,7 @@ export default class Music {
     const msgchannel = this.guild.channels.cache.get(channelid) as TextChannel;
     let voicechannel = await this.getchannel(message);
     let livestream = false;
+    this.checkwaitend = false;
     if (voicechannel) {
       if (getVoiceConnection(this.guild.id)) await entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
       let data: nowplay | undefined = await this.getdata(message?.member?.user.id || "", getsearch, !!time);
@@ -358,6 +365,7 @@ export default class Music {
         }
         this.nowplaying = data;
       } else {
+        this.checkwaitend = true;
         return this.waitend();
       }
       this.playing = true;
@@ -419,6 +427,7 @@ export default class Music {
         Player.on(AudioPlayerStatus.Idle, async (P) => {
           // 봇 노래 재생 끝났을때
           this.canrecom = true;
+          this.checkwaitend = true;
           this.nowstatus = "재생중지됨";
           if (addduration) clearInterval(addduration);
           Player.stop();
@@ -600,7 +609,7 @@ export default class Music {
   }
 
   async waitend() {
-    if (!this.playing) return;
+    if (!this.checkwaitend) return;
     await this.stop(false, "waitend");
     this.players[0]?.player.stop();
     this.timeout = setTimeout(async () => {
@@ -622,6 +631,7 @@ export default class Music {
 
   async stop(leave: boolean, text: string) {
     this.playing = false;
+    this.checkwaitend = false;
     this.nowplaying = null;
     this.inputplaylist = false;
     this.setVoiceChannel = undefined;

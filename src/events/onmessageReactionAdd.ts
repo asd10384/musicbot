@@ -22,8 +22,9 @@ export default async function onmessageReactionAdd (reaction: MessageReaction | 
       if (mc.playing && await checkchannel(reaction.message, user)) mc.pause();
     }
     if (name === '⏹️') {
-      await QDB.setqueue(reaction.message.guildId, []);
+      mc.setplaying(false);
       mc.setcanrecom(false);
+      await QDB.setqueue(reaction.message.guildId, []);
       mc.players[0]?.player.stop();
     }
     if (name === '⏭️') {
