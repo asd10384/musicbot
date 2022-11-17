@@ -85,6 +85,10 @@ async function first(vid: string) {
     });
   });
 }
+
+let r_min = 1;
+let r_max = 3;
+
 async function second(vid: string, plid: string, params: string, recomlist: string[]) {
   return new Promise<[string | undefined, string]>((res, rej) => {
     if (!key) return res([ undefined, "키를 찾을수 없음" ]);
@@ -123,7 +127,7 @@ async function second(vid: string, plid: string, params: string, recomlist: stri
         let alr: number[] = [];
         for (let i=1; i<d1.length; i++) {
           let r = i;
-          if (r<=3) r = Math.floor((Math.random()*3)+1);
+          if (r<=r_max) r = Math.floor((Math.random()*(r_max-r_min))+r_min);
           if (alr.includes(r)) {
             continue;
           } else {
