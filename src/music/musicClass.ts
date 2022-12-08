@@ -680,7 +680,7 @@ export default class Music {
       if (queue.length > 0) {
         for (let i in queue) {
           let data = queue[i];
-          let text = `\n${i+1}. ${(guildDB.options.author) ? `${data.author.replace(" - Topic","")} - ` : ''}${data.title} [${this.settime(data.duration)}]${(guildDB.options.player) ? ` ~ ${data.player}` : ''}`;
+          let text = `\n${Number(i)+1}. ${(guildDB.options.author) ? `${data.author.replace(" - Topic","")} - ` : ''}${data.title} [${this.settime(data.duration)}]${(guildDB.options.player) ? ` ~ ${data.player}` : ''}`;
           if (length+text.length > 2000) {
             output += `\n+ ${queue.length-list.length}곡`;
             break;
