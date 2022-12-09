@@ -1,7 +1,7 @@
 import { client, handler } from "../index";
 import { Command } from "../interfaces/Command";
 import { I, D } from "../aliases/discord.js";
-import { CacheType, Message, ActionRowBuilder, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction } from "discord.js";
+import { CacheType, Message, ActionRowBuilder, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, StringSelectMenuBuilder } from "discord.js";
 
 /**
  * DB
@@ -81,7 +81,7 @@ export default class HelpCommand implements Command {
       color: client.embedcolor
     });
     const row = new ActionRowBuilder<SelectMenuBuilder>().addComponents(
-      new SelectMenuBuilder()
+      new StringSelectMenuBuilder()
         .setCustomId('help')
         .setPlaceholder('명령어를 선택해주세요.')
         .addOptions(cmdlist)
