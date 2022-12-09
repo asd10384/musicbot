@@ -1,7 +1,7 @@
 import { client, handler } from "../index";
 import { Command } from "../interfaces/Command";
 import { I, D } from "../aliases/discord.js";
-import { CacheType, Message, ActionRowBuilder, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, StringSelectMenuBuilder } from "discord.js";
+import { Message, ActionRowBuilder, EmbedBuilder, StringSelectMenuBuilder, StringSelectMenuInteraction } from "discord.js";
 
 /**
  * DB
@@ -31,7 +31,7 @@ export default class HelpCommand implements Command {
   async msgrun(message: Message, args: string[]) {
     return message.channel.send(this.gethelp()).then(m => client.msgdelete(m, 5));
   }
-  async menurun(interaction: SelectMenuInteraction<CacheType>, args: string[]) {
+  async menurun(interaction: StringSelectMenuInteraction, args: string[]) {
     const command = handler.commands.get(args[0]);
     var embed = client.mkembed({ color: client.embedcolor });
     var embed2: EmbedBuilder | undefined = undefined;
@@ -49,7 +49,7 @@ export default class HelpCommand implements Command {
     return await interaction.followUp({ embeds: [ embed ] });
   }
 
-  gethelp(): { embeds: EmbedBuilder[], components: ActionRowBuilder<SelectMenuBuilder>[] } {
+  gethelp(): { embeds: EmbedBuilder[], components: ActionRowBuilder<StringSelectMenuBuilder>[] } {
     const slashcmdembed = client.mkembed({
       title: `\` slash (/) 도움말 \``,
       description: `명령어\n명령어 설명`,
@@ -80,7 +80,7 @@ export default class HelpCommand implements Command {
       footer: { text: '여러번 가능' },
       color: client.embedcolor
     });
-    const row = new ActionRowBuilder<SelectMenuBuilder>().addComponents(
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId('help')
         .setPlaceholder('명령어를 선택해주세요.')
