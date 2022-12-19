@@ -17,7 +17,7 @@ import checkvideo from "./checkvideo";
 import fluentFFmpeg from "fluent-ffmpeg";
 import { createReadStream, unlink, unlinkSync } from "fs";
 import recommand from "./recommand";
-import getytmusic from "./getytmusic";
+import { getytmusic } from "./getytmusic";
 
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;

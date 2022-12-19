@@ -1,12 +1,12 @@
 import "dotenv/config";
 import axios from "axios";
 
-const key = process.env.YOUTUBE_MUSIC_KEY;
-const visitorData = process.env.YOUTUBE_MUSIC_VISITORDATA;
-const authorization = process.env.YOUTUBE_MUSIC_AUTHORIZATION;
-const cookie = process.env.YOUTUBE_MUSIC_COOKIE;
+const key = process.env.A_YOUTUBE_MUSIC_KEY;
+const visitorData = process.env.A_YOUTUBE_MUSIC_VISITORDATA;
+const authorization = process.env.A_YOUTUBE_MUSIC_AUTHORIZATION;
+const cookie = process.env.A_YOUTUBE_MUSIC_COOKIE;
 
-export default async function getytmusic(query: string) {
+export const getytmusic = async (query: string) => {
   return new Promise<[string | undefined, string]>((res, rej) => {
     axios.post(`https://music.youtube.com/youtubei/v1/search?key=${key}&prettyPrint=false`, {
       // "params": "EgWKAQIIAWoKEAMQBBAJEAoQBQ%3D%3D",
@@ -29,7 +29,8 @@ export default async function getytmusic(query: string) {
         "origin": "https://music.youtube.com",
         "x-origin": "https://music.youtube.com",
         "referer": `https://music.youtube.com/search?q=${encodeURIComponent(query)}`,
-        "cookie": `${cookie}`
+        "cookie": `${cookie}`,
+        'Accept-Encoding': '*'
       },
       responseType: "json"
     }).then((res2) => {
@@ -37,13 +38,16 @@ export default async function getytmusic(query: string) {
         let d1 = res2.data?.contents?.tabbedSearchResultsRenderer?.tabs;
         let d2: any[] = d1[0]?.tabRenderer?.content?.sectionListRenderer?.contents;
         let d3 = d2.filter(d => d.musicShelfRenderer?.title?.runs[0]?.text === "상위 검색결과");
+        let d7_2: string | undefined = undefined;
         if (d3 && d3[0]) {
           let d4 = d3[0].musicShelfRenderer?.contents;
           let d5: any[] = d4[0]?.musicResponsiveListItemRenderer?.flexColumns;
-          let d6 = d5.filter(d => d.musicResponsiveListItemFlexColumnRenderer?.text?.runs[0]?.text === "노래");
+          let d6 = d5.filter(d => d.musicResponsiveListItemFlexColumnRenderer?.text?.runs.length > 1 && ![ "아티스트", "동영상", "재생목록", "엘범" ].includes(d.musicResponsiveListItemFlexColumnRenderer?.text?.runs[0]?.text));
           if (d6 && d6[0]) {
             let d7 = d3[0].musicShelfRenderer?.contents[0]?.musicResponsiveListItemRenderer?.playlistItemData?.videoId;
             if (d7) return res([ d7, "" ]);
+          } else {
+            d7_2 = d3[0].musicShelfRenderer?.contents[0]?.musicResponsiveListItemRenderer?.playlistItemData?.videoId;
           }
         }
         let e1 = d2.filter(d => d.musicShelfRenderer?.title?.runs[0]?.text === "노래");
@@ -51,12 +55,13 @@ export default async function getytmusic(query: string) {
           let e2 = e1[0].musicShelfRenderer?.contents[0]?.musicResponsiveListItemRenderer?.playlistItemData?.videoId;
           if (e2) return res([ e2, "" ]);
         }
-        return res([ undefined, "노래를 찾을수없음" ]);
+        if (d7_2) return res([ d7_2, "" ]);
+        return res([ undefined, "노래를 찾을수없음1" ]);
       } catch {
-        return res([ undefined, "노래를 찾을수없음" ]);
+        return res([ undefined, "노래를 찾을수없음2" ]);
       }
     }).catch((err) => {
-      return res([ undefined, "노래를 찾을수없음" ]);
+      return res([ undefined, "노래를 찾을수없음3" ]);
     });
   });
 }
