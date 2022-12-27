@@ -1,59 +1,40 @@
-import "dotenv/config"; // .env 불러오기
-import { ChatInputApplicationCommandData, Client, ClientEvents, ColorResolvable, Guild, Message, EmbedBuilder, EmbedField, ApplicationCommandOptionType } from 'discord.js';
-import _ from '../consts';
-import Music from "../music/musicClass";
+import "dotenv/config";
+import { ApplicationCommandOptionType, ChatInputApplicationCommandData, Client, ClientEvents, ColorResolvable, EmbedBuilder, EmbedField, Guild, Message } from "discord.js";
+import { Consts } from "../config/consts";
+import { Music } from "../music/musicClass";
+// import { Logger } from "../utils/Logger";
 
-/**
- * 봇 클라이언트
- * 
- * 토큰, 세션관리 및 이벤트 레지스트리를 담당
- * * Disocrd.js Client의 확장
- * * 샤딩 지원
- */
-export default class BotClient extends Client {
-  debug: boolean;
-  prefix: string;
-  msgdelete: (m: Message, deletetime: number, customtime?: boolean) => void;
-  deletetime: number;
-  ttsfilepath: string;
-  ttstimer: Map<string, { start: boolean, time: number }>;
-  ttstimertime: number;
-  embedcolor: ColorResolvable;
-  maxqueue: number;
-  musicClass: Map<string, Music>;
-  /**
-   * 클라이언트 생성
-   * 
-   * 환경변수를 읽고 해당 토큰을 사용해 클라이언트 생성
-   */
+export class BotClient extends Client {
+  public debug: boolean;
+  public prefix: string;
+  public embedColor: ColorResolvable;
+  public maxqueue: number;
+  public musicClass: Map<string, Music>;
+
   public constructor() {
-    super({ intents: _.CLIENT_INTENTS });
+    super({ intents: Consts.CLIENT_INTENTS });
+    
+    this.debug = JSON.parse(process.env.DEBUG || "false");
+    this.prefix = process.env.PREFIX || "t;";
 
-    if (!process.env.DISCORD_TOKEN) {
-      throw new Error('.env 파일에 DISOCRD_TOKEN이 없음.');
-    }
-    this.debug = JSON.parse(process.env.DEBUG!);
-    this.token = process.env.DISCORD_TOKEN!;
-    this.prefix = process.env.PREFIX || 'm;';
-    this.login();
-    this.deletetime = 6000; //초
-    this.ttsfilepath = (process.env.TTS_FILE_PATH) ? (process.env.TTS_FILE_PATH.endsWith('/')) ? process.env.TTS_FILE_PATH : process.env.TTS_FILE_PATH+'/' : '';
-    this.msgdelete = (message: Message, time: number, customtime?: boolean) => {
-      let dtime = (customtime) ? time : this.deletetime * time;
-      if (dtime < 100) dtime = 100;
-      setTimeout(() => {
-        try {
-          message.delete();
-        } catch(err) {}
-      }, dtime);
-    };
-    this.ttstimer = new Map<string, { start: boolean, time: number }>();
-    this.ttstimertime = (60) * 45; //분
-    this.embedcolor = process.env.EMBED_COLOR
+    this.embedColor = process.env.EMBED_COLOR
       ? process.env.EMBED_COLOR.trim().charAt(0).toLocaleUpperCase() + process.env.EMBED_COLOR.trim().slice(1).toLocaleLowerCase() as ColorResolvable
       : "Orange";
+      
     this.maxqueue = 30;
     this.musicClass = new Map();
+
+    this.login(process.env.DISCORD_TOKEN);
+  }
+
+  public readonly msgdelete = (message: Message, time: number, customtime?: boolean) => {
+    let deletetime = customtime ? time : 6000 * time;
+    if (deletetime < 100) deletetime = 100;
+    setTimeout(() => {
+      try {
+        if (message.deletable) message.delete();
+      } catch {};
+    }, deletetime);
   }
 
   /**
@@ -65,21 +46,21 @@ export default class BotClient extends Client {
    * 
    * @example
    *    client.onEvent('ready', (client, info) => {
-   *      console.log(client?.user.username, '봇이 준비되었습니다.', info) // 출력: OOO 봇이 준비되었습니다. 추가 정보
+   *      Logger.ready(client?.user.username, '봇이 준비되었습니다.', info) // 출력: OOO 봇이 준비되었습니다. 추가 정보
    *    }, ['추가 정보']);
    * 
    * @param event 이벤트명
    * @param func 이벤트 핸들러 함수
    * @param extra 추가로 전달할 목록
    */
-  public onEvent = (event: keyof ClientEvents, func: Function, ...extra: any[]) => this.on(event, (...args) => func(...args, ...extra));
+  public readonly onEvent = (event: keyof ClientEvents, func: Function, ...extra: any[]) => this.on(event, (...args) => func(...args, ...extra));
 
   public getmc = (guild: Guild): Music => {
     if (!this.musicClass.has(guild.id)) this.musicClass.set(guild.id, new Music(guild));
     return this.musicClass.get(guild.id)!;
   }
 
-  mkembed(data: {
+  public mkembed(data: {
     title?: string,
     description?: string,
     url?: string,
@@ -104,12 +85,12 @@ export default class BotClient extends Client {
     if (data.color) {
       embed.setColor(data.color);
     } else {
-      embed.setColor(this.embedcolor);
+      embed.setColor(this.embedColor);
     }
     return embed;
   }
 
-  help(name: string, metadata: ChatInputApplicationCommandData, msgmetadata?: { name: string, des: string }[]): EmbedBuilder | undefined {
+  public help(name: string, metadata: ChatInputApplicationCommandData, msgmetadata?: { name: string, des: string }[]): EmbedBuilder | undefined {
     const prefix = this.prefix;
     var text = "";
     metadata.options?.forEach((opt) => {
@@ -137,7 +118,7 @@ export default class BotClient extends Client {
     return this.mkembed({
       title: `\` ${name} 명령어 \``,
       description: text,
-      color: this.embedcolor
+      color: this.embedColor
     });
   }
 }

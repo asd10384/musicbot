@@ -1,21 +1,9 @@
 import { client } from "../index";
-import { PM, M } from "../aliases/discord.js.js"
-import QDB from "../database/Quickdb";
+import { QDB } from "../databases/Quickdb";
 import { nowplay } from "./musicClass";
+import { Message, PartialMessage } from "discord.js";
 
-export default async function shuffle(message: M | PM) {
-  let queue = await QDB.queue(message.guildId!);
-  let queuenumber = Array.from({ length: queue.length }, (v, i) => i);
-  queuenumber = fshuffle(queuenumber);
-  let list: nowplay[] = [];
-  for (let i of queuenumber) {
-    list.push(queue[i]);
-  }
-  await QDB.setqueue(message.guildId!, list);
-  client.getmc(message.guild!).setmsg();
-}
-
-export function fshuffle(list: any[]) {
+export const fshuffle = (list: any[]): any[] => {
   var j, x, i;
   for (i=list.length; i; i-=1) {
     j = Math.floor(Math.random() * i);
@@ -24,4 +12,16 @@ export function fshuffle(list: any[]) {
     list[j] = x;
   }
   return list;
+}
+
+export const shuffle = async (message: Message | PartialMessage) => {
+  let queue = await QDB.guild.queue(message.guildId!);
+  let queuenumber = Array.from({ length: queue.length }, (_v, i) => i);
+  queuenumber = fshuffle(queuenumber);
+  let list: nowplay[] = [];
+  for (let i of queuenumber) {
+    list.push(queue[i]);
+  }
+  await QDB.guild.setqueue(message.guildId!, list);
+  client.getmc(message.guild!).setmsg();
 }

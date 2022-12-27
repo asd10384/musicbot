@@ -1,23 +1,23 @@
 import "dotenv/config";
 import { client, MUSICFOLDER } from "../index";
-import { Guild, EmbedBuilder, TextChannel, ChannelType, VoiceBasedChannel, GuildMember } from "discord.js";
-import { I, M, PM } from "../aliases/discord.js.js";
-import { AudioPlayer, AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, demuxProbe, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import { Guild, EmbedBuilder, TextChannel, ChannelType, VoiceBasedChannel, GuildMember, Message, PartialMessage, CommandInteraction } from "discord.js";
+import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import ytdl from "ytdl-core";
 import ytpl from "ytpl";
 import ytsr from "ytsr";
 import internal from "stream";
-import nowdate from "../function/nowdate";
-import QDB, { guilddata } from "../database/Quickdb";
+import { Timestamp } from "../utils/Timestamp";
+import { QDB, guildData } from "../databases/Quickdb";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import { fshuffle } from "./shuffle";
 import { parmas } from "./music";
-import checkurl from "./checkurl";
-import checkvideo from "./checkvideo";
+import { checkurl } from "./checkurl";
+import { checkvideo } from "./checkvideo";
 import fluentFFmpeg from "fluent-ffmpeg";
-import { createReadStream, unlink, unlinkSync } from "fs";
-import recommand from "./recommand";
+import { createReadStream } from "fs";
+import { recommand } from "./recommand";
 import { getytmusic } from "./getytmusic";
+// import { Logger } from "../utils/Logger";
 
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
@@ -33,9 +33,9 @@ export interface nowplay {
 };
 
 type Vtype = "video" | "playlist" | "database";
-type Etype = "notfound" | "added" | "livestream";
+// type Etype = "notfound" | "added" | "livestream";
 
-export default class Music {
+export class Music {
   guild: Guild;
   playing: boolean;
   checkwaitend: boolean;
@@ -82,7 +82,7 @@ export default class Music {
     this.canrecom = getcanrecom;
   }
 
-  async search(message: M, text: string, parmas?: parmas): Promise<[ytdl.videoInfo, Vtype, M | undefined ] | [ undefined, string, M | undefined ]> {
+  async search(message: Message, text: string, parmas?: parmas): Promise<[ytdl.videoInfo, Vtype, Message | undefined ] | [ undefined, string, Message | undefined ]> {
     if (this.inputplaylist) return [ undefined, `현재 플레이리스트를 추가하는중입니다.\n잠시뒤 사용해주세요.`, undefined ];
     let url = checkurl(text);
     if (url.video) { // 유튜브 영상
@@ -91,40 +91,40 @@ export default class Music {
       if (checkv[0]) return [ checkv[1], "video", undefined ];
       return [ undefined, checkv[1], undefined ];
     } else if (url.list) { // 유튜브 재생목록
-      let guildDB = await QDB.get(this.guild);
+      const GDB = await QDB.guild.get(this.guild);
       this.inputplaylist = true;
       const addedembed = await message.channel.send({ embeds: [
         client.mkembed({
           description: `<@${message.author.id}> 플레이리스트 확인중...\n(노래가 많으면 많을수록 오래걸립니다.)`,
-          color: client.embedcolor
+          color: client.embedColor
         })
-      ] }).catch((err) => {
+      ] }).catch(() => {
         return undefined;
       });
       let list = await ytpl(url.list[1].replace(/\&.+/g,''), {
         gl: "KR",
         requestOptions: { agent },
-        limit: 50000 // (guildDB.options.listlimit) ? guildDB.options.listlimit : 300
+        limit: 50000 // (GDB.options.listlimit) ? GDB.options.listlimit : 300
       }).catch((err) => {
         if (client.debug) console.log(err);
         return undefined;
       });
-      addedembed?.delete().catch((err) => {});
+      addedembed?.delete().catch(() => {});
       if (list && list.items && list.items.length > 0) {
-        if (client.debug) console.log(this.guild.name, list.title, list.items.length, (guildDB.options.listlimit) ? guildDB.options.listlimit : 300);
+        if (client.debug) console.log(this.guild.name, list.title, list.items.length, (GDB.options.listlimit) ? GDB.options.listlimit : 300);
         this.sendlog(`${list.title}: ${list.items.length}`);
         const addembed = await message.channel.send({ embeds: [
           client.mkembed({
             title: `\` ${list.title} \` 플레이리스트 추가중...`,
             description: `재생목록에 \` ${list.items.length} \` 곡 ${parmas?.shuffle ? "섞어서 " : ""}추가중`,
-            color: client.embedcolor
+            color: client.embedColor
           })
-        ] }).catch((err) => {
+        ] }).catch(() => {
           return undefined;
         });
         if (parmas?.shuffle) list.items = fshuffle(list.items);
         if (this.playing) {
-          await QDB.setqueue(this.guild.id, (await QDB.queue(this.guild.id)).concat(list.items.map((data) => {
+          await QDB.guild.setqueue(this.guild.id, (await QDB.guild.queue(this.guild.id)).concat(list.items.map((data) => {
             return {
               title: data.title,
               duration: data.durationSec!.toString(),
@@ -139,7 +139,7 @@ export default class Music {
           return [ undefined, `플레이리스트를 찾을수 없습니다.`, addembed ];
         } else {
           const output = list.items.shift()!;
-          await QDB.setqueue(this.guild.id, (await QDB.queue(this.guild.id)).concat(list.items.map((data) => {
+          await QDB.guild.setqueue(this.guild.id, (await QDB.guild.queue(this.guild.id)).concat(list.items.map((data) => {
             return {
               title: data.title,
               duration: data.durationSec!.toString(),
@@ -201,12 +201,12 @@ export default class Music {
       };
     } else {
       if (checktime) return this.nowplaying ? this.nowplaying : undefined;
-      let queue = await QDB.queue(this.guild.id);
+      let queue = await QDB.guild.queue(this.guild.id);
       let shi = queue.shift();
       if (shi) {
         data = shi;
-        await QDB.setqueue(this.guild.id, queue);
-      } else if (this.playing && this.canrecom && (await QDB.get(this.guild)).options.recommend) {
+        await QDB.guild.setqueue(this.guild.id, queue);
+      } else if (this.playing && this.canrecom && (await QDB.guild.get(this.guild)).options.recommend) {
         this.setmsg(undefined, true);
         let vid = this.nowplaying ? this.nowplaying.url.replace("https://www.youtube.com/watch?v=","") : "7n9D8ZeOQv0";
         this.recomlist.push(vid);
@@ -222,7 +222,7 @@ export default class Music {
     return data;
   }
 
-  async getchannel(message: M | PM | I | undefined) {
+  async getchannel(message: Message | PartialMessage | CommandInteraction | undefined) {
     if (message) {
       const bot = await message.guild?.members.fetchMe({ cache: true });
       if (bot?.voice.channelId) return bot.voice.channel;
@@ -235,8 +235,8 @@ export default class Music {
     }
   }
 
-  async makefile(msgchannel: TextChannel | undefined, ytsource: internal.Readable, url: string, time?: number) {
-    return new Promise<string | undefined>((res, rej) => {
+  async makefile(msgchannel: TextChannel | undefined, ytsource: internal.Readable, time?: number) {
+    return new Promise<string | undefined>((res, _rej) => {
       try {
         const fstream = fluentFFmpeg({ source: ytsource }).toFormat('wav');
         if (time) fstream.setStartTime(time);
@@ -262,7 +262,7 @@ export default class Music {
   }
 
   async getytsource(msgchannel: TextChannel | undefined, data: nowplay, time: number | undefined, livestream: boolean) {
-    return new Promise<[internal.Readable | undefined, string | undefined]>(async (res, rej) => {
+    return new Promise<[internal.Readable | undefined, string | undefined]>(async (res, _rej) => {
       try {
         let ytsource: internal.Readable | undefined = undefined;
         ytsource = ytdl(data.url, {
@@ -291,7 +291,7 @@ export default class Music {
         ytsource.setMaxListeners(0);
         if (!time) return res([ ytsource, undefined ]);
         else {
-          const name = await this.makefile(msgchannel, ytsource, data.url, time);
+          const name = await this.makefile(msgchannel, ytsource, time);
           if (!name) {
             msgchannel?.send({ embeds: [
               client.mkembed({
@@ -323,7 +323,7 @@ export default class Music {
   }
 
   async setconnection(voicechannel: VoiceBasedChannel) {
-    return new Promise<VoiceConnection>((res, rej) => {
+    return new Promise<VoiceConnection>((res, _rej) => {
       const connection = joinVoiceChannel({
         adapterCreator: this.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator,
         guildId: this.guild.id,
@@ -333,15 +333,15 @@ export default class Music {
     })
   }
 
-  async play(message: M | PM | I | undefined, getsearch?: ytdl.videoInfo, time?: number) {
-    let guildDB = await QDB.get(this.guild);
-    const channelid = guildDB.channelId;
+  async play(message: Message | PartialMessage | CommandInteraction | undefined, getsearch?: ytdl.videoInfo, time?: number) {
+    const GDB = await QDB.guild.get(this.guild);
+    const channelid = GDB.channelId;
     const msgchannel = this.guild.channels.cache.get(channelid) as TextChannel;
     let voicechannel = await this.getchannel(message);
     let livestream = false;
     this.checkwaitend = false;
     if (voicechannel) {
-      if (getVoiceConnection(this.guild.id)) await entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
+      if (getVoiceConnection(this.guild.id)) await entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch(() => {});
       let data: nowplay | undefined = await this.getdata(message?.member?.user.id || "", getsearch, !!time);
       this.canrecom = true;
       if (this.timeout) clearTimeout(this.timeout);
@@ -378,7 +378,7 @@ export default class Music {
         return this.skipPlayer();
       }
       const resource = createAudioResource(ytsource[0], { inlineVolume: true, inputType: StreamType.Arbitrary });
-      resource.volume?.setVolume((guildDB.options.volume) ? guildDB.options.volume / 100 : 0.7);
+      resource.volume?.setVolume((GDB.options.volume) ? GDB.options.volume / 100 : 0.7);
       
       const connection = await this.setconnection(voicechannel);
       try {
@@ -407,31 +407,31 @@ export default class Music {
         this.nowduration = 0;
         if (time) this.nowduration = time;
         let addduration: NodeJS.Timer | undefined = undefined;
-        Player.on(AudioPlayerStatus.Playing, async (P) => {
+        Player.on(AudioPlayerStatus.Playing, async (_P) => {
           this.canrecom = true;
           this.nowstatus = "재생중";
           if (!livestream) addduration = setInterval(() => {
             this.nowduration++;
           }, 1000);
         });
-        Player.on(AudioPlayerStatus.Paused, async (P) => {
+        Player.on(AudioPlayerStatus.Paused, async (_P) => {
           this.canrecom = true;
           this.nowstatus = "일시정지됨";
           if (addduration) clearInterval(addduration);
         })
-        Player.on(AudioPlayerStatus.AutoPaused, async (P) => {
+        Player.on(AudioPlayerStatus.AutoPaused, async (_P) => {
           this.canrecom = true;
           this.nowstatus = "일시정지됨";
           if (addduration) clearInterval(addduration);
         })
-        Player.on(AudioPlayerStatus.Idle, async (P) => {
+        Player.on(AudioPlayerStatus.Idle, async (_P) => {
           // 봇 노래 재생 끝났을때
           this.canrecom = true;
           this.checkwaitend = true;
           this.nowstatus = "재생중지됨";
           if (addduration) clearInterval(addduration);
           Player.stop();
-          await entersState(connection, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
+          await entersState(connection, VoiceConnectionStatus.Ready, 5_000).catch(() => {});
           return this.play(message, undefined, undefined);
         });
         connection.once('error', async (err) => {
@@ -454,7 +454,7 @@ export default class Music {
             if (check) {
               const info = await ytdl.getInfo(data!.url, {
                 lang: "KR"
-              }).catch((err) => {
+              }).catch(() => {
                 return undefined;
               });
               return this.play(undefined, info);
@@ -492,7 +492,7 @@ export default class Music {
             if (check) {
               const info = await ytdl.getInfo(data!.url, {
                 lang: "KR"
-              }).catch((err) => {
+              }).catch(() => {
                 return undefined;
               });
               return this.play(undefined, info);
@@ -524,7 +524,7 @@ export default class Music {
         return this.skipPlayer();
       }
     } else {
-      if (message) return message instanceof I
+      if (message) return message instanceof CommandInteraction
         ? undefined
         : message.channel.send({ embeds: [
           client.mkembed({
@@ -555,7 +555,7 @@ export default class Music {
     if (this.players[0]) {
       if (this.players[0].player.state.status === AudioPlayerStatus.Playing) {
         this.players[0].player.pause();
-        if (getVoiceConnection(this.guild.id)) entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+        if (getVoiceConnection(this.guild.id)) entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch(() => {});
         if (this.notleave) clearInterval(this.notleave);
         this.guild.members.fetchMe({ cache: true }).then((me) => {
           this.setVoiceChannel = me?.voice.channel || undefined;
@@ -565,7 +565,7 @@ export default class Music {
           if (this.players[0]?.player.state.status === AudioPlayerStatus.Paused) {
             this.guild.members.fetchMe({ cache: true }).then((me) => {
               if (me?.voice.channelId) {
-                entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+                entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch(() => {});
               } else {
                 if (this.setVoiceChannel) try {
                   joinVoiceChannel({
@@ -573,7 +573,7 @@ export default class Music {
                     channelId: this.setVoiceChannel.id,
                     adapterCreator: this.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator
                   });
-                  entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch((err) => {});
+                  entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 30_000).catch(() => {});
                 } catch {}
               }
             });
@@ -613,7 +613,7 @@ export default class Music {
     await this.stop(false, "waitend");
     this.players[0]?.player.stop();
     this.timeout = setTimeout(async () => {
-      if (!this.playing && (await QDB.queue(this.guild.id)).length === 0) {
+      if (!this.playing && (await QDB.guild.queue(this.guild.id)).length === 0) {
         if (this.players[0]?.player.state.status === AudioPlayerStatus.Paused) return;
         return this.stop(true, `${BOT_LEAVE_TIME}지남`);
       }
@@ -623,7 +623,7 @@ export default class Music {
 
   async skipPlayer() {
     if (getVoiceConnection(this.guild.id)) {
-      await entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
+      await entersState(getVoiceConnection(this.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch(() => {});
       this.canrecom = true;
       this.play(undefined, undefined, undefined);
     }
@@ -640,7 +640,7 @@ export default class Music {
     this.canrecom = true;
     if (this.notleave) clearInterval(this.notleave);
     if (this.timeout) clearTimeout(this.timeout);
-    await QDB.setqueue(this.guild.id, []);
+    await QDB.guild.setqueue(this.guild.id, []);
     this.setmsg();
     if (leave) {
       this.guild.members.fetchMe({ cache: true }).then((me) => {
@@ -659,28 +659,26 @@ export default class Music {
 
   setmsg(pause?: boolean, waitrecom?: boolean) {
     setTimeout(() => {
-      QDB.get(this.guild).then(async (guildDB) => {
-        if (guildDB) {
-          let text = await this.setlist(guildDB);
-          if (!text) return;
-          let embed = await this.setembed(guildDB, pause, waitrecom);
-          if (!embed) return;
-          let channel = this.guild.channels.cache.get(guildDB.channelId);
-          if (channel && channel.type === ChannelType.GuildText) channel.messages.cache.get(guildDB.msgId)?.edit({ content: text, embeds: [embed] }).catch(() => {});
-        }
-      }).catch((err) => {});
+      QDB.guild.get(this.guild).then(async (GDB) => {
+        let text = await this.setlist(GDB);
+        if (!text) return;
+        let embed = await this.setembed(GDB, pause, waitrecom);
+        if (!embed) return;
+        let channel = this.guild.channels.cache.get(GDB.channelId);
+        if (channel && channel.type === ChannelType.GuildText) channel.messages.cache.get(GDB.msgId)?.edit({ content: text, embeds: [embed] }).catch(() => {});
+      }).catch(() => {});
     }, 15);
   }
-  async setlist(guildDB: guilddata): Promise<string | undefined> {
+  async setlist(GDB: guildData): Promise<string | undefined> {
     try {
       var output = '__**대기열 목록:**__';
       var list: string[] = [];
       var length = output.length + 20;
-      const queue = await QDB.queue(this.guild.id);
+      const queue = await QDB.guild.queue(this.guild.id);
       if (queue.length > 0) {
         for (let i in queue) {
           let data = queue[i];
-          let text = `\n${Number(i)+1}. ${(guildDB.options.author) ? `${data.author.replace(" - Topic","")} - ` : ''}${data.title} [${this.settime(data.duration)}]${(guildDB.options.player) ? ` ~ ${data.player}` : ''}`;
+          let text = `\n${Number(i)+1}. ${(GDB.options.author) ? `${data.author.replace(" - Topic","")} - ` : ''}${data.title} [${this.settime(data.duration)}]${(GDB.options.player) ? ` ~ ${data.player}` : ''}`;
           if (length+text.length > 2000) {
             output += `\n+ ${queue.length-list.length}곡`;
             break;
@@ -698,7 +696,7 @@ export default class Music {
     }
   }
 
-  async setembed(guildDB: guilddata, pause?: boolean, waitrecom?: boolean): Promise<EmbedBuilder | undefined> {
+  async setembed(GDB: guildData, pause?: boolean, waitrecom?: boolean): Promise<EmbedBuilder | undefined> {
     try {
       let data: nowplay = this.nowplaying ? this.nowplaying : {
         author: "",
@@ -710,7 +708,7 @@ export default class Music {
       };
       var title = '';
       if (this.playing && data.url.length > 0) {
-        title = `**[${this.settime(data.duration)}] - ${(guildDB.options.author) ? `${data.author.replace(" - Topic","")} - ` : ''}${data.title}**`;
+        title = `**[${this.settime(data.duration)}] - ${(GDB.options.author) ? `${data.author.replace(" - Topic","")} - ` : ''}${data.title}**`;
       } else {
         title = `**현재 노래가 재생되지 않았습니다**.`;
         data.image = 'https://cdn.hydra.bot/hydra_no_music.png';
@@ -719,9 +717,9 @@ export default class Music {
         title: title,
         image: data.image,
         url: data.url,
-        color: client.embedcolor
+        color: client.embedColor
       });
-      if (this.playing && guildDB.options.player) em.setDescription(`노래 요청자: ${data.player}`);
+      if (this.playing && GDB.options.player) em.setDescription(`노래 요청자: ${data.player}`);
       if (waitrecom) {
         em.setTitle(`**다음노래 자동선택중...**.`)
           .setDescription(`노래 요청자: 자동재생`)
@@ -729,9 +727,9 @@ export default class Music {
           .setImage(this.nowplaying?.image || "");
       }
       if (this.playing) {
-        em.setFooter({ text: `대기열: ${(await QDB.queue(this.guild.id)).length}개 | Volume: ${guildDB.options.volume}%${guildDB.options.recommend ? " | 자동재생: 활성화" : ""}${(pause) ? ` | 노래가 일시중지 되었습니다.` : ''}` });
+        em.setFooter({ text: `대기열: ${(await QDB.guild.queue(this.guild.id)).length}개 | Volume: ${GDB.options.volume}%${GDB.options.recommend ? " | 자동재생: 활성화" : ""}${(pause) ? ` | 노래가 일시중지 되었습니다.` : ''}` });
       } else {
-        em.setFooter({ text: `Volume: ${guildDB.options.volume}%${guildDB.options.recommend ? " | 자동재생: 활성화" : ""}` });
+        em.setFooter({ text: `Volume: ${GDB.options.volume}%${GDB.options.recommend ? " | 자동재생: 활성화" : ""}` });
       }
       return em;
     } catch (err) {
@@ -786,7 +784,7 @@ export default class Music {
       },
       title: `${client.user?.username}`,
       description: `${text}`,
-      footer: { text: nowdate() }
+      footer: { text: Timestamp() }
     }) ] }).catch(() => {});
   }
 }

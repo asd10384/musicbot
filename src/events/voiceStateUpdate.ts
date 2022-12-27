@@ -2,7 +2,7 @@ import { client } from "../index";
 import { ClientUser, Guild, GuildMember, VoiceState } from "discord.js";
 import { AudioPlayerStatus, DiscordGatewayAdapterCreator, joinVoiceChannel } from "@discordjs/voice";
 
-export default function voiceStateUpdate(oldState: VoiceState, newState: VoiceState) {
+export const voiceStateUpdate = (oldState: VoiceState, newState: VoiceState) => {
   if (newState.member!.id === client.user!.id && !newState.channelId) {
     const mc = client.getmc(oldState.guild);
     if (oldState.channelId && mc.players[0]?.player.state.status === AudioPlayerStatus.Paused) {

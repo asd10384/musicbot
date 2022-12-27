@@ -1,26 +1,24 @@
 import { client } from "../index";
 import { Command } from "../interfaces/Command";
-import { I, D, M } from "../aliases/discord.js.js";
-import { ApplicationCommandOptionType, EmbedBuilder } from "discord.js";
+import { ApplicationCommandOptionType, ChatInputApplicationCommandData, CommandInteraction, EmbedBuilder, Message } from "discord.js";
 import { entersState, getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 
 /**
  * DB
- * let guildDB = await MDB.get.guild(interaction);
+ * const GDB = await MDB.get.guild(interaction);
  * 
  * check permission(role)
  * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
  */
 
-/** Seek 명령어 */
-export default class SeekCommand implements Command {
+export default class implements Command {
   /** 해당 명령어 설명 */
   name = "seek";
   visible = true;
   description = "move to time";
   information = "설정한 시간으로 이동";
   aliases: string[] = [  ];
-  metadata: D = {
+  metadata: ChatInputApplicationCommandData = {
     name: this.name,
     description: this.description,
     options: [{
@@ -33,15 +31,15 @@ export default class SeekCommand implements Command {
   msgmetadata?: { name: string; des: string; }[] = undefined;
 
   /** 실행되는 부분 */
-  async slashrun(interaction: I) {
-    let time = interaction.options.get('time', true).value as string;
+  async slashRun(interaction: CommandInteraction) {
+    let time = interaction.options.data[0].value as string;
     return await interaction.followUp({ embeds: [ await this.seek(interaction, time) ] });
   }
-  async msgrun(message: M, args: string[]) {
+  async messageRun(message: Message, args: string[]) {
     return await message.channel.send({ embeds: [ await this.seek(message, args.join(":")) ] });
   }
 
-  async seek(message: M | I, time: string): Promise<EmbedBuilder> {
+  async seek(message: Message | CommandInteraction, time: string): Promise<EmbedBuilder> {
     const mc = client.getmc(message.guild!);
     if (!mc.playing || !mc.nowplaying?.duration) return this.err(`재생중인 노래가 없습니다.`);
     if (mc.nowplaying.duration === "0") return this.err(`실시간 영상은 시간을 변경할수 없습니다.`);
@@ -52,7 +50,7 @@ export default class SeekCommand implements Command {
     if (sec < 0 || setsec < 0) return this.err(`시간을 불러올수 없습니다.`);
     if (sec < setsec) return this.err(`시간이 너무 큽니다.\n현재노래길이 : ${mc.settime(sec)}`);
     if (getVoiceConnection(mc.guild.id)) {
-      await entersState(getVoiceConnection(mc.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch((err) => {});
+      await entersState(getVoiceConnection(mc.guild.id)!, VoiceConnectionStatus.Ready, 5_000).catch(() => {});
       mc.play(message, undefined, setsec);
     }
     return client.mkembed({

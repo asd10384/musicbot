@@ -1,13 +1,13 @@
-import BotClient from "./classes/BotClient";
-import SlashHandler from "./classes/Handler";
+import { BotClient } from "./classes/BotClient";
+import { SlashHandler } from "./classes/Handler";
 
-import onReady from "./events/onReady";
-import onInteractionCreate from "./events/onInteractionCreate";
-import onMessageCreate from "./events/onMessageCreate";
-import onmessageReactionAdd from "./events/onmessageReactionAdd";
-import guildDelete from "./events/guildDelete";
-import voiceStateUpdate from "./events/voiceStateUpdate";
-import { existsSync, mkdirSync, readdirSync, unlink, unlinkSync } from "fs";
+import { onReady } from "./events/onReady";
+import { onInteractionCreate } from "./events/onInteractionCreate";
+import { onMessageCreate } from "./events/onMessageCreate";
+import { onmessageReactionAdd } from "./events/onmessageReactionAdd";
+import { guildDelete } from "./events/guildDelete";
+import { voiceStateUpdate } from "./events/voiceStateUpdate";
+import { existsSync, mkdirSync, readdirSync, unlinkSync } from "fs";
 
 // 봇 클라이언트 생성
 export const client = new BotClient();

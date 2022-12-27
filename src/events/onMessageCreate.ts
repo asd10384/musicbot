@@ -1,9 +1,10 @@
-import { client, handler } from '..';
-import { ChannelType, Message } from 'discord.js';
-import QDB from "../database/Quickdb";
-import music from '../music/music';
+import { ChannelType, Message } from "discord.js";
+import { client, handler } from "..";
+import { Logger } from "../utils/Logger";
+import { QDB } from "../databases/Quickdb";
+import { music } from "../music/music";
 
-export default async function onMessageCreate (message: Message) {
+export const onMessageCreate = async (message: Message) => {
   if (message.author.bot || message.channel.type === ChannelType.DM) return;
   if (message.content.startsWith(client.prefix)) {
     const content = message.content.slice(client.prefix.length).trim();
@@ -11,17 +12,17 @@ export default async function onMessageCreate (message: Message) {
     const commandName = args.shift()?.toLowerCase();
     const command = handler.commands.get(commandName!) || handler.commands.find((cmd) => cmd.aliases.includes(commandName!));
     try {
-      if (!command || !command.msgrun) return handler.err(message, commandName);
-      command.msgrun(message, args);
+      if (!command || !command.messageRun) return handler.err(message, commandName);
+      command.messageRun(message, args);
     } catch(error) {
-      if (client.debug) console.log(error); // 오류확인
+      if (client.debug) Logger.error(error as any); // 오류확인
       handler.err(message, commandName);
     } finally {
-      client.msgdelete(message, 0);
+      client.msgdelete(message, 0, true);
     }
   } else {
-    const guildDB = await QDB.get(message.guild!);
-    if (guildDB.channelId === message.channelId) {
+    const GDB = await QDB.guild.get(message.guild!);
+    if (GDB.channelId === message.channelId) {
       const getcooldown = handler.cooldown.get(`${message.guildId!}.${message.author.id}`);
       if (getcooldown && getcooldown > Date.now()) {
         message.channel.send({ embeds: [

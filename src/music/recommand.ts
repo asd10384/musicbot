@@ -1,7 +1,7 @@
 import "dotenv/config";
 import axios from "axios";
 import { nowplay } from "./musicClass";
-import checkvideo from "./checkvideo";
+import { checkvideo } from "./checkvideo";
 
 const isNum = (n: any) => !isNaN(n);
 
@@ -12,7 +12,7 @@ const cookie = process.env.B_YOUTUBE_MUSIC_COOKIE;
 const max = process.env.YOUTUBE_MUSIC_MAX && isNum(process.env.YOUTUBE_MUSIC_MAX) ? Number(process.env.YOUTUBE_MUSIC_MAX) : 2;
 const min = 1;
 
-export default async function recommand(recomlist: string[], vid: string): Promise<[string | undefined, nowplay | undefined, string]> {
+export const recommand = async (recomlist: string[], vid: string): Promise<[string | undefined, nowplay | undefined, string]> => {
   if (!key) return [ undefined, undefined, "key를 찾을수 없음" ];
   if (!visitorData) return [ undefined, undefined, "visitorData를 찾을수 없음" ];
   if (!authorization) return [ undefined, undefined, "authorization을 찾을수 없음" ];
@@ -39,7 +39,7 @@ export default async function recommand(recomlist: string[], vid: string): Promi
 }
 
 async function first(vid: string) {
-  return new Promise<[string | undefined, string, string]>((res, rej) => {
+  return new Promise<[string | undefined, string, string]>((res, _rej) => {
     axios.post(`https://music.youtube.com/youtubei/v1/next?key=${key}&prettyPrint=false`, {
       "enablePersistentPlaylistPanel": true,
       "tunerSettingValue": "AUTOMIX_SETTING_NORMAL",
@@ -66,7 +66,7 @@ async function first(vid: string) {
         "x-origin": "https://music.youtube.com",
         "referer": `https://music.youtube.com/watch?v=${vid}`,
         "cookie": `${cookie}`,
-        'Accept-Encoding': '*'
+        'Accept-Encoding': "GZIP,DEFLATE,COMPRESS"
         // "cookie": "YSC=9Uf6zEgc2L0; VISITOR_INFO1_LIVE=fMy5s5mGV1E; GPS=1; _gcl_au=1.1.829840149.1666948199; _ga=GA1.1.1822743544.1666948200; HSID=A0wOAgaH_AcK-ElhZ; SSID=AMBxwP9eJ503wkiVm; APISID=cMcEwrWQfNlEQ20a/A-UBgLhK0OpS3mx9O; SAPISID=dUAj8y2f-C7wq5Rl/A8abTohQ_6hp8O_M8; __Secure-1PAPISID=dUAj8y2f-C7wq5Rl/A8abTohQ_6hp8O_M8; __Secure-3PAPISID=dUAj8y2f-C7wq5Rl/A8abTohQ_6hp8O_M8; LOGIN_INFO=AFmmF2swRQIhANdgVtAaOYY9dWmrEVFw9hXJL8CuFqkk_0n6JJM67dmAAiBENvk6o00BliaDG4qxVr4xoQ0ePV1FgKUQPnvDnrbefQ:QUQ3MjNmeUpiM1U5alB2b0FhWW5wazNwalZHejJ4RFBnT1J3SEprSlZ0Yl9xc0ZxeldaeWswMDF4NnRmSEg1Y0diWEFVb2ozWUsxS3RBX3hTRF9Db1otZ3ZpUGdNUjhsZjI0LV9zUE0wMzlnVGNKMUtBQy1oYzBIOV9HSWN3ekVQOW9sMlNpdUF5MkJKVXNpcUJsVW9fclQ4S0QtVURoX013; NID=511=PdKXqYloB5dk_HPpAIggBed4qjk6cgYmpmfWJ59HQqWVo5zuP9G9X3U_kAOz_rPqGokg87MCfrU8TiQZMhrMlNaRmVaFZio0ZOvqnrgMgCR1_V_omb_10JsucbNpu5ZBuUVoBpu5Lx4t4axybApjDuLP-QBE9SSNsT8gPGQp5_U; CONSISTENCY=APAR8nt0lzzgs46rCct-cNzBOeMvlN8KbPUs73v4BfO4pC4oB4EfvFsIBaovxN5DDdUE4mN_GOuKNEs2XgRWUYRCpriWRyV33A6al2l92_x9AqbJxlWzcpo_SQzXErYA7k2dEF8JJY90o0ByRkIETCfqp_Xy5sdrB8F8BBf-iIgPwJGwnv6E-74Bcxgp; SID=QAi_R0DomYQfDuHXf2lEQWtV4na6PDa5vajaL0PdMTumqJkcCBMjiH9YANajiA9SxDCWxQ.; __Secure-1PSID=QAi_R0DomYQfDuHXf2lEQWtV4na6PDa5vajaL0PdMTumqJkc2RRj8Cs9LRgR1R-xSbOUgQ.; __Secure-3PSID=QAi_R0DomYQfDuHXf2lEQWtV4na6PDa5vajaL0PdMTumqJkcMy4OWENphlu2tmfoaZ_fag.; PREF=f6=80&tz=Asia.Seoul; _ga_VCGEPY40VB=GS1.1.1666948199.1.1.1666948539.0.0.0; SIDCC=AIKkIs0aZUecoEwoZTSV3fbHtBxRdNTpyv2iadC7PbSry2KhI1TbH4W1uiAjFiBYhjHz4TrE9g; __Secure-1PSIDCC=AIKkIs0esPtIx6JF0cRz0dMYOSiV-tojvfNBTzlTuLbviQk6dH9-YZ6OKdhE9ehk3-8Z3QU9lQ; __Secure-3PSIDCC=AIKkIs2vnoaDt8v5ogjoGpnbMwTFuU3J4JOcKHDxXh523r2WobuL6vOnvdTb89n7E9yyiXtn"
       },
       responseType: "json"
@@ -86,7 +86,7 @@ async function first(vid: string) {
       } catch {
         return res([ undefined, "", "추천영상을 찾을수없음15" ]);
       }
-    }).catch((err) => {
+    }).catch((_err) => {
       // console.log(err);
       return res([ undefined, "", "키를 찾을수없음1" ]);
     });
@@ -94,7 +94,7 @@ async function first(vid: string) {
 }
 
 async function second(vid: string, plid: string, params: string, recomlist: string[]) {
-  return new Promise<[string | undefined, string]>((res, rej) => {
+  return new Promise<[string | undefined, string]>((res, _rej) => {
     if (!key) return res([ undefined, "키를 찾을수 없음" ]);
     axios.post(`https://music.youtube.com/youtubei/v1/next?key=${key}&prettyPrint=false`, {
       "enablePersistentPlaylistPanel": true,
@@ -122,7 +122,7 @@ async function second(vid: string, plid: string, params: string, recomlist: stri
         "x-origin": "https://music.youtube.com",
         "referer": `https://music.youtube.com/watch?v=${vid}`,
         "cookie": `${cookie}`,
-        'Accept-Encoding': '*'
+        'Accept-Encoding': "gzip,deflate,compress"
       },
       responseType: "json"
     }).then(async (res2) => {
@@ -148,10 +148,11 @@ async function second(vid: string, plid: string, params: string, recomlist: stri
         }
         if (getvid) return res([ getvid, getvid ? "" : "추천영상을 찾을수없음25" ]);
         return res([ undefined, "추천영상을 찾을수없음2" ]);
-      } catch {
+      } catch (err) {
+        console.log(err);
         return res([ undefined, "추천영상을 찾을수없음21" ]);
       }
-    }).catch((err) => {
+    }).catch((_err) => {
       // console.log(err);
       return res([ undefined, "키를 찾을수없음2" ]);
     })

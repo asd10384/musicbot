@@ -1,26 +1,24 @@
 import { client } from "../index";
 import { Command } from "../interfaces/Command";
-import { I, D } from "../aliases/discord.js";
-import { ApplicationCommandOptionType, Guild } from "discord.js";
-import QDB, { guilddata } from "../database/Quickdb";
+import { ApplicationCommandOptionType, ChatInputApplicationCommandData, CommandInteraction, EmbedBuilder, Guild } from "discord.js";
+import { QDB, guildData } from "../databases/Quickdb";
 
 /**
  * DB
- * let guildDB = await MDB.get.guild(interaction);
+ * const GDB = await MDB.get.guild(interaction);
  * 
  * check permission(role)
  * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
  */
 
-/** queue 명령어 */
-export default class QueueCommand implements Command {
+export default class implements Command {
   /** 해당 명령어 설명 */
   name = "queue";
   visible = true;
   description = "check queue";
   information = "queue 확인";
   aliases: string[] = [  ];
-  metadata: D = {
+  metadata: ChatInputApplicationCommandData = {
     name: this.name,
     description: this.description,
     options: [{
@@ -33,15 +31,19 @@ export default class QueueCommand implements Command {
   msgmetadata?: { name: string; des: string; }[] = undefined;
 
   /** 실행되는 부분 */
-  async slashrun(interaction: I) {
+  async slashRun(interaction: CommandInteraction) {
     const getnumber = interaction.options.get('number') ? interaction.options.get('number')?.value as number : null;
-    let guildDB = await QDB.get(interaction.guild!);
-    return await interaction.followUp({ embeds: [ await this.list(interaction.guild!, guildDB, getnumber) ] });
+    const GDB = await QDB.guild.get(interaction.guild!);
+    return await interaction.followUp({ embeds: [ await this.list(interaction.guild!, GDB, getnumber) ] });
   }
 
-  async list(guild: Guild, guildDB: guilddata, getnumber: number | null) {
+  help(): EmbedBuilder {
+    return client.help(this.metadata.name, this.metadata, this.msgmetadata)!;
+  }
+
+  async list(guild: Guild, GDB: guildData, getnumber: number | null) {
     const mc = client.getmc(guild);
-    const queue = await QDB.queue(guild.id);
+    const queue = await QDB.guild.queue(guild.id);
     if (mc.playing) {
       var list: { label: string, description: string, value: string }[] = [];
       const number = Math.ceil(queue.length / client.maxqueue);
@@ -60,7 +62,7 @@ export default class QueueCommand implements Command {
             description: `입력한 번호가 너무 큽니다.\n현재 \` 1~${list.length} \` 번까지 입력가능합니다.`,
             color: "DarkRed"
           });
-          let options = guildDB.options;
+          let options = GDB.options;
           var list2: string[] = [];
           queue.forEach((data, i) => {
             if (!list2[Math.floor(i/client.maxqueue)]) list2[Math.floor(i/client.maxqueue)] = '';
@@ -69,14 +71,14 @@ export default class QueueCommand implements Command {
           return client.mkembed({
             title: `${Number(getnumber)}번째 QUEUE ${((Number(getnumber)-1)*client.maxqueue)+1}~${((Number(getnumber)-1)*30)+30}`,
             description: list2[Number(getnumber)-1],
-            color: client.embedcolor
+            color: client.embedColor
           });
         }
         return client.mkembed({
           title: `QUEUE 확인`,
           description: `확인할 번호를 선택해주세요.\n현재 \` 1~${list.length} \` 번까지 있습니다.\n한번에 ${client.maxqueue}개씩 볼수있습니다.`,
           footer: { text: `/queue number:[번호] 로선택해주세요.` },
-          color: client.embedcolor
+          color: client.embedColor
         });
       } else {
         return client.mkembed({

@@ -1,35 +1,33 @@
 import { client } from "../index";
-import { check_permission as ckper, embed_permission as emper } from "../function/permission";
+// import { check_permission as ckper, embed_permission as emper } from "../utils/Permission";
 import { Command } from "../interfaces/Command";
-import { I, D } from "../aliases/discord.js";
-import { Message, ActionRowBuilder, ButtonBuilder, EmbedBuilder, ApplicationCommandOptionType } from "discord.js";
-import QDB from "../database/Quickdb";
+import { Message, EmbedBuilder, ChatInputApplicationCommandData, CommandInteraction } from "discord.js";
+// import { QDB } from "../databases/Quickdb";
 
 /**
  * DB
- * let guildDB = await QDB.get(interaction.guild!);
+ * const GDB = await QDB.get(interaction.guild!);
  * 
  * check permission(role)
  * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
  * if (!(await ckper(message))) return message.channel.send({ embeds: [ emper ] }).then(m => client.msgdelete(m, 1));
  */
 
-/** np 명령어 */
-export default class NpCommand implements Command {
+export default class implements Command {
   /** 해당 명령어 설명 */
   name = "np";
   visible = true;
   description = "현재 노래정보를 알려줍니다.";
   information = "현재 노래정보를 알려줍니다.";
   aliases: string[] = [];
-  metadata: D = {
+  metadata: ChatInputApplicationCommandData = {
     name: this.name,
     description: this.description
   };
   msgmetadata?: { name: string; des: string; }[] = undefined;
 
   /** 실행되는 부분 */
-  async slashrun(interaction: I) {
+  async slashRun(interaction: CommandInteraction) {
     const mc = client.getmc(interaction.guild!);
     if (!mc.playing || !mc.nowplaying) return await interaction.followUp({ embeds: [
       client.mkembed({
@@ -56,7 +54,7 @@ export default class NpCommand implements Command {
       })
     ] });
   }
-  async msgrun(message: Message, args: string[]) {
+  async messageRun(message: Message, _args: string[]) {
     const mc = client.getmc(message.guild!);
     if (!mc.playing || !mc.nowplaying) return message.channel.send({ embeds: [
       client.mkembed({

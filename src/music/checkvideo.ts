@@ -4,11 +4,11 @@ const areaobj = {
   KR: "한국"
 };
 
-export default async function checkvideo(data: { url?: string, getInfo?: ytdl.videoInfo }): Promise<[ true, ytdl.videoInfo ] | [ false, string ]> {
+export const checkvideo = async (data: { url?: string, getInfo?: ytdl.videoInfo }): Promise<[ true, ytdl.videoInfo ] | [ false, string ]> => {
   if (data.url) {
     const info = await ytdl.getInfo(data.url, {
       lang: "KR"
-    }).catch((err) => {
+    }).catch(() => {
       return undefined;
     });
     if (info && info.videoDetails) {

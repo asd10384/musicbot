@@ -1,26 +1,24 @@
 import { client } from "../index";
 import { Command } from "../interfaces/Command";
-import { I, D, M } from "../aliases/discord.js.js";
-import { ApplicationCommandOptionType, EmbedBuilder } from "discord.js";
-import QDB, { nowplay } from "../database/Quickdb";
+import { ApplicationCommandOptionType, ChatInputApplicationCommandData, CommandInteraction, EmbedBuilder } from "discord.js";
+import { QDB, nowplay } from "../databases/Quickdb";
 
 /**
  * DB
- * let guildDB = await MDB.get.guild(interaction);
+ * const GDB = await MDB.get.guild(interaction);
  * 
  * check permission(role)
  * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
  */
 
-/** Remove 명령어 */
-export default class RemoveCommand implements Command {
+export default class implements Command {
   /** 해당 명령어 설명 */
   name = "remove";
   visible = true;
   description = "remove queue song";
   information = "목록에 있는 노래 제거";
-  aliases: string[] = [  ];
-  metadata: D = {
+  aliases: string[] = [];
+  metadata: ChatInputApplicationCommandData = {
     name: this.name,
     description: this.description,
     options: [{
@@ -33,25 +31,25 @@ export default class RemoveCommand implements Command {
   msgmetadata?: { name: string; des: string; }[] = undefined;
 
   /** 실행되는 부분 */
-  async slashrun(interaction: I) {
-    let number = interaction.options.get('number', true).value as number;
+  async slashRun(interaction: CommandInteraction) {
+    let number = interaction.options.data[0].value as number;
     return await interaction.followUp({ embeds: [ await this.remove(interaction, number) ] });
   }
 
-  async remove(message: M | I, number: number): Promise<EmbedBuilder> {
-    const queue = await QDB.queue(message.guildId!);
+  async remove(message: CommandInteraction, number: number): Promise<EmbedBuilder> {
+    const queue = await QDB.guild.queue(message.guildId!);
     const mc = client.getmc(message.guild!);
     if (number > 0 && queue.length >= number) {
       let list: nowplay[] = [];
       queue.forEach((data, i) => {
         if (i !== number-1) list.push(data);
       });
-      await QDB.setqueue(message.guildId!, list);
+      await QDB.guild.setqueue(message.guildId!, list);
       mc.setmsg();
       return client.mkembed({
         title: `${number}번 노래 제거 완료`,
         description: `/queue 로 번호를 확인해주세요.`,
-        color: client.embedcolor
+        color: client.embedColor
       });
     } else {
       return client.mkembed({

@@ -1,13 +1,13 @@
 import { client } from "../index";
-import { M } from "../aliases/discord.js.js";
-import QDB from "../database/Quickdb";
+import { QDB } from "../databases/Quickdb";
 import ytdl from "ytdl-core";
+import { Message } from "discord.js";
 
 export type parmas = {
   shuffle?: boolean;
 }
 
-export default async function music(message: M, text: string) {
+export const music = async (message: Message, text: string) => {
   let args = text.trim().replace(/ +/g," ").split(" -");
   if (args.length === 0) return;
   const mc = client.getmc(message.guild!);
@@ -25,7 +25,7 @@ export default async function music(message: M, text: string) {
     shuffle: (args.includes("S")) ? true : false
   }
   const searching = await mc.search(message, searchtext, parmas);
-  searching[2]?.delete().catch((err) => { if (client.debug) console.log('addembed 메세지 삭제 오류'); });
+  searching[2]?.delete().catch(() => { if (client.debug) console.log('addembed 메세지 삭제 오류'); });
   if (searching[0]) {
     if (mc.playing) {
       return addqueue(message, searching[0]);
@@ -43,9 +43,9 @@ export default async function music(message: M, text: string) {
   }).then(m => client.msgdelete(m, 1000*10, true));
 }
 
-async function addqueue(message: M, getsearch: ytdl.videoInfo) {
+async function addqueue(message: Message, getsearch: ytdl.videoInfo) {
   let getinfo = getsearch.videoDetails;
-  await QDB.addqueue(message.guildId!, {
+  await QDB.guild.addqueue(message.guildId!, {
     title: getinfo.title,
     duration: getinfo.lengthSeconds,
     author: getinfo.author!.name,
