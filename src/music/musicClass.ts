@@ -329,7 +329,7 @@ export class Music {
         adapterCreator: this.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator,
         guildId: this.guild.id,
         channelId: voicechannel.id
-      });
+      }).setMaxListeners(0);
       return res(connection);
     })
   }
