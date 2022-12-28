@@ -6,6 +6,7 @@ import { ApplicationCommandOptionType, ChannelType, ChatInputApplicationCommandD
 import { QDB, guildData } from "../databases/Quickdb";
 import { DiscordGatewayAdapterCreator, joinVoiceChannel } from "@discordjs/voice";
 import { BOT_NUMBER } from "../databases/Quickdb";
+import { Logger } from "../utils/Logger";
 
 /**
  * DB
@@ -120,7 +121,9 @@ export default class implements Command {
     if (channel) {
       await (channel as TextChannel).messages.fetch().then((msg) => {
         try {
-          if (msg.size > 0) (channel as TextChannel).bulkDelete(msg.size).catch(() => { if (client.debug) console.log('메세지 전체 삭제 오류'); });
+          if (msg.size > 0) (channel as TextChannel).bulkDelete(msg.size).catch(() => {
+            if (client.debug) Logger.error('메세지 전체 삭제 오류');
+          });
         } catch (err) {}
       });
     } else {

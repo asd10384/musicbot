@@ -40,7 +40,9 @@ function musicfix() {
         if (channel && channel.type === ChannelType.GuildText) {
           channel.messages.fetch().then(async (msgs) => {
             try {
-              if (msgs.size > 0) channel.bulkDelete(msgs.size).catch(() => { if (client.debug) console.log('메세지 전체 삭제 오류'); });
+              if (msgs.size > 0) channel.bulkDelete(msgs.size).catch(() => {
+                if (client.debug) Logger.error('메세지 전체 삭제 오류');
+              });
             } catch (err) {}
             await sleep(500);
             const msg = await channel.send({
@@ -66,13 +68,13 @@ function musicfix() {
               if (msg?.guild) {
                 const mc = client.getmc(msg.guild);
                 mc.stop(true, "onReady");
-                console.log(`${msg.guild.name} : 시작 fix 성공`);
+                Logger.ready(`${msg.guild.name} : 시작 fix 성공`);
                 mc.sendlog(`시작 fix 성공`);
               }
               return;
             }).catch(() => {
               if (msg?.guild) {
-                console.log(`${msg.guild.name} : 시작 fix 실패`);
+                Logger.ready(`${msg.guild.name} : 시작 fix 실패`);
                 client.getmc(msg.guild).sendlog(`시작 fix 실패`);
                 return;
               }

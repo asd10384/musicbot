@@ -17,7 +17,7 @@ import fluentFFmpeg from "fluent-ffmpeg";
 import { createReadStream } from "fs";
 import { recommand } from "./recommand";
 import { getytmusic } from "./getytmusic";
-// import { Logger } from "../utils/Logger";
+import { Logger } from "../utils/Logger";
 
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
@@ -106,12 +106,12 @@ export class Music {
         requestOptions: { agent },
         limit: 50000 // (GDB.options.listlimit) ? GDB.options.listlimit : 300
       }).catch((err) => {
-        if (client.debug) console.log(err);
+        if (client.debug) Logger.error(err);
         return undefined;
       });
       addedembed?.delete().catch(() => {});
       if (list && list.items && list.items.length > 0) {
-        if (client.debug) console.log(this.guild.name, list.title, list.items.length, (GDB.options.listlimit) ? GDB.options.listlimit : 300);
+        if (client.debug) Logger.log(`${this.guild.name}, ${list.title}, ${list.items.length}, ${(GDB.options.listlimit) ? GDB.options.listlimit : 300}`);
         this.sendlog(`${list.title}: ${list.items.length}`);
         const addembed = await message.channel.send({ embeds: [
           client.mkembed({
@@ -211,7 +211,7 @@ export class Music {
         let vid = this.nowplaying ? this.nowplaying.url.replace("https://www.youtube.com/watch?v=","") : "7n9D8ZeOQv0";
         this.recomlist.push(vid);
         let recom = await recommand(this.recomlist, vid);
-        // console.log(recom);
+        // Logger.log(recom);
         if (recom[0]) {
           data = recom[1];
         } else {
@@ -273,7 +273,7 @@ export class Music {
           liveBuffer: livestream ? 5000 : undefined,
           requestOptions: { agent }
         }).once('error', (err) => {
-          if (client.debug) console.log('ytdl-core오류1:', err);
+          if (client.debug) Logger.error(`ytdl-core오류1: ${err}`);
           return undefined;
         });
         if (!ytsource) {
@@ -289,8 +289,9 @@ export class Music {
           return res([ undefined, undefined ]);
         }
         ytsource.setMaxListeners(0);
-        if (!time) return res([ ytsource, undefined ]);
-        else {
+        if (!time) {
+          return res([ ytsource, undefined ]);
+        } else {
           const name = await this.makefile(msgchannel, ytsource, time);
           if (!name) {
             msgchannel?.send({ embeds: [
@@ -438,7 +439,7 @@ export class Music {
           this.nowstatus = "재생중지됨";
           if (addduration) clearInterval(addduration);
           if (connection.state.status != VoiceConnectionStatus.Ready && getVoiceConnection(this.guild.id)) {
-            if (client.debug) console.log('connection오류:', err);
+            if (client.debug) Logger.error(`connection오류: ${err}`);
             msgchannel.send({ embeds: [
               client.mkembed({
                 title: `오류발생`,
@@ -476,7 +477,7 @@ export class Music {
           this.nowstatus = "재생중지됨";
           if (addduration) clearInterval(addduration);
           if (Player.state.status != AudioPlayerStatus.Playing) {
-            if (client.debug) console.log('Player오류:', err);
+            if (client.debug) Logger.error(`Player오류: ${err}`);
             msgchannel.send({ embeds: [
               client.mkembed({
                 title: `오류발생`,
@@ -511,7 +512,7 @@ export class Music {
           }
         });
       } catch (err) {
-        if (client.debug) console.log('Catch오류:', err);
+        if (client.debug) Logger.error(`Catch오류: ${err}`);
         msgchannel.send({ embeds: [
           client.mkembed({
             title: `오류발생`,
