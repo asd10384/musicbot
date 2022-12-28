@@ -21,7 +21,8 @@ import { Logger } from "../utils/Logger";
 
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
-const LOGSC = process.env.LOGSC ? process.env.LOGSC.trim().split(",").length === 2 ? process.env.LOGSC.trim().split(",") : undefined : undefined;
+const LOG_SERVER_ID = process.env.LOG_SERVER_ID ? process.env.LOG_SERVER_ID.trim() : undefined;
+const LOG_SERVER_CHANNEL_ID = process.env.LOG_SERVER_CHANNEL_ID ? process.env.LOG_SERVER_CHANNEL_ID.trim() : undefined;
 
 export interface nowplay {
   title: string;
@@ -772,10 +773,17 @@ export class Music {
   }
 
   sendlog(text: string) {
-    if (!LOGSC) return;
-    const guild = client.guilds.cache.get(LOGSC[0]);
+    if (!LOG_SERVER_ID) {
+      if (client.debug) Logger.error(`LOG_SERVER_ID를 찾을수 없음`);
+      return;
+    }
+    if (!LOG_SERVER_CHANNEL_ID) {
+      if (client.debug) Logger.error(`LOG_SERVER_CHANNEL_ID를 찾을수 없음`);
+      return;
+    }
+    const guild = client.guilds.cache.get(LOG_SERVER_ID);
     if (!guild) return;
-    const channel = guild.channels.cache.get(LOGSC[1]);
+    const channel = guild.channels.cache.get(LOG_SERVER_CHANNEL_ID);
     if (!channel) return;
     if (channel.type !== ChannelType.GuildText) return;
     channel.send({ embeds: [ client.mkembed({
