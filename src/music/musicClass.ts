@@ -94,9 +94,10 @@ export class Music {
     } else if (url.list) { // 유튜브 재생목록
       const GDB = await QDB.guild.get(this.guild);
       this.inputplaylist = true;
+      const embedUrlText = `[플레이리스트](https://www.youtube.com/playlist?list=${url.list[1].replace(/\&.+/g,'')})`;
       const addedembed = await message.channel.send({ embeds: [
         client.mkembed({
-          description: `<@${message.author.id}> 플레이리스트 확인중...\n(노래가 많으면 많을수록 오래걸립니다.)`,
+          description: `<@${message.author.id}> ${embedUrlText} 확인중...\n(노래가 많으면 많을수록 오래걸립니다.)`,
           color: client.embedColor
         })
       ] }).catch(() => {
@@ -116,7 +117,7 @@ export class Music {
         this.sendlog(`${list.title}: ${list.items.length}`);
         const addembed = await message.channel.send({ embeds: [
           client.mkembed({
-            title: `\` ${list.title} \` 플레이리스트 추가중...`,
+            title: `\` ${list.title} \` ${embedUrlText} 추가중...`,
             description: `재생목록에 \` ${list.items.length} \` 곡 ${parmas?.shuffle ? "섞어서 " : ""}추가중`,
             color: client.embedColor
           })
