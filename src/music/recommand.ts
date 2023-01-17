@@ -149,7 +149,7 @@ async function second(vid: string, plid: string, params: string, recomlist: stri
         if (getvid) return res([ getvid, getvid ? "" : "추천영상을 찾을수없음25" ]);
         return res([ undefined, "추천영상을 찾을수없음2" ]);
       } catch (err) {
-        console.log(err);
+        // console.log(err);
         return res([ undefined, "추천영상을 찾을수없음21" ]);
       }
     }).catch((_err) => {

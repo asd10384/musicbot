@@ -23,6 +23,7 @@ export const agent = new HttpsProxyAgent(process.env.PROXY!);
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
 const LOG_SERVER_ID = process.env.LOG_SERVER_ID ? process.env.LOG_SERVER_ID.trim() : undefined;
 const LOG_SERVER_CHANNEL_ID = process.env.LOG_SERVER_CHANNEL_ID ? process.env.LOG_SERVER_CHANNEL_ID.trim() : undefined;
+export const YT_TOKEN = process.env.YT_TOKEN && process.env.YT_TOKEN.length != 0 ? process.env.YT_TOKEN : undefined;
 
 export interface nowplay {
   title: string;
@@ -213,7 +214,7 @@ export class Music {
         let vid = this.nowplaying ? this.nowplaying.url.replace("https://www.youtube.com/watch?v=","") : "7n9D8ZeOQv0";
         this.recomlist.push(vid);
         let recom = await recommand(this.recomlist, vid);
-        // Logger.log(recom);
+        // Logger.log(JSON.stringify(recom, undefined, 2));
         if (recom[0]) {
           data = recom[1];
         } else {
@@ -273,7 +274,12 @@ export class Music {
           highWaterMark: 1 << 20,
           dlChunkSize: 0,
           liveBuffer: livestream ? 5000 : undefined,
-          requestOptions: { agent }
+          requestOptions: {
+            agent,
+            headers: {
+              "cookie": `${YT_TOKEN}`
+            }
+          }
         }).once('error', (err) => {
           if (client.debug) Logger.error(`ytdl-core오류1: ${err}`);
           return undefined;
@@ -456,7 +462,13 @@ export class Music {
             const check = await checkvideo({ url: data?.url });
             if (check) {
               const info = await ytdl.getInfo(data!.url, {
-                lang: "KR"
+                lang: "KR",
+                requestOptions: {
+                  agent,
+                  headers: {
+                    "cookie": `${YT_TOKEN}`
+                  }
+                }
               }).catch(() => {
                 return undefined;
               });
@@ -494,7 +506,13 @@ export class Music {
             const check = await checkvideo({ url: data?.url });
             if (check) {
               const info = await ytdl.getInfo(data!.url, {
-                lang: "KR"
+                lang: "KR",
+                requestOptions: {
+                  agent,
+                  headers: {
+                    "cookie": `${YT_TOKEN}`
+                  }
+                }
               }).catch(() => {
                 return undefined;
               });

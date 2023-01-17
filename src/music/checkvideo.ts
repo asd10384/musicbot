@@ -1,4 +1,5 @@
 import ytdl from "ytdl-core";
+import { agent, YT_TOKEN } from "./musicClass";
 
 const areaobj = {
   KR: "한국"
@@ -7,7 +8,13 @@ const areaobj = {
 export const checkvideo = async (data: { url?: string, getInfo?: ytdl.videoInfo }): Promise<[ true, ytdl.videoInfo ] | [ false, string ]> => {
   if (data.url) {
     const info = await ytdl.getInfo(data.url, {
-      lang: "KR"
+      lang: "KR",
+      requestOptions: {
+        agent,
+        headers: {
+          "cookie": `${YT_TOKEN}`
+        }
+      }
     }).catch(() => {
       return undefined;
     });
