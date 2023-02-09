@@ -2,21 +2,13 @@ import "dotenv/config";
 import { Guild, GuildMember } from "discord.js";
 import { QuickDB } from "quick.db";
 import { client } from "..";
+import { nowplay } from "../music/musicClass";
 
 const qdb = new QuickDB({
   filePath: process.env.DB_FILE_PATH || "./dbfile.sqlite"
 });
 
 export const BOT_NUMBER = (process.env.BOT_NUMBER) ? process.env.BOT_NUMBER : '';
-
-export interface nowplay {
-  title: string;
-  author: string;
-  duration: string;
-  url: string;
-  image: string;
-  player: string;
-};
 
 export interface music {
   playing: boolean;

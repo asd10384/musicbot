@@ -1,7 +1,8 @@
 import { client } from "../index";
 import { Command } from "../interfaces/Command";
 import { ApplicationCommandOptionType, ChatInputApplicationCommandData, CommandInteraction, EmbedBuilder } from "discord.js";
-import { QDB, nowplay } from "../databases/Quickdb";
+import { QDB } from "../databases/Quickdb";
+import { nowplay } from "../music/musicClass";
 
 /**
  * DB

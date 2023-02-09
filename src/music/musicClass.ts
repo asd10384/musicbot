@@ -729,7 +729,7 @@ export class Music {
       };
       var title = '';
       if (this.playing && data.url.length > 0) {
-        title = `**[${this.settime(data.duration)}] - ${(GDB.options.author) ? `${data.author.replace(" - Topic","")} - ` : ''}${data.title}**`;
+        title = `**[${this.settime(data.duration)}] ${(GDB.options.author) ? `${data.author.replace(" - Topic","")} - ` : ''}${data.title}**`;
       } else {
         title = `**현재 노래가 재생되지 않았습니다**.`;
         data.image = 'https://cdn.hydra.bot/hydra_no_music.png';
