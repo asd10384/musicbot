@@ -3,6 +3,7 @@ import "dotenv/config";
 import { client, handler } from "..";
 import { Logger } from "../utils/Logger";
 import { ChannelType } from "discord.js";
+import { makeButton } from "../config/config";
 
 export const onReady = () => {
   if (!client.user) return;
@@ -60,11 +61,7 @@ function musicfix() {
               msgId: msg?.id ? msg.id : "null"
             }).then((val) => {
               if (!val) return `데이터베이스 오류\n다시시도해주세요.`;
-              msg?.react('⏯️');
-              msg?.react('⏹️');
-              msg?.react('⏭️');
-              msg?.react('🔀');
-              msg?.react('<:auto:1035604533532954654>');
+              msg?.edit({ content: msg.content, embeds: msg.embeds, components: [ makeButton() ] });
               if (msg?.guild) {
                 const mc = client.getmc(msg.guild);
                 mc.stop(true, "onReady");

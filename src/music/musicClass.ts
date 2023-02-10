@@ -18,6 +18,7 @@ import { createReadStream } from "fs";
 import { recommand } from "./recommand";
 import { getytmusic } from "./getytmusic";
 import { Logger } from "../utils/Logger";
+import { makeButton } from "../config/config";
 
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
@@ -681,12 +682,13 @@ export class Music {
   setmsg(pause?: boolean, waitrecom?: boolean) {
     setTimeout(() => {
       QDB.guild.get(this.guild).then(async (GDB) => {
+        const actionRow = makeButton(this.playing && !pause ? false : true, !this.playing, false, !this.playing, (await QDB.guild.queue(this.guild.id)).length <= 1, false);
         let text = await this.setlist(GDB);
         if (!text) return;
         let embed = await this.setembed(GDB, pause, waitrecom);
         if (!embed) return;
         let channel = this.guild.channels.cache.get(GDB.channelId);
-        if (channel && channel.type === ChannelType.GuildText) channel.messages.cache.get(GDB.msgId)?.edit({ content: text, embeds: [embed] }).catch(() => {});
+        if (channel && channel.type === ChannelType.GuildText) channel.messages.cache.get(GDB.msgId)?.edit({ content: text, embeds: [embed], components: [ actionRow ] }).catch(() => {});
       }).catch(() => {});
     }, 15);
   }

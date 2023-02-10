@@ -3,7 +3,7 @@ import { Message, MessageReaction, PartialMessage, PartialMessageReaction, Parti
 import { client } from "..";
 import { shuffle } from "../music/shuffle";
 
-const checkChannel = async (message: Message | PartialMessage, user: User | PartialUser) => {
+export const checkChannel = async (message: Message | PartialMessage, user: User | PartialUser) => {
   const bot = await message.guild?.members.fetchMe({ cache: true });
   const member = message.guild?.members.cache.get(user.id);
   if (member?.voice?.channelId && bot?.voice?.channelId && member?.voice?.channelId === bot?.voice?.channelId) return true;

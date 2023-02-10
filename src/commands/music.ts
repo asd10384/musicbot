@@ -7,6 +7,7 @@ import { QDB, guildData } from "../databases/Quickdb";
 import { DiscordGatewayAdapterCreator, joinVoiceChannel } from "@discordjs/voice";
 import { BOT_NUMBER } from "../databases/Quickdb";
 import { Logger } from "../utils/Logger";
+import { makeButton } from "../config/config";
 
 /**
  * DB
@@ -104,11 +105,7 @@ export default class implements Command {
       msgId: msg?.id ? msg.id : "null"
     }).then((val) => {
       if (!val) return `데이터베이스 오류\n다시시도해주세요.`;
-      msg?.react('⏯️');
-      msg?.react('⏹️');
-      msg?.react('⏭️');
-      msg?.react('🔀');
-      msg?.react('<:auto:1035604533532954654>');
+      msg?.edit({ content: msg.content, embeds: msg.embeds, components: [ makeButton() ] });
       return `<#${channel?.id!}> creation complete!`;
     }).catch(() => {
       return `데이터베이스 오류\n다시시도해주세요.`;
@@ -149,11 +146,7 @@ export default class implements Command {
       msgId: msg?.id ? msg.id : "null"
     }).then((val) => {
       if (!val) return `데이터베이스 오류\n다시시도해주세요.`;
-      msg?.react('⏯️');
-      msg?.react('⏹️');
-      msg?.react('⏭️');
-      msg?.react('🔀');
-      msg?.react('<:auto:1035604533532954654>');
+      msg?.edit({ content: msg.content, embeds: msg.embeds, components: [ makeButton() ] });
       client.getmc(msg.guild!).stop(true, "command-music-fix");
       return `Error correction completed!`;
     }).catch(() => {
