@@ -4,7 +4,7 @@ import { CacheType, Message, ActionRowBuilder, EmbedBuilder, ChatInputApplicatio
 
 /**
  * DB
- * const GDB = await QDB.get(interaction);
+ * let GDB = await QDB.get(interaction);
  * 
  * check permission(role)
  * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });

@@ -93,7 +93,7 @@ export class Music {
       if (checkv[0]) return [ checkv[1], "video", undefined ];
       return [ undefined, checkv[1], undefined ];
     } else if (url.list) { // 유튜브 재생목록
-      const GDB = await QDB.guild.get(this.guild);
+      let GDB = await QDB.guild.get(this.guild);
       this.inputplaylist = true;
       const embedUrlText = `[플레이리스트](https://www.youtube.com/playlist?list=${url.list[1].replace(/\&.+/g,'')})`;
       const addedembed = await message.channel.send({ embeds: [
@@ -343,7 +343,7 @@ export class Music {
   }
 
   async play(message: Message | PartialMessage | CommandInteraction | undefined, getsearch?: ytdl.videoInfo, time?: number) {
-    const GDB = await QDB.guild.get(this.guild);
+    let GDB = await QDB.guild.get(this.guild);
     const channelid = GDB.channelId;
     const msgchannel = this.guild.channels.cache.get(channelid) as TextChannel;
     let voicechannel = await this.getchannel(message);

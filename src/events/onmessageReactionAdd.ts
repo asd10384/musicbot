@@ -25,7 +25,7 @@ export const onmessageReactionAdd = async (reaction: MessageReaction | PartialMe
   if (reaction.message.partial) await reaction.message.fetch();
   if (reaction.partial) await reaction.fetch();
 
-  const GDB = await QDB.guild.get(reaction.message.guild!);
+  let GDB = await QDB.guild.get(reaction.message.guild!);
   const mc = client.getmc(reaction.message.guild!);
 
   const name = reaction.emoji.name;

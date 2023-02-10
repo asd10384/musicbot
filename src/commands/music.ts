@@ -10,7 +10,7 @@ import { Logger } from "../utils/Logger";
 
 /**
  * DB
- * const GDB = await MDB.get.guild(interaction);
+ * let GDB = await MDB.get.guild(interaction);
  * 
  * check permission(role)
  * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });

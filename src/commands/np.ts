@@ -6,7 +6,7 @@ import { Message, EmbedBuilder, ChatInputApplicationCommandData, CommandInteract
 
 /**
  * DB
- * const GDB = await QDB.get(interaction.guild!);
+ * let GDB = await QDB.get(interaction.guild!);
  * 
  * check permission(role)
  * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });

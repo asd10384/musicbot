@@ -6,7 +6,7 @@ import { QDB, guildData } from "../databases/Quickdb";
 
 /**
  * DB
- * const GDB = await QDB.get(interaction);
+ * let GDB = await QDB.get(interaction);
  * 
  * check permission(role)
  * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
@@ -83,7 +83,7 @@ export default class implements Command {
     if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
     const cmd = interaction.options.data[0];
     const role = cmd.options ? cmd.options[0]?.role : undefined;
-    const GDB = await QDB.guild.get(interaction.guild!);
+    let GDB = await QDB.guild.get(interaction.guild!);
     if (cmd.name === '목록') return await interaction.followUp({ embeds: [ this.list(GDB) ] });
     if (cmd.name === '추가') return await interaction.followUp({ embeds: [ await this.add(GDB, role!.id) ] });
     if (cmd.name === '제거') return await interaction.followUp({ embeds: [ await this.remove(GDB, role!.id) ] });
@@ -93,7 +93,7 @@ export default class implements Command {
   }
   async messageRun(message: Message, args: string[]) {
     if (!(await ckper(message))) return message.channel.send({ embeds: [ emper ] });
-    const GDB = await QDB.guild.get(message.guild!);
+    let GDB = await QDB.guild.get(message.guild!);
     if (!GDB) return message.channel.send({ embeds: [ client.mkembed({
       title: `데이터베이스오류`,
       description: "다시시도해주세요.",

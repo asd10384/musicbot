@@ -21,7 +21,7 @@ export const onMessageCreate = async (message: Message) => {
       client.msgdelete(message, 0, true);
     }
   } else {
-    const GDB = await QDB.guild.get(message.guild!);
+    let GDB = await QDB.guild.get(message.guild!);
     if (GDB.channelId === message.channelId) {
       const getcooldown = handler.cooldown.get(`${message.guildId!}.${message.author.id}`);
       if (getcooldown && getcooldown > Date.now()) {

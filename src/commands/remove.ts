@@ -6,7 +6,7 @@ import { nowplay } from "../music/musicClass";
 
 /**
  * DB
- * const GDB = await MDB.get.guild(interaction);
+ * let GDB = await MDB.get.guild(interaction);
  * 
  * check permission(role)
  * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });

@@ -5,7 +5,7 @@ import { QDB, guildData } from "../databases/Quickdb";
 
 /**
  * DB
- * const GDB = await MDB.get.guild(interaction);
+ * let GDB = await MDB.get.guild(interaction);
  * 
  * check permission(role)
  * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
@@ -33,7 +33,7 @@ export default class implements Command {
   /** 실행되는 부분 */
   async slashRun(interaction: CommandInteraction) {
     const getnumber = interaction.options.get('number') ? interaction.options.get('number')?.value as number : null;
-    const GDB = await QDB.guild.get(interaction.guild!);
+    let GDB = await QDB.guild.get(interaction.guild!);
     return await interaction.followUp({ embeds: [ await this.list(interaction.guild!, GDB, getnumber) ] });
   }
 
