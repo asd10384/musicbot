@@ -1,12 +1,11 @@
 import axios from "axios";
-import { key, contentClientVersion, A as Adata } from "./data";
+import { key, contentClientVersion, Adata } from "./data";
 
-const { authorization, cookie, visitorData } = Adata;
+const { authorization, cookie } = Adata;
 
 export const getytmusic = async (query: string) => {
   return new Promise<[string | undefined, string]>((res, _rej) => {
     axios.post(`https://music.youtube.com/youtubei/v1/search?key=${key}&prettyPrint=false&alt=json`, {
-      // "params": "EgWKAQIIAWoKEAMQBBAJEAoQBQ%3D%3D",
       "query": query,
       "context": {
         "client": {
@@ -15,7 +14,6 @@ export const getytmusic = async (query: string) => {
           "remoteHost": "",
           "deviceMake": "",
           "deviceModel": "",
-          "visitorData": `${visitorData}`,
           "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36,gzip(gfe)",
           "clientName": "WEB_REMIX",
           "clientVersion": `${contentClientVersion}`,
@@ -27,7 +25,6 @@ export const getytmusic = async (query: string) => {
           "timeZone": "Asia/Seoul",
           "browserName": "Chrome",
           "acceptHeader": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-          "deviceExperimentId": `${visitorData}`,
           "userInterfaceTheme": "USER_INTERFACE_THEME_LIGHT",
           "musicAppInfo": {
             "pwaInstallabilityStatus": "PWA_INSTALLABILITY_STATUS_UNKNOWN",
