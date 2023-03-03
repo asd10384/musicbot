@@ -1,6 +1,6 @@
 import { client } from "../index";
 import { Command } from "../interfaces/Command";
-import { Message, EmbedBuilder, ApplicationCommandOptionType, ChatInputApplicationCommandData, CommandInteraction } from "discord.js";
+import { Message, EmbedBuilder, ApplicationCommandOptionType, ChatInputApplicationCommandData, CommandInteraction, TextChannel } from "discord.js";
 import { check_permission as ckper, embed_permission as emper } from "../utils/Permission";
 import { QDB, guildData } from "../databases/Quickdb";
 
@@ -92,29 +92,29 @@ export default class implements Command {
     ] });
   }
   async messageRun(message: Message, args: string[]) {
-    if (!(await ckper(message))) return message.channel.send({ embeds: [ emper ] });
+    if (!(await ckper(message))) return (message.channel as TextChannel).send({ embeds: [ emper ] });
     let GDB = await QDB.guild.get(message.guild!);
-    if (!GDB) return message.channel.send({ embeds: [ client.mkembed({
+    if (!GDB) return (message.channel as TextChannel).send({ embeds: [ client.mkembed({
       title: `데이터베이스오류`,
       description: "다시시도해주세요.",
       color: "DarkRed"
     }) ] }).then(m => client.msgdelete(m, 1));
-    if (args[0] === "목록") return message.channel.send({ embeds: [ this.list(GDB) ] }).then(m => client.msgdelete(m, 4));
+    if (args[0] === "목록") return (message.channel as TextChannel).send({ embeds: [ this.list(GDB) ] }).then(m => client.msgdelete(m, 4));
     if (args[0] === "추가") {
       if (args[1]) {
         const role = message.guild?.roles.cache.get(args[1]);
-        if (role) return message.channel.send({ embeds: [ await this.add(GDB, role.id) ] }).then(m => client.msgdelete(m, 2));
+        if (role) return (message.channel as TextChannel).send({ embeds: [ await this.add(GDB, role.id) ] }).then(m => client.msgdelete(m, 2));
       }
-      return message.channel.send({ embeds: [ this.err("추가", "역할을 찾을수 없습니다.") ] }).then(m => client.msgdelete(m, 1));
+      return (message.channel as TextChannel).send({ embeds: [ this.err("추가", "역할을 찾을수 없습니다.") ] }).then(m => client.msgdelete(m, 1));
     }
     if (args[0] === "제거") {
       if (args[1]) {
         const role = message.guild?.roles.cache.get(args[1]);
-        if (role) return message.channel.send({ embeds: [ await this.remove(GDB, role.id) ] }).then(m => client.msgdelete(m, 2));
+        if (role) return (message.channel as TextChannel).send({ embeds: [ await this.remove(GDB, role.id) ] }).then(m => client.msgdelete(m, 2));
       }
-      return message.channel.send({ embeds: [ this.err("제거", "역할을 찾을수 없습니다.") ] }).then(m => client.msgdelete(m, 1));
+      return (message.channel as TextChannel).send({ embeds: [ this.err("제거", "역할을 찾을수 없습니다.") ] }).then(m => client.msgdelete(m, 1));
     }
-    return message.channel.send({ embeds: [ client.help(this.name, this.metadata, this.msgmetadata)! ] }).then(m => client.msgdelete(m, 5));
+    return (message.channel as TextChannel).send({ embeds: [ client.help(this.name, this.metadata, this.msgmetadata)! ] }).then(m => client.msgdelete(m, 5));
   }
 
   err(name: string, desc: string): EmbedBuilder {

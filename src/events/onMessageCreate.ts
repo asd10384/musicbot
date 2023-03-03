@@ -1,4 +1,4 @@
-import { ChannelType, Message } from "discord.js";
+import { ChannelType, Message, TextChannel } from "discord.js";
 import { client, handler } from "..";
 import { Logger } from "../utils/Logger";
 import { QDB } from "../databases/Quickdb";
@@ -25,7 +25,7 @@ export const onMessageCreate = async (message: Message) => {
     if (GDB.channelId === message.channelId) {
       const getcooldown = handler.cooldown.get(`${message.guildId!}.${message.author.id}`);
       if (getcooldown && getcooldown > Date.now()) {
-        message.channel.send({ embeds: [
+        (message.channel as TextChannel).send({ embeds: [
           client.mkembed({
             description: `**<@${message.author.id}>님 너무 빠르게 입력했습니다.**\n${((getcooldown - Date.now())/1000).toFixed(2)}초 뒤에 다시 사용해주세요.`,
             color: "DarkRed"

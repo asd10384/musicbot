@@ -1,6 +1,6 @@
 import { client } from "../index";
 import { Command } from "../interfaces/Command";
-import { ApplicationCommandOptionType, ChatInputApplicationCommandData, CommandInteraction, EmbedBuilder, Message } from "discord.js";
+import { ApplicationCommandOptionType, ChatInputApplicationCommandData, CommandInteraction, EmbedBuilder, Message, TextChannel } from "discord.js";
 import { entersState, getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 
 /**
@@ -36,7 +36,7 @@ export default class implements Command {
     return await interaction.followUp({ embeds: [ await this.seek(interaction, time) ] });
   }
   async messageRun(message: Message, args: string[]) {
-    return await message.channel.send({ embeds: [ await this.seek(message, args.join(":")) ] });
+    return await (message.channel as TextChannel).send({ embeds: [ await this.seek(message, args.join(":")) ] });
   }
 
   async seek(message: Message | CommandInteraction, time: string): Promise<EmbedBuilder> {
