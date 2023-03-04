@@ -342,15 +342,17 @@ export class Music {
       connection.setMaxListeners(0);
       connection.configureNetworking();
       connection.once("stateChange", (oldState, newState) => {
-        const oldNetworking = Reflect.get(oldState, 'networking');
-        const newNetworking = Reflect.get(newState, 'networking');
-        const networkStateChangeHandler = (_oldNetworkState: any, newNetworkState: any) => {
-          const newUdp = Reflect.get(newNetworkState, 'udp');
-          clearInterval(newUdp?.keepAliveInterval);
+        if (this.playing) {
+          const oldNetworking = Reflect.get(oldState, 'networking');
+          const newNetworking = Reflect.get(newState, 'networking');
+          const networkStateChangeHandler = (_oldNetworkState: any, newNetworkState: any) => {
+            const newUdp = Reflect.get(newNetworkState, 'udp');
+            clearInterval(newUdp?.keepAliveInterval);
+          }
+          oldNetworking?.off('stateChange', networkStateChangeHandler);
+          newNetworking?.on('stateChange', networkStateChangeHandler);
+          if (oldState.status === VoiceConnectionStatus.Ready && newState.status === VoiceConnectionStatus.Signalling) connection.configureNetworking();
         }
-        oldNetworking?.off('stateChange', networkStateChangeHandler);
-        newNetworking?.on('stateChange', networkStateChangeHandler);
-        if (oldState.status === VoiceConnectionStatus.Ready && newState.status === VoiceConnectionStatus.Signalling) connection.configureNetworking();
       });
       return res(connection);
     });
