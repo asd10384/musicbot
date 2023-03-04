@@ -140,7 +140,7 @@ export class Music {
           })));
           this.setmsg();
           this.inputplaylist = false;
-          return [ undefined, `플레이리스트를 찾을수 없습니다.`, addembed ];
+          return [ undefined, `추가됨`, addembed ];
         } else {
           const output = list.items.shift()!;
           await QDB.guild.setqueue(this.guild.id, (await QDB.guild.queue(this.guild.id)).concat(list.items.map((data) => {
@@ -338,7 +338,20 @@ export class Music {
         adapterCreator: this.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator,
         guildId: this.guild.id,
         channelId: voicechannel.id
-      }).setMaxListeners(0);
+      });
+      connection.setMaxListeners(0);
+      connection.configureNetworking();
+      connection.on("stateChange", (oldState, newState) => {
+        const oldNetworking = Reflect.get(oldState, 'networking');
+        const newNetworking = Reflect.get(newState, 'networking');
+        const networkStateChangeHandler = (_oldNetworkState: any, newNetworkState: any) => {
+          const newUdp = Reflect.get(newNetworkState, 'udp');
+          clearInterval(newUdp?.keepAliveInterval);
+        }
+        oldNetworking?.off('stateChange', networkStateChangeHandler);
+        newNetworking?.on('stateChange', networkStateChangeHandler);
+        if (oldState.status === VoiceConnectionStatus.Ready && newState.status === VoiceConnectionStatus.Signalling) connection.configureNetworking();
+      });
       return res(connection);
     })
   }
