@@ -341,7 +341,7 @@ export class Music {
       })
       connection.setMaxListeners(0);
       connection.configureNetworking();
-      connection.on("stateChange", (oldState, newState) => {
+      connection.once("stateChange", (oldState, newState) => {
         const oldNetworking = Reflect.get(oldState, 'networking');
         const newNetworking = Reflect.get(newState, 'networking');
         const networkStateChangeHandler = (_oldNetworkState: any, newNetworkState: any) => {
@@ -422,7 +422,8 @@ export class Music {
 
       try {
         const Player = createAudioPlayer();
-        Player.setMaxListeners(0).play(resource);
+        Player.setMaxListeners(0)
+        Player.play(resource);
         this.sendlog(`${this.nowplaying.title}\n${this.nowplaying.url}\n재생 시작`);
         const subscription = connection.subscribe(Player);
         this.players = [ subscription, resource ];
