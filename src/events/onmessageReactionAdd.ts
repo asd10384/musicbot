@@ -1,5 +1,5 @@
 import { QDB } from "../databases/Quickdb";
-import { Message, MessageReaction, PartialMessage, PartialMessageReaction, PartialUser, User } from "discord.js";
+import { Message, MessageReaction, PartialMessage, PartialMessageReaction, PartialUser, TextChannel, User } from "discord.js";
 import { client } from "..";
 import { shuffle } from "../music/shuffle";
 
@@ -7,7 +7,7 @@ export const checkChannel = async (message: Message | PartialMessage, user: User
   const bot = await message.guild?.members.fetchMe({ cache: true });
   const member = message.guild?.members.cache.get(user.id);
   if (member?.voice?.channelId && bot?.voice?.channelId && member?.voice?.channelId === bot?.voice?.channelId) return true;
-  message.channel.send({ embeds: [
+  (message.channel as TextChannel).send({ embeds: [
     client.mkembed({
       title: '음성채널을 찾을수 없습니다.',
       description: '음성채널에 들어가서 사용해주세요.',

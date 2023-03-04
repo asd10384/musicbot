@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { client } from "..";
-import { DefaultRestOptions, REST, Routes } from "discord.js";
+import { DefaultRestOptions, REST, Routes, TextChannel } from "discord.js";
 import { Consts } from "../config/consts";
 import { ApplicationCommandData, Collection, CommandInteraction, Message } from "discord.js";
 import { Command } from "../interfaces/Command";
@@ -78,7 +78,7 @@ export class SlashHandler {
 
   err(message: Message, commandName: string | undefined | null) {
     if (!commandName || commandName == '') return;
-    return message.channel.send({ embeds: [
+    return (message.channel as TextChannel).send({ embeds: [
       client.mkembed({
         description: `\` ${commandName} \` 이라는 명령어를 찾을수 없습니다.`,
         footer: { text: ` ${client.prefix}help 를 입력해 명령어를 확인해주세요.` },

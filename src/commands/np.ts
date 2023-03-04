@@ -1,7 +1,7 @@
 import { client } from "../index";
 // import { check_permission as ckper, embed_permission as emper } from "../utils/Permission";
 import { Command } from "../interfaces/Command";
-import { Message, EmbedBuilder, ChatInputApplicationCommandData, CommandInteraction } from "discord.js";
+import { Message, EmbedBuilder, ChatInputApplicationCommandData, CommandInteraction, TextChannel } from "discord.js";
 // import { QDB } from "../databases/Quickdb";
 
 /**
@@ -10,7 +10,7 @@ import { Message, EmbedBuilder, ChatInputApplicationCommandData, CommandInteract
  * 
  * check permission(role)
  * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
- * if (!(await ckper(message))) return message.channel.send({ embeds: [ emper ] }).then(m => client.msgdelete(m, 1));
+ * if (!(await ckper(message))) return (message.channel as TextChannel).send({ embeds: [ emper ] }).then(m => client.msgdelete(m, 1));
  */
 
 export default class implements Command {
@@ -56,13 +56,13 @@ export default class implements Command {
   }
   async messageRun(message: Message, _args: string[]) {
     const mc = client.getmc(message.guild!);
-    if (!mc.playing || !mc.nowplaying) return message.channel.send({ embeds: [
+    if (!mc.playing || !mc.nowplaying) return (message.channel as TextChannel).send({ embeds: [
       client.mkembed({
         title: `현재 재생중인 노래가 없습니다.`,
         color: "DarkRed"
       })
     ] }).then(m => client.msgdelete(m, 1));
-    return message.channel.send({ embeds: [
+    return (message.channel as TextChannel).send({ embeds: [
       client.mkembed({
         title: `${mc.nowplaying.title}`,
         description: `가수 : ${

@@ -1,7 +1,7 @@
 import { client } from "../index";
 import { check_permission as ckper, embed_permission as emper } from "../utils/Permission";
 import { Command } from "../interfaces/Command";
-import { Message, EmbedBuilder, ChatInputApplicationCommandData } from "discord.js";
+import { Message, EmbedBuilder, ChatInputApplicationCommandData, TextChannel } from "discord.js";
 // import { QDB } from "../databases/Quickdb";
 
 /**
@@ -10,7 +10,7 @@ import { Message, EmbedBuilder, ChatInputApplicationCommandData } from "discord.
  * 
  * check permission(role)
  * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
- * if (!(await ckper(message))) return message.channel.send({ embeds: [ emper ] }).then(m => client.msgdelete(m, 1));
+ * if (!(await ckper(message))) return (message.channel as TextChannel).send({ embeds: [ emper ] }).then(m => client.msgdelete(m, 1));
  */
 
 export default class implements Command {
@@ -28,16 +28,16 @@ export default class implements Command {
 
   /** 실행되는 부분 */
   async messageRun(message: Message, args: string[]) {
-    if (!(await ckper(message))) return message.channel.send({ embeds: [ emper ] }).then(m => client.msgdelete(m, 1));
+    if (!(await ckper(message))) return (message.channel as TextChannel).send({ embeds: [ emper ] }).then(m => client.msgdelete(m, 1));
     if (args[0] === "채널삭제") {
-      if (!args[1]) return message.channel.send({ embeds: [
+      if (!args[1]) return (message.channel as TextChannel).send({ embeds: [
         client.mkembed({
           title: `채널아이디 입력`,
           color: "DarkRed"
         })
       ] }).then(m => client.msgdelete(m, 1));
       let channel = message.guild?.channels.cache.get(args[1]);
-      if (!channel) return message.channel.send({ embeds: [
+      if (!channel) return (message.channel as TextChannel).send({ embeds: [
         client.mkembed({
           title: `채널없음`,
           color: "DarkRed"
@@ -48,20 +48,20 @@ export default class implements Command {
     }
 
     if (args[0] === "채널이름") {
-      if (!args[1]) return message.channel.send({ embeds: [
+      if (!args[1]) return (message.channel as TextChannel).send({ embeds: [
         client.mkembed({
           title: `채널아이디 입력`,
           color: "DarkRed"
         })
       ] }).then(m => client.msgdelete(m, 1));
-      if (!args[2]) return message.channel.send({ embeds: [
+      if (!args[2]) return (message.channel as TextChannel).send({ embeds: [
         client.mkembed({
           title: `채널이름 입력`,
           color: "DarkRed"
         })
       ] }).then(m => client.msgdelete(m, 1));
       let channel = message.guild?.channels.cache.get(args[1]);
-      if (!channel) return message.channel.send({ embeds: [
+      if (!channel) return (message.channel as TextChannel).send({ embeds: [
         client.mkembed({
           title: `채널없음`,
           color: "DarkRed"
@@ -71,7 +71,7 @@ export default class implements Command {
       return;
     }
 
-    return message.channel.send({ embeds: [
+    return (message.channel as TextChannel).send({ embeds: [
       client.mkembed({
         title: `실패`,
         color: "DarkRed"

@@ -97,7 +97,7 @@ export class Music {
       let GDB = await QDB.guild.get(this.guild);
       this.inputplaylist = true;
       const embedUrlText = `[플레이리스트](https://www.youtube.com/playlist?list=${url.list[1].replace(/\&.+/g,'')})`;
-      const addedembed = await message.channel.send({ embeds: [
+      const addedembed = await (message.channel as TextChannel).send({ embeds: [
         client.mkembed({
           description: `<@${message.author.id}> ${embedUrlText} 확인중...\n(노래가 많으면 많을수록 오래걸립니다.)`,
           color: client.embedColor
@@ -117,7 +117,7 @@ export class Music {
       if (list && list.items && list.items.length > 0) {
         if (client.debug) Logger.log(`${this.guild.name}, ${list.title}, ${list.items.length}, ${(GDB.options.listlimit) ? GDB.options.listlimit : 300}`);
         this.sendlog(`${list.title}: ${list.items.length}`);
-        const addembed = await message.channel.send({ embeds: [
+        const addembed = await (message.channel as TextChannel).send({ embeds: [
           client.mkembed({
             title: `\` ${list.title} \` ${embedUrlText} 추가중...`,
             description: `재생목록에 \` ${list.items.length} \` 곡 ${parmas?.shuffle ? "섞어서 " : ""}추가중`,
@@ -240,7 +240,7 @@ export class Music {
   }
 
   async makefile(msgchannel: TextChannel | undefined, ytsource: internal.Readable, time?: number) {
-    return new Promise<string | undefined>((res, _rej) => {
+    return new Promise<string | undefined>((res) => {
       try {
         const fstream = fluentFFmpeg({ source: ytsource }).toFormat('wav');
         if (time) fstream.setStartTime(time);
@@ -266,7 +266,7 @@ export class Music {
   }
 
   async getytsource(msgchannel: TextChannel | undefined, data: nowplay, time: number | undefined, livestream: boolean) {
-    return new Promise<[internal.Readable | undefined, string | undefined]>(async (res, _rej) => {
+    return new Promise<[internal.Readable | undefined, string | undefined]>(async (res) => {
       try {
         let ytsource: internal.Readable | undefined = undefined;
         ytsource = ytdl(data.url, {
@@ -333,27 +333,16 @@ export class Music {
   }
 
   async setconnection(voicechannel: VoiceBasedChannel) {
-    return new Promise<VoiceConnection>((res, _rej) => {
+    return new Promise<VoiceConnection>((res) => {
       const connection = joinVoiceChannel({
         adapterCreator: this.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator,
         guildId: this.guild.id,
         channelId: voicechannel.id
-      });
-      connection.setMaxListeners(0);
-      connection.configureNetworking();
-      connection.on("stateChange", (oldState, newState) => {
-        const oldNetworking = Reflect.get(oldState, 'networking');
-        const newNetworking = Reflect.get(newState, 'networking');
-        const networkStateChangeHandler = (_oldNetworkState: any, newNetworkState: any) => {
-          const newUdp = Reflect.get(newNetworkState, 'udp');
-          clearInterval(newUdp?.keepAliveInterval);
-        }
-        oldNetworking?.off('stateChange', networkStateChangeHandler);
-        newNetworking?.on('stateChange', networkStateChangeHandler);
-        if (oldState.status === VoiceConnectionStatus.Ready && newState.status === VoiceConnectionStatus.Signalling) connection.configureNetworking();
-      });
+      })
+      connection?.setMaxListeners(0);
+      connection?.configureNetworking();
       return res(connection);
-    })
+    });
   }
 
   async play(message: Message | PartialMessage | CommandInteraction | undefined, getsearch?: ytdl.videoInfo, time?: number) {
@@ -561,7 +550,7 @@ export class Music {
     } else {
       if (message) return message instanceof CommandInteraction
         ? undefined
-        : message.channel.send({ embeds: [
+        : (message.channel as TextChannel).send({ embeds: [
           client.mkembed({
             title: '음성채널을 찾을수 없습니다.',
             description: `음성채널에 들어가서 사용해주세요.`,
