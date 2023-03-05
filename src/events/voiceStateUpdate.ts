@@ -6,7 +6,7 @@ export const voiceStateUpdate = (oldState: VoiceState, newState: VoiceState) => 
   if (newState.member!.id === client.user!.id && !newState.channelId) {
     const mc = client.getmc(oldState.guild);
     if (oldState.channelId && mc.players[0]?.player.state.status === AudioPlayerStatus.Paused) {
-      if (mc.checkautopause && mc.setVoiceChannel && mc.lastpausetime+(1000*60*58) <= Date.now()) {
+      if (mc.playing && mc.checkautopause && mc.setVoiceChannel && mc.lastpausetime+(1000*60*58) <= Date.now()) {
         joinVoiceChannel({
           guildId: oldState.guild.id,
           channelId: oldState.channelId!,
