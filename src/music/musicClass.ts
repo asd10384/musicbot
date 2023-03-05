@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { client, MUSICFOLDER } from "../index";
 import { Guild, EmbedBuilder, TextChannel, ChannelType, VoiceBasedChannel, GuildMember, Message, PartialMessage, CommandInteraction } from "discord.js";
-import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnection, VoiceConnectionState, VoiceConnectionStatus } from "@discordjs/voice";
 import ytdl from "ytdl-core";
 import ytpl from "ytpl";
 import ytsr from "ytsr";
@@ -341,17 +341,22 @@ export class Music {
       })
       connection.setMaxListeners(0);
       connection.configureNetworking();
-      connection.once("stateChange", (oldState, newState) => {
+      connection.once("stateChange", (oldState: VoiceConnectionState, newState: VoiceConnectionState) => {
         if (this.playing) {
           const oldNetworking = Reflect.get(oldState, 'networking');
           const newNetworking = Reflect.get(newState, 'networking');
           const networkStateChangeHandler = (_oldNetworkState: any, newNetworkState: any) => {
-            const newUdp = Reflect.get(newNetworkState, 'udp');
-            clearInterval(newUdp?.keepAliveInterval);
+            if (this.playing) {
+              const newUdp = Reflect.get(newNetworkState, 'udp');
+              clearInterval(newUdp?.keepAliveInterval);
+            }
           }
           oldNetworking?.off('stateChange', networkStateChangeHandler);
           newNetworking?.on('stateChange', networkStateChangeHandler);
-          if (oldState.status === VoiceConnectionStatus.Ready && newState.status === VoiceConnectionStatus.Signalling) connection.configureNetworking();
+          if (oldState.status === VoiceConnectionStatus.Ready && newState.status === VoiceConnectionStatus.Signalling) {
+            connection.setMaxListeners(0);
+            connection.configureNetworking();
+          }
         }
       });
       return res(connection);
