@@ -342,6 +342,7 @@ export class Music {
       connection.setMaxListeners(0);
       connection.configureNetworking();
       connection.once("stateChange", (oldState: VoiceConnectionState, newState: VoiceConnectionState) => {
+        connection.configureNetworking();
         if (this.playing) {
           const oldNetworking = Reflect.get(oldState, 'networking');
           const newNetworking = Reflect.get(newState, 'networking');
@@ -353,10 +354,6 @@ export class Music {
           }
           oldNetworking?.off('stateChange', networkStateChangeHandler);
           newNetworking?.on('stateChange', networkStateChangeHandler);
-          if (oldState.status === VoiceConnectionStatus.Ready && newState.status === VoiceConnectionStatus.Signalling) {
-            connection.setMaxListeners(0);
-            connection.configureNetworking();
-          }
         }
       });
       return res(connection);
