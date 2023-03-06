@@ -1,6 +1,6 @@
 import { client } from "../index";
 import { ClientUser, Guild, GuildMember, VoiceState } from "discord.js";
-import { AudioPlayerStatus, DiscordGatewayAdapterCreator, joinVoiceChannel } from "@discordjs/voice";
+import { AudioPlayerStatus, DiscordGatewayAdapterCreator, getVoiceConnection, joinVoiceChannel } from "@discordjs/voice";
 
 export const voiceStateUpdate = (oldState: VoiceState, newState: VoiceState) => {
   if (newState.member!.id === client.user!.id && !newState.channelId) {
@@ -15,16 +15,14 @@ export const voiceStateUpdate = (oldState: VoiceState, newState: VoiceState) => 
       } else {
         mc.stopPlayer();
         mc.stop(false, "voiceStateUpdate");
-        oldState.guild.members.fetchMe({ cache: true }).then((me) => {
-          me?.voice?.disconnect();
-        });
+        getVoiceConnection(oldState.guild.id)?.disconnect();
+        getVoiceConnection(oldState.guild.id)?.destroy();
       }
     } else {
       mc.stopPlayer();
       mc.stop(false, "voiceStateUpdate");
-      oldState.guild.members.fetchMe({ cache: true }).then((me) => {
-        me?.voice?.disconnect();
-      });
+      getVoiceConnection(oldState.guild.id)?.disconnect();
+      getVoiceConnection(oldState.guild.id)?.destroy();
     }
   } else {
     botautopause(oldState.guild);

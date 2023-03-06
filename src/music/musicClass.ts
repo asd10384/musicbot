@@ -683,9 +683,8 @@ export class Music {
     await QDB.guild.setqueue(this.guild.id, []);
     this.setmsg();
     if (leave) {
-      this.guild.members.fetchMe({ cache: true }).then((me) => {
-        me?.voice?.disconnect();
-      });
+      getVoiceConnection(this.guild.id)?.disconnect();
+      getVoiceConnection(this.guild.id)?.destroy();
     } else {
       this.sendlog(`stop 명령어 실행: ${text}`);
     }
