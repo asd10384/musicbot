@@ -54,6 +54,7 @@ export class Music {
   lastpausetime: number;
   recomlist: string[];
   canrecom: boolean;
+  statsChageTime: number;
 
   constructor(guild: Guild) {
     this.guild = guild;
@@ -71,6 +72,7 @@ export class Music {
     this.lastpausetime = 0;
     this.recomlist = [];
     this.canrecom = true;
+    this.statsChageTime = 0;
   }
 
   setinputplaylist(getinputplaylist: boolean) {
@@ -332,7 +334,7 @@ export class Music {
     });
   }
 
-  async setconnection(voicechannel: VoiceBasedChannel) {
+  async setConnection(voicechannel: VoiceBasedChannel) {
     return new Promise<VoiceConnection>((res) => {
       const connection = joinVoiceChannel({
         adapterCreator: this.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator,
@@ -341,16 +343,15 @@ export class Music {
       })
       connection.setMaxListeners(0);
       connection.configureNetworking();
-      connection.once("stateChange", (oldState: VoiceConnectionState, newState: VoiceConnectionState) => {
-        connection.configureNetworking();
-        if (this.playing) {
+      connection.on("stateChange", (oldState: VoiceConnectionState, newState: VoiceConnectionState) => {
+        if (this.statsChageTime <= Date.now()) {
+          this.statsChageTime = Date.now() + 10000;
+          connection.configureNetworking();
           const oldNetworking = Reflect.get(oldState, 'networking');
           const newNetworking = Reflect.get(newState, 'networking');
           const networkStateChangeHandler = (_oldNetworkState: any, newNetworkState: any) => {
-            if (this.playing) {
-              const newUdp = Reflect.get(newNetworkState, 'udp');
-              clearInterval(newUdp?.keepAliveInterval);
-            }
+            const newUdp = Reflect.get(newNetworkState, 'udp');
+            clearInterval(newUdp?.keepAliveInterval);
           }
           oldNetworking?.off('stateChange', networkStateChangeHandler);
           newNetworking?.on('stateChange', networkStateChangeHandler);
@@ -407,7 +408,7 @@ export class Music {
       const resource = createAudioResource(ytsource[0], { inlineVolume: true, inputType: StreamType.Arbitrary });
       resource.volume?.setVolume((GDB.options.volume) ? GDB.options.volume / 100 : 0.7);
       
-      const connection = await this.setconnection(voicechannel);
+      const connection = await this.setConnection(voicechannel);
       try {
         await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
       } catch {
