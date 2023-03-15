@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { client, MUSICFOLDER } from "../index";
 import { Guild, EmbedBuilder, TextChannel, ChannelType, VoiceBasedChannel, GuildMember, Message, PartialMessage, CommandInteraction } from "discord.js";
-import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnection, VoiceConnectionState, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import ytdl from "ytdl-core";
 import ytpl from "ytpl";
 import ytsr from "ytsr";
@@ -340,23 +340,23 @@ export class Music {
         adapterCreator: this.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator,
         guildId: this.guild.id,
         channelId: voicechannel.id
-      })
-      connection.setMaxListeners(0);
-      connection.configureNetworking();
-      connection.on("stateChange", (oldState: VoiceConnectionState, newState: VoiceConnectionState) => {
-        if (this.statsChageTime <= Date.now()) {
-          this.statsChageTime = Date.now() + 10000;
-          connection.configureNetworking();
-          const oldNetworking = Reflect.get(oldState, 'networking');
-          const newNetworking = Reflect.get(newState, 'networking');
-          const networkStateChangeHandler = (_oldNetworkState: any, newNetworkState: any) => {
-            const newUdp = Reflect.get(newNetworkState, 'udp');
-            clearInterval(newUdp?.keepAliveInterval);
-          }
-          oldNetworking?.off('stateChange', networkStateChangeHandler);
-          newNetworking?.on('stateChange', networkStateChangeHandler);
-        }
       });
+      connection.setMaxListeners(0);
+      // connection.configureNetworking();
+      // connection.on("stateChange", (oldState: VoiceConnectionState, newState: VoiceConnectionState) => {
+      //   if (this.statsChageTime <= Date.now()) {
+      //     this.statsChageTime = Date.now() + 10000;
+      //     connection.configureNetworking();
+      //     const oldNetworking = Reflect.get(oldState, 'networking');
+      //     const newNetworking = Reflect.get(newState, 'networking');
+      //     const networkStateChangeHandler = (_oldNetworkState: any, newNetworkState: any) => {
+      //       const newUdp = Reflect.get(newNetworkState, 'udp');
+      //       clearInterval(newUdp?.keepAliveInterval);
+      //     }
+      //     oldNetworking?.off('stateChange', networkStateChangeHandler);
+      //     newNetworking?.on('stateChange', networkStateChangeHandler);
+      //   }
+      // });
       return res(connection);
     });
   }

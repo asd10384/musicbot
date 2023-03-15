@@ -33,20 +33,15 @@ export const getytmusic = (query: string) => new Promise<[string | undefined, st
     try {
       let d1 = res2.data?.contents?.tabbedSearchResultsRenderer?.tabs;
       let d2: any[] = d1[0]?.tabRenderer?.content?.sectionListRenderer?.contents;
-      let d3 = d2?.filter(d => d.musicShelfRenderer?.title?.runs[0]?.text === "상위 검색결과");
+      let d3 = d2?.filter(d => d.musicShelfRenderer?.header?.musicCardShelfHeaderBasicRenderer?.title?.runs[0]?.text === "상위 검색결과");
       if (d3 && d3[0]) {
-        let d4 = d3[0].musicShelfRenderer?.contents;
-        let d5: any[] = d4[0]?.musicResponsiveListItemRenderer?.flexColumns;
-        let d6 = d5?.filter(d => d.musicResponsiveListItemFlexColumnRenderer?.text?.runs.length > 1 && ![ "아티스트", "동영상", "재생목록", "앨범", "커뮤니티" ].includes(d.musicResponsiveListItemFlexColumnRenderer?.text?.runs[0]?.text));
-        if (d6 && d6[0]) {
-          let d7 = d3[0].musicShelfRenderer?.contents[0]?.musicResponsiveListItemRenderer?.playlistItemData?.videoId;
-          if (d7) return res([ d7, "" ]);
-        } else {
-          let d6_2 = d5?.filter(d => d.musicResponsiveListItemFlexColumnRenderer?.text?.runs.length > 1 && [ "동영상" ].includes(d.musicResponsiveListItemFlexColumnRenderer?.text?.runs[0]?.text));
-          if (d6_2 && d6_2[0]) {
-            let d7_2 = d3[0].musicShelfRenderer?.contents[0]?.musicResponsiveListItemRenderer?.playlistItemData?.videoId;
-            if (d7_2) return res([ d7_2, "" ]);
-          }
+        if (
+          d3[0].musicCardShelfRenderer.subtitle.runs?.length > 1
+          && ![ "아티스트", "재생목록", "앨범", "커뮤니티" /* , "동영상" */ ].includes(d3[0].musicCardShelfRenderer.subtitle.runs[0]?.text)
+          && d3[0].musicCardShelfRenderer?.title?.runs?.length > 1
+        ) {
+          let d4 = d3[0].musicCardShelfRenderer?.title?.runs[0]?.navigationEndpoint?.watchEndpoint?.videoId;
+          if (d4 && d4.length > 1) return res([ d4, "" ]);
         }
       }
       let e1 = d2?.filter(d => d.musicShelfRenderer?.title?.runs[0]?.text === "노래");
