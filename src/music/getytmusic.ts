@@ -33,12 +33,12 @@ export const getytmusic = (query: string) => new Promise<[string | undefined, st
     try {
       let d1 = res2.data?.contents?.tabbedSearchResultsRenderer?.tabs;
       let d2: any[] = d1[0]?.tabRenderer?.content?.sectionListRenderer?.contents;
-      let d3 = d2?.filter(d => d.musicShelfRenderer?.header?.musicCardShelfHeaderBasicRenderer?.title?.runs[0]?.text === "상위 검색결과");
+      let d3 = d2?.filter(d => d.musicCardShelfRenderer?.header?.musicCardShelfHeaderBasicRenderer?.title?.runs[0]?.text === "상위 검색결과");
       if (d3 && d3[0]) {
         if (
-          d3[0].musicCardShelfRenderer.subtitle.runs?.length > 1
-          && ![ "아티스트", "재생목록", "앨범", "커뮤니티" /* , "동영상" */ ].includes(d3[0].musicCardShelfRenderer.subtitle.runs[0]?.text)
-          && d3[0].musicCardShelfRenderer?.title?.runs?.length > 1
+          d3[0].musicCardShelfRenderer?.subtitle.runs?.length > 1
+          && ![ "아티스트", "재생목록", "앨범", "커뮤니티" /* , "동영상" */ ].includes(d3[0].musicCardShelfRenderer?.subtitle.runs[0]?.text)
+          && d3[0].musicCardShelfRenderer?.title?.runs?.length >= 1
         ) {
           let d4 = d3[0].musicCardShelfRenderer?.title?.runs[0]?.navigationEndpoint?.watchEndpoint?.videoId;
           if (d4 && d4.length > 1) return res([ d4, "" ]);
