@@ -13,7 +13,7 @@ const min = 1;
 export const recommand = async (recomlist: string[], vid: string): Promise<[ string | undefined, nowplay | undefined, string ] | [ undefined, string ]> => {
   if (!authorization) return [ undefined, "authorization을 찾을수 없음" ];
 
-  const getvid = await second(vid, recomlist);
+  const getvid = await getData(vid, recomlist);
   if (!getvid[0]) return [ undefined, undefined, getvid[1] ];
   // console.log(getvid);
   let checkv = await checkvideo({ url: `https://www.youtube.com/watch?v=${getvid[0]}` });
@@ -31,7 +31,7 @@ export const recommand = async (recomlist: string[], vid: string): Promise<[ str
   return [ undefined, undefined, "추천영상을 찾을수없음3" ];
 }
 
-async function second(vid: string, recomlist: string[]) {
+async function getData(vid: string, recomlist: string[]) {
   return new Promise<[string | undefined, string]>((res, _rej) => {
     axios.post(`https://music.youtube.com/youtubei/v1/next?key=${key}&prettyPrint=false`, {
       "enablePersistentPlaylistPanel": true,
