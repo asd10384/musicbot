@@ -32,9 +32,8 @@ export const music = async (message: Message, text: string) => {
     } else {
       return mc.play(message, searching[0]);
     }
-  } else if (searching[1] !== "추가됨") {
-    return;
   }
+  if (searching[1] == "추가됨") return;
   return message.channel?.send({
     embeds: [
       client.mkembed({
