@@ -3,7 +3,7 @@ import { client, MUSICFOLDER } from "../index";
 import { Guild, EmbedBuilder, TextChannel, ChannelType, VoiceBasedChannel, GuildMember, Message, PartialMessage, CommandInteraction } from "discord.js";
 import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import ytdl from "ytdl-core";
-import ytpl from "ytpl";
+// import ytpl from "ytpl";
 import ytsr from "ytsr";
 import internal from "stream";
 import { Timestamp } from "../utils/Timestamp";
@@ -96,10 +96,10 @@ export class Music {
       let checkv = await checkvideo({ url: `https://www.youtube.com/watch?v=${yid}` });
       if (checkv[0]) return [ checkv[1], "video", undefined ];
       return [ undefined, checkv[1], undefined ];
-    } else if (url.musiclist) { // 유튜브 뮤직 재생목록
+    } else if (url.list) { // 유튜브 뮤직 통합 재생목록
       let GDB = await QDB.guild.get(this.guild);
       this.inputplaylist = true;
-      const embedUrlText = `[플레이리스트](https://music.youtube.com/playlist?list=${url.musiclist[1].replace(/\&.+/g,'')})`;
+      const embedUrlText = `[플레이리스트](https://music.youtube.com/playlist?list=${url.list[1].replace(/\&.+/g,'')})`;
       const addedembed = await (message.channel as TextChannel).send({ embeds: [
         client.mkembed({
           description: `<@${message.author.id}> ${embedUrlText} 확인중...\n(노래가 많으면 많을수록 오래걸립니다.)`,
@@ -108,7 +108,7 @@ export class Music {
       ] }).catch(() => {
         return undefined;
       });
-      let { name, list, err } = await getPlayList(url.musiclist[1].replace(/\&.+/g,''), message.author.id);
+      let { name, list, err } = await getPlayList(url.list[1].replace(/\&.+/g,''), message.author.id);
       addedembed?.delete().catch(() => {});
       if (err || !list) return [ undefined, `플레이리스트를 찾을수 없습니다.`, undefined ];
       if (client.debug) Logger.log(`${this.guild.name}, ${name}, ${list.length}, ${(GDB.options.listlimit) ? GDB.options.listlimit : 300}`);
@@ -136,81 +136,78 @@ export class Music {
         if (checkv[0]) return [ checkv[1], "video", addembed ];
         return [ undefined, checkv[1], addembed ];
       }
-    } else if (url.list) { // 유튜브 재생목록
-      let GDB = await QDB.guild.get(this.guild);
-      this.inputplaylist = true;
-      const embedUrlText = `[플레이리스트](https://www.youtube.com/playlist?list=${url.list[1].replace(/\&.+/g,'')})`;
-      const addedembed = await (message.channel as TextChannel).send({ embeds: [
-        client.mkembed({
-          description: `<@${message.author.id}> ${embedUrlText} 확인중...\n(노래가 많으면 많을수록 오래걸립니다.)`,
-          color: client.embedColor
-        })
-      ] }).catch(() => {
-        return undefined;
-      });
-      let list = await ytpl(url.list[1].replace(/\&.+/g,''), {
-        gl: "KR",
-        requestOptions: { agent },
-        limit: 50000 // (GDB.options.listlimit) ? GDB.options.listlimit : 300
-      }).catch((err) => {
-        if (client.debug) Logger.error(err);
-        return undefined;
-      });
-      addedembed?.delete().catch(() => {});
-      if (list && list.items && list.items.length > 0) {
-        if (client.debug) Logger.log(`${this.guild.name}, ${list.title}, ${list.items.length}, ${(GDB.options.listlimit) ? GDB.options.listlimit : 300}`);
-        this.sendlog(`${list.title}: ${list.items.length}`);
-        const addembed = await (message.channel as TextChannel).send({ embeds: [
-          client.mkembed({
-            title: `\` ${list.title} \` ${embedUrlText} 추가중...`,
-            description: `재생목록에 \` ${list.items.length} \` 곡 ${parmas?.shuffle ? "섞어서 " : ""}추가중`,
-            color: client.embedColor
-          })
-        ] }).catch(() => {
-          return undefined;
-        });
-        if (parmas?.shuffle) list.items = fshuffle(list.items);
-        if (this.playing) {
-          await QDB.guild.setqueue(this.guild.id, (await QDB.guild.queue(this.guild.id)).concat(list.items.map((data) => {
-            return {
-              title: data.title,
-              duration: data.durationSec!.toString(),
-              author: data.author.name,
-              url: data.shortUrl,
-              image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
-              player: `<@${message.author.id}>`
-            }
-          })));
-          this.setmsg();
-          this.inputplaylist = false;
-          return [ undefined, `추가됨`, addembed ];
-        } else {
-          const output = list.items.shift()!;
-          await QDB.guild.setqueue(this.guild.id, (await QDB.guild.queue(this.guild.id)).concat(list.items.map((data) => {
-            return {
-              title: data.title,
-              duration: data.durationSec!.toString(),
-              author: data.author.name,
-              url: data.shortUrl,
-              image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
-              player: `<@${message.author.id}>`
-            }
-          })));
-          let checkv = await checkvideo({ url: output.shortUrl });
-          this.inputplaylist = false;
-          if (checkv[0]) return [ checkv[1], "video", addembed ];
-          return [ undefined, checkv[1], addembed ];
-        }
-      } else {
-        this.inputplaylist = false;
-        return [ undefined, `플레이리스트를 찾을수 없습니다.`, undefined ];
-      }
-    } else if (url.billboardoo && !text.includes("?")) { // 빌보두 영상
-      let yid = url.billboardoo[1];
-      let checkv = await checkvideo({ url: `https://www.youtube.com/watch?v=${yid}` });
-      if (checkv[0]) return [ checkv[1], "video", undefined ];
-      return [ undefined, checkv[1], undefined ];
-    } else { // TEXT 문자
+    }
+    // else if (url.list) { // 유튜브 재생목록
+    //   let GDB = await QDB.guild.get(this.guild);
+    //   this.inputplaylist = true;
+    //   const embedUrlText = `[플레이리스트](https://www.youtube.com/playlist?list=${url.list[1].replace(/\&.+/g,'')})`;
+    //   const addedembed = await (message.channel as TextChannel).send({ embeds: [
+    //     client.mkembed({
+    //       description: `<@${message.author.id}> ${embedUrlText} 확인중...\n(노래가 많으면 많을수록 오래걸립니다.)`,
+    //       color: client.embedColor
+    //     })
+    //   ] }).catch(() => {
+    //     return undefined;
+    //   });
+    //   let list = await ytpl(url.list[1].replace(/\&.+/g,''), {
+    //     gl: "KR",
+    //     requestOptions: { agent },
+    //     limit: 50000 // (GDB.options.listlimit) ? GDB.options.listlimit : 300
+    //   }).catch((err) => {
+    //     if (client.debug) Logger.error(err);
+    //     return undefined;
+    //   });
+    //   addedembed?.delete().catch(() => {});
+    //   if (list && list.items && list.items.length > 0) {
+    //     if (client.debug) Logger.log(`${this.guild.name}, ${list.title}, ${list.items.length}, ${(GDB.options.listlimit) ? GDB.options.listlimit : 300}`);
+    //     this.sendlog(`${list.title}: ${list.items.length}`);
+    //     const addembed = await (message.channel as TextChannel).send({ embeds: [
+    //       client.mkembed({
+    //         title: `\` ${list.title} \` ${embedUrlText} 추가중...`,
+    //         description: `재생목록에 \` ${list.items.length} \` 곡 ${parmas?.shuffle ? "섞어서 " : ""}추가중`,
+    //         color: client.embedColor
+    //       })
+    //     ] }).catch(() => {
+    //       return undefined;
+    //     });
+    //     if (parmas?.shuffle) list.items = fshuffle(list.items);
+    //     if (this.playing) {
+    //       await QDB.guild.setqueue(this.guild.id, (await QDB.guild.queue(this.guild.id)).concat(list.items.map((data) => {
+    //         return {
+    //           title: data.title,
+    //           duration: data.durationSec!.toString(),
+    //           author: data.author.name,
+    //           url: data.shortUrl,
+    //           image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+    //           player: `<@${message.author.id}>`
+    //         }
+    //       })));
+    //       this.setmsg();
+    //       this.inputplaylist = false;
+    //       return [ undefined, `추가됨`, addembed ];
+    //     } else {
+    //       const output = list.items.shift()!;
+    //       await QDB.guild.setqueue(this.guild.id, (await QDB.guild.queue(this.guild.id)).concat(list.items.map((data) => {
+    //         return {
+    //           title: data.title,
+    //           duration: data.durationSec!.toString(),
+    //           author: data.author.name,
+    //           url: data.shortUrl,
+    //           image: (data.thumbnails.length > 0 && data.thumbnails[data.thumbnails.length-1]?.url) ? data.thumbnails[data.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
+    //           player: `<@${message.author.id}>`
+    //         }
+    //       })));
+    //       let checkv = await checkvideo({ url: output.shortUrl });
+    //       this.inputplaylist = false;
+    //       if (checkv[0]) return [ checkv[1], "video", addembed ];
+    //       return [ undefined, checkv[1], addembed ];
+    //     }
+    //   } else {
+    //     this.inputplaylist = false;
+    //     return [ undefined, `플레이리스트를 찾을수 없습니다.`, undefined ];
+    //   }
+    // }
+    else { // TEXT 문자
       let getytvid = await getytmusic(text);
       if (getytvid[0]) {
         let checkv = await checkvideo({ url: `https://www.youtube.com/watch?v=${getytvid[0]}` });
