@@ -10,7 +10,7 @@ export const getPlayList = (playlistId: string, authorId: string) => new Promise
   list?: nowplay[];
   err?: string;
 }>((res) => {
-  if (playlistId.startsWith("PL")) playlistId = "VL" + playlistId;
+  if (!playlistId.startsWith("VL")) playlistId = "VL" + playlistId;
   axios.post(`https://music.youtube.com/youtubei/v1/browse?key=${key}&prettyPrint=false`, {
     "browseId": playlistId,
     "context": {
