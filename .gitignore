@@ -5,4 +5,4 @@ test*.ts
 .env
 test_file/
 *.sqlite
-music/
+musicFile/
