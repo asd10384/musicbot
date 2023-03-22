@@ -19,6 +19,7 @@ import { recommand } from "./recommand";
 import { getytmusic } from "./getytmusic";
 import { Logger } from "../utils/Logger";
 import { makeButton } from "../config/config";
+import { getPlayList } from "./getytplaylist";
 
 export const agent = new HttpsProxyAgent(process.env.PROXY!);
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
@@ -95,6 +96,46 @@ export class Music {
       let checkv = await checkvideo({ url: `https://www.youtube.com/watch?v=${yid}` });
       if (checkv[0]) return [ checkv[1], "video", undefined ];
       return [ undefined, checkv[1], undefined ];
+    } else if (url.musiclist) { // 유튜브 뮤직 재생목록
+      let GDB = await QDB.guild.get(this.guild);
+      this.inputplaylist = true;
+      const embedUrlText = `[플레이리스트](https://music.youtube.com/playlist?list=${url.musiclist[1].replace(/\&.+/g,'')})`;
+      const addedembed = await (message.channel as TextChannel).send({ embeds: [
+        client.mkembed({
+          description: `<@${message.author.id}> ${embedUrlText} 확인중...\n(노래가 많으면 많을수록 오래걸립니다.)`,
+          color: client.embedColor
+        })
+      ] }).catch(() => {
+        return undefined;
+      });
+      let { name, list, err } = await getPlayList(url.musiclist[1].replace(/\&.+/g,''), message.author.id);
+      addedembed?.delete().catch(() => {});
+      if (err || !list) return [ undefined, `플레이리스트를 찾을수 없습니다.`, undefined ];
+      if (client.debug) Logger.log(`${this.guild.name}, ${name}, ${list.length}, ${(GDB.options.listlimit) ? GDB.options.listlimit : 300}`);
+      this.sendlog(`${name}: ${list.length}`);
+      const addembed = await (message.channel as TextChannel).send({ embeds: [
+        client.mkembed({
+          title: `\` ${name} \` ${embedUrlText} 추가중...`,
+          description: `재생목록에 \` ${list.length} \` 곡 ${parmas?.shuffle ? "섞어서 " : ""}추가중`,
+          color: client.embedColor
+        })
+      ] }).catch(() => {
+        return undefined;
+      });
+      if (parmas?.shuffle) list = fshuffle(list);
+      if (this.playing) {
+        await QDB.guild.setqueue(this.guild.id, (await QDB.guild.queue(this.guild.id)).concat(list));
+        this.setmsg();
+        this.inputplaylist = false;
+        return [ undefined, `추가됨`, addembed ];
+      } else {
+        const output = list.shift()!;
+        await QDB.guild.setqueue(this.guild.id, (await QDB.guild.queue(this.guild.id)).concat(list));
+        let checkv = await checkvideo({ url: output.url });
+        this.inputplaylist = false;
+        if (checkv[0]) return [ checkv[1], "video", addembed ];
+        return [ undefined, checkv[1], addembed ];
+      }
     } else if (url.list) { // 유튜브 재생목록
       let GDB = await QDB.guild.get(this.guild);
       this.inputplaylist = true;
