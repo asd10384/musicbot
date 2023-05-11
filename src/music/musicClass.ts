@@ -27,6 +27,8 @@ const LOG_SERVER_ID = process.env.LOG_SERVER_ID ? process.env.LOG_SERVER_ID.trim
 const LOG_SERVER_CHANNEL_ID = process.env.LOG_SERVER_CHANNEL_ID ? process.env.LOG_SERVER_CHANNEL_ID.trim() : undefined;
 export const YT_TOKEN = process.env.YT_TOKEN && process.env.YT_TOKEN.length != 0 ? process.env.YT_TOKEN : undefined;
 
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
 export interface nowplay {
   title: string;
   author: string;
@@ -485,12 +487,12 @@ export class Music {
           this.canrecom = true;
           this.nowstatus = "일시정지됨";
           if (addduration) clearInterval(addduration);
-        })
+        });
         Player.on(AudioPlayerStatus.AutoPaused, async (_P) => {
           this.canrecom = true;
           this.nowstatus = "일시정지됨";
           if (addduration) clearInterval(addduration);
-        })
+        });
         Player.on(AudioPlayerStatus.Idle, async (_P) => {
           // 봇 노래 재생 끝났을때
           this.canrecom = true;
@@ -744,7 +746,33 @@ export class Music {
         let embed = await this.setembed(GDB, pause, waitrecom);
         if (!embed) return;
         let channel = this.guild.channels.cache.get(GDB.channelId);
-        if (channel && channel.type === ChannelType.GuildText) channel.messages.cache.get(GDB.msgId)?.edit({ content: text, embeds: [embed], components: [ actionRow ] }).catch(() => {});
+        if (channel && channel.type === ChannelType.GuildText) {
+          let msg: Message | undefined = channel.messages.cache.get(GDB.msgId);
+          if (msg) {
+            msg.edit({ content: text, embeds: [embed], components: [ actionRow ] }).catch(() => {});
+          } else {
+            channel.messages.fetch().then(async (msgs) => {
+              try {
+                if (msgs.size > 0) (channel as TextChannel).bulkDelete(msgs.size).catch(() => {
+                  if (client.debug) Logger.error('메세지 전체 삭제 오류');
+                });
+              } catch (err) {}
+              await sleep(500);
+              msg = await (channel as TextChannel).send({ content: "메세지 오류 수정중입니다..." });
+              await QDB.guild.set(GDB.id, {
+                msgId: msg?.id ? msg.id : "null"
+              }).then((check) => {
+                if (!check || !embed) return;
+                msg?.edit({ content: text, embeds: [embed], components: [ actionRow ] }).catch(() => {});
+                if (msg?.guild) {
+                  const mc = client.getmc(msg.guild);
+                  Logger.ready(`${msg.guild.name} : 오류 fix 성공`);
+                  mc.sendlog(`오류 fix 성공`);
+                }
+              }).catch(() => {});
+            });
+          }
+        }
       }).catch(() => {});
     }, 15);
   }
