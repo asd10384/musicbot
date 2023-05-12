@@ -493,16 +493,18 @@ export class Music {
           this.nowstatus = "일시정지됨";
           if (addduration) clearInterval(addduration);
         });
-        Player.on(AudioPlayerStatus.Idle, async (_P) => {
-          // 봇 노래 재생 끝났을때
-          this.canrecom = true;
-          this.checkwaitend = true;
-          this.nowstatus = "재생중지됨";
-          if (addduration) clearInterval(addduration);
-          Player.stop();
-          await entersState(connection, VoiceConnectionStatus.Ready, 5_000).catch(() => {});
-          return this.play(message, undefined, undefined);
-        });
+        setTimeout(() => {
+          Player.on(AudioPlayerStatus.Idle, async (_P) => {
+            // 봇 노래 재생 끝났을때
+            this.canrecom = true;
+            this.checkwaitend = true;
+            this.nowstatus = "재생중지됨";
+            if (addduration) clearInterval(addduration);
+            Player.stop();
+            await entersState(connection, VoiceConnectionStatus.Ready, 5_000).catch(() => {});
+            return this.play(message, undefined, undefined);
+          });
+        }, 5000);
         connection.once('error', async (err) => {
           this.nowstatus = "재생중지됨";
           if (addduration) clearInterval(addduration);
