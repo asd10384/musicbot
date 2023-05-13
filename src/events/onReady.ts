@@ -1,5 +1,5 @@
-import { guildData, QDB } from "../databases/Quickdb";
 import "dotenv/config";
+import { QDB, guildData } from "../databases/Quickdb";
 import { client, handler } from "..";
 import { Logger } from "../utils/Logger";
 import { ChannelType } from "discord.js";
@@ -37,8 +37,9 @@ function musicfix() {
   QDB.guild.all().then((val: guildData[]) => {
     val.forEach((GDB) => {
       if (GDB.id && GDB.channelId) {
-        const channel = client.guilds.cache.get(GDB.id)?.channels.cache.get(GDB.channelId);
-        if (channel && channel.type === ChannelType.GuildText) {
+        const guild = client.guilds.cache.get(GDB.id);
+        const channel = guild?.channels.cache.get(GDB.channelId);
+        if (guild && channel && channel.type === ChannelType.GuildText) {
           channel.messages.fetch().then(async (msgs) => {
             try {
               if (msgs.size > 0) channel.bulkDelete(msgs.size).catch(() => {
@@ -56,11 +57,15 @@ function musicfix() {
                 })
               ]
             });
-            return await QDB.guild.set(GDB.id, {
+            return await QDB.guild.set(guild, {
               channelId: GDB.channelId,
               msgId: msg?.id ? msg.id : "null"
             }).then((val) => {
-              if (!val) return `데이터베이스 오류\n다시시도해주세요.`;
+              if (!val) {
+                Logger.ready(`${msg.guild.name} : 시작 fix 실패`);
+                client.getmc(msg.guild).sendlog(`시작 fix 실패`);
+                return;
+              }
               msg?.edit({ content: msg.content, embeds: msg.embeds, components: [ makeButton() ] });
               if (msg?.guild) {
                 const mc = client.getmc(msg.guild);

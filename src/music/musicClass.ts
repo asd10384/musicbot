@@ -476,35 +476,7 @@ export class Music {
         this.nowduration = 0;
         if (time) this.nowduration = time;
         let addduration: NodeJS.Timer | undefined = undefined;
-        Player.on(AudioPlayerStatus.Playing, async (_P) => {
-          this.canrecom = true;
-          this.nowstatus = "재생중";
-          if (!livestream) addduration = setInterval(() => {
-            this.nowduration++;
-          }, 1000);
-        });
-        Player.on(AudioPlayerStatus.Paused, async (_P) => {
-          this.canrecom = true;
-          this.nowstatus = "일시정지됨";
-          if (addduration) clearInterval(addduration);
-        });
-        Player.on(AudioPlayerStatus.AutoPaused, async (_P) => {
-          this.canrecom = true;
-          this.nowstatus = "일시정지됨";
-          if (addduration) clearInterval(addduration);
-        });
-        setTimeout(() => {
-          Player.on(AudioPlayerStatus.Idle, async (_P) => {
-            // 봇 노래 재생 끝났을때
-            this.canrecom = true;
-            this.checkwaitend = true;
-            this.nowstatus = "재생중지됨";
-            if (addduration) clearInterval(addduration);
-            Player.stop();
-            await entersState(connection, VoiceConnectionStatus.Ready, 5_000).catch(() => {});
-            return this.play(message, undefined, undefined);
-          });
-        }, 5000);
+
         connection.once('error', async (err) => {
           this.nowstatus = "재생중지됨";
           if (addduration) clearInterval(addduration);
@@ -592,6 +564,34 @@ export class Music {
               return this.skipPlayer();
             }
           }
+        });
+
+        Player.on(AudioPlayerStatus.Playing, async (_P) => {
+          this.canrecom = true;
+          this.nowstatus = "재생중";
+          if (!livestream) addduration = setInterval(() => {
+            this.nowduration++;
+          }, 1000);
+        });
+        Player.on(AudioPlayerStatus.Paused, async (_P) => {
+          this.canrecom = true;
+          this.nowstatus = "일시정지됨";
+          if (addduration) clearInterval(addduration);
+        });
+        Player.on(AudioPlayerStatus.AutoPaused, async (_P) => {
+          this.canrecom = true;
+          this.nowstatus = "일시정지됨";
+          if (addduration) clearInterval(addduration);
+        });
+        Player.on(AudioPlayerStatus.Idle, async (_P) => {
+          // 봇 노래 재생 끝났을때
+          this.canrecom = true;
+          this.checkwaitend = true;
+          this.nowstatus = "재생중지됨";
+          if (addduration) clearInterval(addduration);
+          Player.stop();
+          await entersState(connection, VoiceConnectionStatus.Ready, 5_000).catch(() => {});
+          return this.play(message, undefined, undefined);
         });
       } catch (err) {
         if (client.debug) Logger.error(`Catch오류: ${err}`);
@@ -751,9 +751,12 @@ export class Music {
         if (channel && channel.type === ChannelType.GuildText) {
           let msg: Message | undefined = channel.messages.cache.get(GDB.msgId);
           if (msg) {
-            msg.edit({ content: text, embeds: [embed], components: [ actionRow ] }).catch(() => {});
+            msg.edit({ content: text, embeds: [ embed ], components: [ actionRow ] }).catch(() => {});
           } else {
-            channel.messages.fetch().then(async (msgs) => {
+            let msgs = await channel.messages.fetch().catch(() => {
+              return undefined;
+            });
+            if (msgs) {
               try {
                 if (msgs.size > 0) (channel as TextChannel).bulkDelete(msgs.size).catch(() => {
                   if (client.debug) Logger.error('메세지 전체 삭제 오류');
@@ -761,18 +764,18 @@ export class Music {
               } catch (err) {}
               await sleep(500);
               msg = await (channel as TextChannel).send({ content: "메세지 오류 수정중입니다..." });
-              await QDB.guild.set(GDB.id, {
+              await QDB.guild.set(this.guild, {
                 msgId: msg?.id ? msg.id : "null"
               }).then((check) => {
                 if (!check || !embed) return;
-                msg?.edit({ content: text, embeds: [embed], components: [ actionRow ] }).catch(() => {});
+                msg?.edit({ content: text, embeds: [ embed ], components: [ actionRow ] }).catch(() => {});
                 if (msg?.guild) {
                   const mc = client.getmc(msg.guild);
                   Logger.ready(`${msg.guild.name} : 오류 fix 성공`);
                   mc.sendlog(`오류 fix 성공`);
                 }
               }).catch(() => {});
-            });
+            }
           }
         }
       }).catch(() => {});

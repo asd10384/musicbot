@@ -100,7 +100,7 @@ export default class implements Command {
         })
       ]
     });
-    return await QDB.guild.set(GDB.id, {
+    return await QDB.guild.set(message.guild!, {
       channelId: channel?.id ? channel.id : "null",
       msgId: msg?.id ? msg.id : "null"
     }).then((val) => {
@@ -141,7 +141,7 @@ export default class implements Command {
         })
       ]
     });
-    return await QDB.guild.set(GDB.id, {
+    return await QDB.guild.set(message.guild!, {
       channelId: channel?.id ? channel.id : "null",
       msgId: msg?.id ? msg.id : "null"
     }).then((val) => {

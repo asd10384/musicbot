@@ -36,6 +36,7 @@
     "ytsr": "^3.8.2"
   },
   "devDependencies": {
-    "@types/fluent-ffmpeg": "^2.1.21"
+    "@types/fluent-ffmpeg": "^2.1.21",
+    "typescript": "^5.0.4"
   }
 }

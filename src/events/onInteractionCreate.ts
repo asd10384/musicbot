@@ -56,7 +56,7 @@ async function music(interaction: ButtonInteraction, cmd: string) {
   }
   if (cmd === "recommand") {
     let GDB = await QDB.guild.get(interaction.guild!);
-    QDB.guild.set(GDB.id, { options: {
+    QDB.guild.set(interaction.guild!, { options: {
       ...GDB.options,
       recommend: !GDB.options.recommend
     } });

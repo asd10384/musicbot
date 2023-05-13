@@ -49,7 +49,7 @@ export const onmessageReactionAdd = async (reaction: MessageReaction | PartialMe
       }
     }
     if (name === 'auto') {
-      await QDB.guild.set(GDB.id, { options: {
+      await QDB.guild.set(reaction.message.guild!, { options: {
         ...GDB.options,
         recommend: !GDB.options.recommend
       } });
