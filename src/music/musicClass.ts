@@ -1,11 +1,12 @@
 import "dotenv/config";
-import { client } from "../index";
+import { client, MUSICFOLDER } from "../index";
 import { Guild, EmbedBuilder, TextChannel, ChannelType, GuildMember, Message, GuildBasedChannel } from "discord.js";
-import { AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayerStatus, AudioResource, createAudioPlayer, createAudioResource, entersState, getVoiceConnection, joinVoiceChannel, PlayerSubscription, StreamType, VoiceConnectionStatus } from "@discordjs/voice";
 import ytdl from "ytdl-core";
 // import ytpl from "ytpl";
 import ytsr from "ytsr";
 import internal from "stream";
+import fluentFFmpeg from "fluent-ffmpeg";
 // import { Timestamp } from "../utils/Timestamp";
 import { QDB, guildData } from "../databases/Quickdb";
 import { getVideo, agent, YT_TOKEN } from "./getVideo";
@@ -17,6 +18,7 @@ import { makeButton } from "../config/config";
 import { fshuffle } from "./shuffle";
 import { Parmas } from "./music";
 import { getThumbnail } from "./getThumbnail";
+import { createReadStream } from "fs";
 
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
 
@@ -38,6 +40,7 @@ export class Music {
   queue: nowplay[];
   recomlist: string[];
   nowplaysong: nowplay | undefined;
+  nowResource: AudioResource | undefined;
   nowSubscription: PlayerSubscription | undefined;
   voiceChannelId: string | undefined;
   stopTimer: NodeJS.Timeout | undefined;
@@ -49,6 +52,7 @@ export class Music {
     this.queue = [];
     this.recomlist = [];
     this.nowplaysong = undefined;
+    this.nowResource = undefined;
     this.nowSubscription = undefined;
     this.voiceChannelId = undefined;
     this.stopTimer = undefined;
@@ -190,7 +194,7 @@ export class Music {
     return undefined;
   }
 
-  async play(data: { playData?: nowplay }) {
+  async play(data: { playData?: nowplay, startTime?: number; }) {
     const channel = this.getVoiceChannel();
     if (!channel) return this.errMsg("음성채널을 찾을수 없습니다.");
     this.playing = true;
@@ -230,7 +234,7 @@ export class Music {
       ytsource = ytdl(this.nowplaysong.id, {
         filter: this.nowplaysong.duration === "0" ? undefined : "audioonly",
         quality: this.nowplaysong.duration === "0" ? undefined : "highestaudio",
-        highWaterMark: 1 << 20,
+        highWaterMark: 1 << 25,
         dlChunkSize: 0,
         liveBuffer: this.nowplaysong.duration === "0" ? 5000 : undefined,
         requestOptions: {
@@ -247,7 +251,7 @@ export class Music {
         ytsource = ytdl(this.nowplaysong.id, {
           filter: this.nowplaysong.duration === "0" ? undefined : "audioonly",
           quality: this.nowplaysong.duration === "0" ? undefined : "highestaudio",
-          highWaterMark: 1 << 25,
+          highWaterMark: 1 << 20,
           dlChunkSize: 0,
           liveBuffer: this.nowplaysong.duration === "0" ? 5000 : undefined,
           requestOptions: {
@@ -266,6 +270,10 @@ export class Music {
       this.errMsg("영상을 찾을수 없습니다. (ytsource2)");
       this.skipPlayer();
       return;
+    }
+    if (data.startTime) {
+      let ytsource2 = await this.makeFileWithStartTime(ytsource, data.startTime);
+      if (ytsource2) ytsource = ytsource2;
     }
     ytsource.setMaxListeners(0);
     // ytsource 끝
@@ -298,6 +306,7 @@ export class Music {
       Player.play(resource);
       // this.sendlog(`${this.nowplaying.title}\n${this.nowplaying.url}\n재생 시작`);
       const subscription = connection.subscribe(Player);
+      this.nowResource = resource;
       this.nowSubscription = subscription;
       // this.players = [ subscription, resource ];
 
@@ -320,23 +329,6 @@ export class Music {
         }
       });
 
-      // Player.on(AudioPlayerStatus.Playing, async (_P) => {
-      //   this.canrecom = true;
-      //   this.nowstatus = "재생중";
-      //   if (!livestream) addduration = setInterval(() => {
-      //     this.nowduration++;
-      //   }, 1000);
-      // });
-      // Player.on(AudioPlayerStatus.Paused, async (_P) => {
-      //   this.canrecom = true;
-      //   this.nowstatus = "일시정지됨";
-      //   if (addduration) clearInterval(addduration);
-      // });
-      // Player.on(AudioPlayerStatus.AutoPaused, async (_P) => {
-      //   this.canrecom = true;
-      //   this.nowstatus = "일시정지됨";
-      //   if (addduration) clearInterval(addduration);
-      // });
       Player.on(AudioPlayerStatus.Idle, async (_P) => {
         // 봇 노래 재생 끝났을때
         if (!this.playing) return;
@@ -350,6 +342,23 @@ export class Music {
       this.errMsg("재생중 오류발생 (catch)");
       this.skipPlayer();
     }
+  }
+
+  async makeFileWithStartTime(ytsource: internal.Readable, startTime: number) {
+    return new Promise<internal.Readable | undefined>(async (res) => {
+      try {
+        const fstream = fluentFFmpeg({ source: ytsource }).toFormat("mp3").setStartTime(startTime);
+        const fstreamPath = `${MUSICFOLDER}/${this.guild.id}.mp3`;
+        
+        fstream.saveToFile(fstreamPath);
+        fstream.once("end", () => {
+          let get = createReadStream(fstreamPath);
+          return res(get);
+        });
+      } catch {
+        return res(undefined);
+      }
+    });
   }
   
   async skipPlayer() {
