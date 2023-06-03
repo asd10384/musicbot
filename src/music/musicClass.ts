@@ -209,6 +209,7 @@ export class Music {
         this.errMsg(err || "추천노래를 찾을수 없습니다.");
         return;
       }
+      this.recomlist.push(videoData.id);
       this.nowplaysong = {
         ...videoData,
         player: "자동재생"
