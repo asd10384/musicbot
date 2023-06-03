@@ -113,7 +113,6 @@ export default class implements Command {
   }
 
   async fix(message: Message | CommandInteraction, GDB: guildData): Promise<string> {
-    client.getmc(message.guild!).setinputplaylist(false);
     let channel = message.guild?.channels.cache.get(GDB.channelId);
     if (channel) {
       await (channel as TextChannel).messages.fetch().then((msg) => {
@@ -147,7 +146,7 @@ export default class implements Command {
     }).then((val) => {
       if (!val) return `데이터베이스 오류\n다시시도해주세요.`;
       msg?.edit({ content: msg.content, embeds: msg.embeds, components: [ makeButton() ] });
-      client.getmc(msg.guild!).stop(true, "command-music-fix");
+      client.getmc(msg.guild!).stop({});
       return `Error correction completed!`;
     }).catch(() => {
       return `데이터베이스 오류\n다시시도해주세요.`;

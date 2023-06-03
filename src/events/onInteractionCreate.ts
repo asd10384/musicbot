@@ -1,6 +1,5 @@
 import { QDB } from "../databases/Quickdb";
 import { ButtonInteraction, Interaction, User } from "discord.js";
-import { shuffle } from "../music/shuffle";
 import { client, handler } from "..";
 import { checkChannel } from "./onmessageReactionAdd";
 
@@ -41,26 +40,24 @@ async function music(interaction: ButtonInteraction, cmd: string) {
     if (mc.playing && await checkChannel(interaction.message, interaction.member!.user as User)) mc.pause();
   }
   if (cmd === "stop") {
-    mc.setplaying(false);
-    mc.setcanrecom(false);
-    QDB.guild.setqueue(interaction.guildId!, []);
-    mc.players[0]?.player.stop();
+    mc.stop({});
   }
   if (cmd === "skip") {
     if (mc.playing && await checkChannel(interaction.message, interaction.member!.user as User)) await mc.skipPlayer();
   }
   if (cmd === "shuffle") {
-    if (mc.playing && await checkChannel(interaction.message, interaction.member!.user as User) && (await QDB.guild.queue(interaction.guildId!)).length > 0) {
-      shuffle(interaction.message);
+    if (mc.playing && await checkChannel(interaction.message, interaction.member!.user as User) && mc.queue.length > 0) {
+      mc.shuffle();
     }
   }
   if (cmd === "recommand") {
-    let GDB = await QDB.guild.get(interaction.guild!);
+    const gdb = await QDB.guild.get(interaction.guild!);
     QDB.guild.set(interaction.guild!, { options: {
-      ...GDB.options,
-      recommend: !GDB.options.recommend
-    } });
-    mc.setmsg();
+      ...gdb.options,
+      recommend: !gdb.options.recommend
+    } }).then((val) => {
+      if (val) mc.setMsg({});
+    });
   }
   interaction.deferUpdate({ fetchReply: false }).catch(() => {});
 }

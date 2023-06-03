@@ -43,7 +43,8 @@ export default class implements Command {
 
   async list(guild: Guild, GDB: guildData, getnumber: number | null) {
     const mc = client.getmc(guild);
-    const queue = await QDB.guild.queue(guild.id);
+    // const queue = await QDB.guild.queue(guild.id);
+    const queue = mc.queue;
     if (mc.playing) {
       var list: { label: string, description: string, value: string }[] = [];
       const number = Math.ceil(queue.length / client.maxqueue);

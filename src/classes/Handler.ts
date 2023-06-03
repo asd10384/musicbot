@@ -1,8 +1,7 @@
 import "dotenv/config";
 import { client } from "..";
-import { DefaultRestOptions, REST, Routes, TextChannel } from "discord.js";
 import { Consts } from "../config/consts";
-import { ApplicationCommandData, Collection, CommandInteraction, Message } from "discord.js";
+import { DefaultRestOptions, REST, Routes, TextChannel, ApplicationCommandData, Collection, CommandInteraction, Message } from "discord.js";
 import { Command } from "../interfaces/Command";
 import { readdirSync } from "fs";
 import { BotClient } from "./BotClient";

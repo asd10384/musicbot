@@ -1,42 +1,19 @@
 import { client } from "../index";
-import { ClientUser, Guild, GuildMember, VoiceState } from "discord.js";
-import { AudioPlayerStatus, DiscordGatewayAdapterCreator, getVoiceConnection, joinVoiceChannel } from "@discordjs/voice";
+import { VoiceState } from "discord.js";
+import { AudioPlayerStatus } from "@discordjs/voice";
 
 export const voiceStateUpdate = (oldState: VoiceState, newState: VoiceState) => {
+  const mc = client.getmc(oldState.guild);
   if (newState.member!.id === client.user!.id && !newState.channelId) {
+    mc.stop({});
+  } else if (oldState.channelId && mc.voiceChannelId && oldState.channelId === mc.voiceChannelId && oldState.channel?.members.filter(m => !m.user.bot).size === 0) {
     const mc = client.getmc(oldState.guild);
-    if (oldState.channelId && mc.players[0]?.player.state.status === AudioPlayerStatus.Paused) {
-      if (mc.playing && mc.checkautopause && mc.setVoiceChannel && mc.lastpausetime+(1000*60*58) <= Date.now()) {
-        joinVoiceChannel({
-          guildId: oldState.guild.id,
-          channelId: oldState.channelId!,
-          adapterCreator: oldState.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator
-        });
-      } else {
-        mc.stopPlayer();
-        mc.stop(false, "voiceStateUpdate");
-        getVoiceConnection(oldState.guild.id)?.disconnect();
-        getVoiceConnection(oldState.guild.id)?.destroy();
-      }
-    } else {
-      mc.stopPlayer();
-      mc.stop(false, "voiceStateUpdate");
-      getVoiceConnection(oldState.guild.id)?.disconnect();
-      getVoiceConnection(oldState.guild.id)?.destroy();
-    }
-  } else {
-    botautopause(oldState.guild);
-  }
-}
-
-function botautopause(guild: Guild) {
-  const user = client.user as ClientUser;
-  const member = guild.members.cache.get(user.id) as GuildMember;
-  const channel = member.voice.channel;
-  const mc = client.getmc(guild);
-  if (channel && channel.members.filter((member) => !member.user.bot).size === 0) {
-    if (!mc.checkautopause) mc.autopause();
-  } else {
-    if (mc.checkautopause) mc.autopause();
+    mc.setAutoPause(true);
+    if (mc.nowSubscription?.player.state.status === AudioPlayerStatus.Playing) mc.nowSubscription.player.pause(true);
+    mc.setMsg({ pause: true });
+  } else if (newState.channelId && mc.voiceChannelId && newState.channelId === mc.voiceChannelId && newState.channel?.members.filter(m => !m.user.bot).size === 1) {
+    mc.setAutoPause(false);
+    if (mc.nowSubscription?.player.state.status === AudioPlayerStatus.Paused) mc.nowSubscription.player.unpause();
+    mc.setMsg({ pause: false });
   }
 }

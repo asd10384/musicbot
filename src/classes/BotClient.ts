@@ -32,7 +32,7 @@ export class BotClient extends Client {
     if (deletetime < 100) deletetime = 100;
     setTimeout(() => {
       try {
-        if (message.deletable) message.delete();
+        if (message.deletable) message.delete().catch(() => {});
       } catch {};
     }, deletetime);
   }

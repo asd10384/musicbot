@@ -3,7 +3,6 @@ import { QDB, guildData } from "../databases/Quickdb";
 import { client, handler } from "..";
 import { Logger } from "../utils/Logger";
 import { ChannelType } from "discord.js";
-import { makeButton } from "../config/config";
 
 export const onReady = () => {
   if (!client.user) return;
@@ -63,21 +62,19 @@ function musicfix() {
             }).then((val) => {
               if (!val) {
                 Logger.ready(`${msg.guild.name} : 시작 fix 실패`);
-                client.getmc(msg.guild).sendlog(`시작 fix 실패`);
+                // client.getmc(msg.guild).sendlog(`시작 fix 실패`);
                 return;
               }
-              msg?.edit({ content: msg.content, embeds: msg.embeds, components: [ makeButton() ] });
               if (msg?.guild) {
-                const mc = client.getmc(msg.guild);
-                mc.stop(true, "onReady");
+                client.getmc(msg.guild).stop({ disconnect: false });
                 Logger.ready(`${msg.guild.name} : 시작 fix 성공`);
-                mc.sendlog(`시작 fix 성공`);
+                // mc.sendlog(`시작 fix 성공`);
               }
               return;
             }).catch(() => {
               if (msg?.guild) {
                 Logger.ready(`${msg.guild.name} : 시작 fix 실패`);
-                client.getmc(msg.guild).sendlog(`시작 fix 실패`);
+                // client.getmc(msg.guild).sendlog(`시작 fix 실패`);
                 return;
               }
             });

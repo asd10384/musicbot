@@ -1,8 +1,7 @@
 import { client } from "../index";
 import { Command } from "../interfaces/Command";
 import { ApplicationCommandOptionType, ChatInputApplicationCommandData, CommandInteraction, EmbedBuilder } from "discord.js";
-import { QDB } from "../databases/Quickdb";
-import { nowplay } from "../music/musicClass";
+// import { QDB } from "../databases/Quickdb";
 
 /**
  * DB
@@ -38,15 +37,14 @@ export default class implements Command {
   }
 
   async remove(message: CommandInteraction, number: number): Promise<EmbedBuilder> {
-    const queue = await QDB.guild.queue(message.guildId!);
+    // const queue = await QDB.guild.queue(message.guildId!);
     const mc = client.getmc(message.guild!);
+    let queue = mc.queue;
     if (number > 0 && queue.length >= number) {
-      let list: nowplay[] = [];
-      queue.forEach((data, i) => {
-        if (i !== number-1) list.push(data);
-      });
-      await QDB.guild.setqueue(message.guildId!, list);
-      mc.setmsg();
+      queue = queue.filter((_v, i) => number !== i+1);
+      // await QDB.guild.setqueue(message.guildId!, list);
+      mc.setQueue(queue);
+      mc.setMsg({});
       return client.mkembed({
         title: `${number}번 노래 제거 완료`,
         description: `/queue 로 번호를 확인해주세요.`,

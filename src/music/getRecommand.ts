@@ -1,39 +1,28 @@
+import "dotenv/config";
 import axios from "axios";
-import { checkvideo } from "./checkvideo";
-import { key, contentClientVersion, Bdata } from "./data";
-import { nowplay } from "./musicClass";
+import { getVideo, Video } from "./getVideo";
 
-const { authorization, cookie } = Bdata;
-
-const isNum = (n: any) => !isNaN(n);
-
-const max = process.env.YOUTUBE_MUSIC_MAX && isNum(process.env.YOUTUBE_MUSIC_MAX) ? Number(process.env.YOUTUBE_MUSIC_MAX) : 2;
+const KEY = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30";
+const CONTENTCLIENTVERSION = process.env.YOUTUBE_CONTENTCLIENTVERSION;
+const AUTHORIZATION = process.env.YOUTUBE_MUSIC_AUTHORIZATION;
+const COOKIE = process.env.YOUTUBE_MUSIC_COOKIE;
+const max = Number(process.env.YOUTUBE_MUSIC_MAX || "2") || 2;
 const min = 1;
 
-export const recommand = async (recomlist: string[], vid: string): Promise<[ string | undefined, nowplay | undefined, string ] | [ undefined, string ]> => {
-  if (!authorization) return [ undefined, "authorization을 찾을수 없음" ];
+export const getRecommand = async (recomlist: string[], vid: string): Promise<{ videoData?: Video; err?: string; }> => {
+  if (!AUTHORIZATION) return { err: "authorization을 찾을수 없음" };
 
-  const getvid = await getData(vid, recomlist);
-  if (!getvid[0]) return [ undefined, undefined, getvid[1] ];
-  // console.log(getvid);
-  let checkv = await checkvideo({ url: `https://www.youtube.com/watch?v=${getvid[0]}` });
-  if (checkv[0]) {
-    let getinfo = checkv[1].videoDetails;
-    return [ getvid[0], {
-      title: getinfo.title,
-      duration: getinfo.lengthSeconds,
-      author: getinfo.author!.name,
-      url: getinfo.video_url,
-      image: (getinfo.thumbnails.length > 0 && getinfo.thumbnails[getinfo.thumbnails.length-1]?.url) ? getinfo.thumbnails[getinfo.thumbnails.length-1].url! : `https://cdn.hydra.bot/hydra-547905866255433758-thumbnail.png`,
-      player: `자동재생`
-    }, "" ];
-  }
-  return [ undefined, undefined, "추천영상을 찾을수없음3" ];
+  const { id, err } = await getData(vid, recomlist);
+  if (!id || err) return { err: err || "추천영상을 찾을수 없음4" };
+  // console.log(id);
+  const { videoData, err: err2 } = await getVideo({ id: id });
+  if (!videoData || err2) return { err: "추천영상을 찾을수 없음4" };
+  return { videoData: videoData };
 }
 
 async function getData(vid: string, recomlist: string[]) {
-  return new Promise<[string | undefined, string]>((res, _rej) => {
-    axios.post(`https://music.youtube.com/youtubei/v1/next?key=${key}&prettyPrint=false`, {
+  return new Promise<{ id?: string; err?: string; }>((res) => {
+    axios.post(`https://music.youtube.com/youtubei/v1/next?key=${KEY}&prettyPrint=false`, {
       "enablePersistentPlaylistPanel": true,
       "tunerSettingValue": "AUTOMIX_SETTING_NORMAL",
       "playlistId": `RDAMVM${vid}`,
@@ -44,7 +33,7 @@ async function getData(vid: string, recomlist: string[]) {
           "gl": "KR",
           "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36,gzip(gfe)",
           "clientName": "WEB_REMIX",
-          "clientVersion": `${contentClientVersion}`,
+          "clientVersion": `${CONTENTCLIENTVERSION}`,
           "clientFormFactor": "UNKNOWN_FORM_FACTOR",
           "timeZone": "Asia/Seoul",
           "acceptHeader": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -56,8 +45,8 @@ async function getData(vid: string, recomlist: string[]) {
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36",
         "origin": "https://music.youtube.com",
         "referer": `https://music.youtube.com/watch?v=${vid}`,
-        "cookie": `${cookie}`,
-        "authorization": `${authorization}`,
+        "cookie": `${COOKIE}`,
+        "authorization": `${AUTHORIZATION}`,
         'Accept-Encoding': '*'
       },
       responseType: "json"
@@ -82,15 +71,15 @@ async function getData(vid: string, recomlist: string[]) {
             }
           }
         }
-        if (getvid) return res([ getvid, getvid ? "" : "추천영상을 찾을수없음25" ]);
-        return res([ undefined, "추천영상을 찾을수없음2" ]);
+        if (getvid) return res({ id: getvid });
+        return res({ err: "추천영상을 찾을수 없음2" });
       } catch (err) {
         // console.log(err);
-        return res([ undefined, "추천영상을 찾을수없음21" ]);
+        return res({ err: "추천영상을 찾을수 없음1" });
       }
     }).catch(() => {
       // console.log(err);
-      return res([ undefined, "키를 찾을수없음2" ]);
+      return res({ err: "키를 찾을수 없음1" });
     })
   });
 }

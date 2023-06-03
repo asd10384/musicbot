@@ -1,7 +1,6 @@
 import { QDB } from "../databases/Quickdb";
 import { Message, MessageReaction, PartialMessage, PartialMessageReaction, PartialUser, TextChannel, User } from "discord.js";
 import { client } from "..";
-import { shuffle } from "../music/shuffle";
 
 export const checkChannel = async (message: Message | PartialMessage, user: User | PartialUser) => {
   const bot = await message.guild?.members.fetchMe({ cache: true });
@@ -35,17 +34,14 @@ export const onmessageReactionAdd = async (reaction: MessageReaction | PartialMe
       if (mc.playing && await checkChannel(reaction.message, user)) mc.pause();
     }
     if (name === '⏹️') {
-      mc.setplaying(false);
-      mc.setcanrecom(false);
-      await QDB.guild.setqueue(reaction.message.guildId, []);
-      mc.players[0]?.player.stop();
+      mc.stop({});
     }
     if (name === '⏭️') {
       if (mc.playing && await checkChannel(reaction.message, user)) await mc.skipPlayer();
     }
     if (name === '🔀') {
-      if (mc.playing && await checkChannel(reaction.message, user) && (await QDB.guild.queue(reaction.message.guildId)).length > 0) {
-        await shuffle(reaction.message);
+      if (mc.playing && await checkChannel(reaction.message, user) && mc.queue.length > 0) {
+        mc.shuffle();
       }
     }
     if (name === 'auto') {
@@ -53,7 +49,7 @@ export const onmessageReactionAdd = async (reaction: MessageReaction | PartialMe
         ...GDB.options,
         recommend: !GDB.options.recommend
       } });
-      mc.setmsg();
+      mc.setMsg({});
     }
     reaction.users.remove(user.id);
   }
