@@ -45,19 +45,43 @@ export default class implements Command {
   async messageRun(message: Message, args: string[]) {
     if (!args[0]) return message.channel.send({ embeds: [ client.mkembed({
       title: `시간을 입력해주세요.`,
-      description: `${client.prefix}seek [number]`,
+      description: `${client.prefix}seek [number]\n${client.prefix}seek 분:초\n${client.prefix}seek 시간:분:초`,
       color: "DarkRed"
     }) ] }).then(m => client.msgdelete(m, 1));
-    if (isNaN(Number(args[0]))) return message.channel.send({ embeds: [ client.mkembed({
-      title: `시간은 숫자만 입력해주세요.`,
-      description: `${client.prefix}seek [number]`,
+    let time = 0;
+    let err = "";
+    let list = args[0].replace(/ +/g,"").split(":");
+    if (list.length > 3) return message.channel.send({ embeds: [ client.mkembed({
+      title: `시간:분:초 형식으로 입력해주세요.`,
+      description: `${client.prefix}seek [number]\n${client.prefix}seek 분:초\n${client.prefix}seek 시간:분:초`,
       color: "DarkRed"
     }) ] }).then(m => client.msgdelete(m, 1));
-    if (Number(args[0]) <= 0) return message.channel.send({ embeds: [ client.mkembed({
-      title: `시간은 1이상으로 입력해주세요.`,
-      description: `${client.prefix}seek [number]`,
+    for (let i=0; i<list.length; i++) {
+      let text = list[i];
+      if (isNaN(Number(text))) {
+        err = "시간은 숫자(초) 혹은 분:초  혹은 시간:분:초 형식으로만 입력가능합니다.";
+        break;
+      }
+      if (Number(args[0]) <= 0) {
+        err = "시간은 1이상으로 입력해주세요";
+        break;
+      }
+    }
+    if (err.length !== 0) return message.channel.send({ embeds: [ client.mkembed({
+      title: err,
+      description: `${client.prefix}seek [number]\n${client.prefix}seek 분:초\n${client.prefix}seek 시간:분:초`,
       color: "DarkRed"
     }) ] }).then(m => client.msgdelete(m, 1));
+    if (list.length === 1) {
+      time = Number(list[0]);
+    } else if (list.length === 2) {
+      time = Number(list[0])*60;
+      time += Number(list[1]);
+    } else {
+      time = Number(list[0])*3600;
+      time += Number(list[1])*60;
+      time += Number(list[2]);
+    }
     return message.channel.send({ embeds: [ await this.seek(message.guild!, Number(args[0])) ] }).then(m => client.msgdelete(m, 2));
   }
 
@@ -71,8 +95,13 @@ export default class implements Command {
       title: `노래가 재생되고있지않음`,
       color: "DarkRed"
     });
+    if (time > Number(mc.nowplaysong.duration)) return client.mkembed({
+      title: `노래 시간보다 입력시간이 더 큼`,
+      color: "DarkRed"
+    });
     const gdb = await QDB.guild.get(guild);
     const data = mc.nowplaysong;
+    mc.play({ playData: data, startTime: time });
     return client.mkembed({
       title: `**${(gdb.options.author) ? `${data.author.replace(" - Topic","")} - ` : ''}${data.title}**`,
       description: `현재재생시간: ${mc.setTime(time)}\n영상재생시간: ${mc.setTime(data.duration)}`,
