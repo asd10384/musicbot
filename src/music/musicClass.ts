@@ -19,6 +19,8 @@ import { fshuffle } from "./shuffle";
 import { Parmas } from "./music";
 import { getThumbnail } from "./getThumbnail";
 import { createReadStream } from "fs";
+import { getResponse } from "../classes/spotifyResponse";
+import { LoadType } from "lavacord";
 
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
 
@@ -103,6 +105,72 @@ export class Music {
   }
 
   async search(member: GuildMember, text: string, parmas: Parmas): Promise<{ err?: string }> {
+    if (client.spotifyClient && text.match(client.spotifyClient.spotifyPattern)) {
+      const result = await getResponse.load(client.spotifyManager.nodes.get("main")!, text, client.spotifyClient);
+      if (result.loadType === LoadType.LOAD_FAILED || result.loadType === LoadType.NO_MATCHES) {
+        return { err: "스포티파이 노래를 찾을수없습니다." };
+      }
+      if (result.loadType === LoadType.TRACK_LOADED) {
+        if (this.playing) {
+          if (parmas.first) {
+            this.queue.unshift({
+              title: result.tracks[0].info.title,
+              author: result.tracks[0].info.author,
+              duration: (result.tracks[0].info.length/1000).toFixed(0),
+              id: "spotify-"+result.tracks[0].info.identifier,
+              image: "",
+              player: member.id
+            });
+          } else {
+            this.queue.push({
+              title: result.tracks[0].info.title,
+              author: result.tracks[0].info.author,
+              duration: (result.tracks[0].info.length/1000).toFixed(0),
+              id: "spotify-"+result.tracks[0].info.identifier,
+              image: "",
+              player: member.id
+            });
+          }
+          this.setMsg({});
+        } else {
+          this.play({ playData: {
+            title: result.tracks[0].info.title,
+            author: result.tracks[0].info.author,
+            duration: (result.tracks[0].info.length/1000).toFixed(0),
+            id: "spotify-"+result.tracks[0].info.identifier,
+            image: "",
+            player: member.id
+          } });
+        }
+        return {};
+      }
+      if (result.loadType === LoadType.PLAYLIST_LOADED) {
+        let list = result.tracks.map((v) => {
+          return {
+            title: v.info.title,
+            author: v.info.author,
+            duration: (v.info.length/1000).toFixed(0),
+            id: "spotify-"+v.info.identifier,
+            image: "",
+            player: member.id
+          };
+        })
+        if (parmas.suffle) list = fshuffle(list);
+        if (this.playing) {
+          if (parmas.first) {
+            this.queue = list.concat(this.queue);
+          } else {
+            this.queue = this.queue.concat(list);
+          }
+          this.setMsg({});
+        } else {
+          const first = list[0];
+          this.play({ playData: first });
+          this.queue = this.queue.concat(list.slice(1));
+        }
+        return {};
+      }
+    }
     const { video: checkVideo, list: checkList } = this.checkUrl(text);
     if (checkVideo !== null) {
       const { videoData, err } = await getVideo({ id: checkVideo[1].replace(/\&.+/g,"").trim() });
@@ -206,7 +274,7 @@ export class Music {
     } else if (this.queue.length > 0) {
       this.nowplaysong = this.queue[0];
       this.queue = this.queue.slice(1);
-    } else if (gdb.options.recommend) {
+    } else if (gdb.options.recommend && this.nowplaysong && !this.nowplaysong.id.startsWith("spotify-")) {
       this.setMsg({ waitrecom: true });
       const { videoData, err } = await getRecommand(this.recomlist, this.nowplaysong?.id || "WdiSosDz4ss");
       if (!videoData || err) {
@@ -221,6 +289,44 @@ export class Music {
     } else {
       this.nowplaysong = undefined;
     }
+
+    if (this.nowplaysong?.id.startsWith("spotify-")) {
+      let spotify_player = this.nowplaysong.player;
+      let id: string | undefined = undefined;
+      let spotify_text = `${this.nowplaysong.author} - ${this.nowplaysong.title}`;
+      let { id: getMusicId } = await getMusic(`${this.nowplaysong.author} - ${this.nowplaysong.title}`);
+      if (getMusicId) {
+        id = getMusicId;
+      } else {
+        id = await ytsr(spotify_text, {
+          gl: 'KO',
+          requestOptions: { agent },
+          limit: 1
+        }).then((list) => {
+          if (list && list.items && list.items.length > 0) {
+            list.items = list.items.filter((item) => item.type === "video");
+            if (list.items.length > 0 && list.items[0].type === "video") return list.items[0].id;
+          }
+          return undefined;
+        }).catch(() => {
+          return undefined;
+        });
+      }
+      if (!id) {
+        this.nowplaysong = undefined;
+      } else {
+        const { videoData, err: err2 } = await getVideo({ id: id });
+        if (!videoData || err2) {
+          this.nowplaysong = undefined;
+        } else {
+          this.nowplaysong = {
+            ...videoData,
+            player: spotify_player
+          };
+        }
+      }
+    }
+
     // 곡선정 끝
     if (!this.nowplaysong) return this.stop({});
 

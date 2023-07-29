@@ -2,7 +2,9 @@ import "dotenv/config";
 import { ApplicationCommandOptionType, ChatInputApplicationCommandData, Client, ClientEvents, ColorResolvable, EmbedBuilder, EmbedField, Guild, Message } from "discord.js";
 import { Consts } from "../config/consts";
 import { Music } from "../music/musicClass";
-// import { Logger } from "../utils/Logger";
+import { Manager } from "@lavacord/discord.js";
+import { LavasfyClient } from "lavasfy";
+import { Logger } from "../utils/Logger";
 
 export class BotClient extends Client {
   public debug: boolean;
@@ -10,6 +12,8 @@ export class BotClient extends Client {
   public embedColor: ColorResolvable;
   public maxqueue: number;
   public musicClass: Map<string, Music>;
+  public spotifyManager: Manager;
+  public spotifyClient: LavasfyClient | null;
 
   public constructor() {
     super({ intents: Consts.CLIENT_INTENTS });
@@ -23,6 +27,32 @@ export class BotClient extends Client {
       
     this.maxqueue = 30;
     this.musicClass = new Map();
+
+    this.spotifyManager = new Manager(this, [{
+      id: "main",
+      host: "localhost",
+      port: 2333,
+      password: "passwd"
+    }]);
+    
+    if (process.env.SPOTIFY_ENABLE === "true") {
+      this.spotifyClient = new LavasfyClient({
+        clientID: process.env.SPOTIFY_CLIENT_ID || "",
+        clientSecret: process.env.SPOTIFY_CLIENT_SECRET || "",
+        playlistLoadLimit: 10000,
+        useSpotifyMetadata: true,
+        autoResolve: false
+      }, [...[...this.spotifyManager.nodes.values()]]);
+
+      this.spotifyClient.requestToken().then(() => {
+        Logger.info("스포티파이 연결완료");
+      }).catch((err) => {
+        Logger.error(err);
+        Logger.warn("스포티파이 연결실패");
+      });
+    } else {
+      this.spotifyClient = null;
+    }
 
     this.login(process.env.DISCORD_TOKEN);
   }
