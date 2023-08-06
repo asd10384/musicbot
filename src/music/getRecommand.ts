@@ -64,8 +64,10 @@ async function getData(vid: string, recomlist: string[]) {
             alr.push(r);
             if (d1 && d1[r]) {
               let d3 = d1[r].playlistPanelVideoWrapperRenderer?.primaryRenderer?.playlistPanelVideoRenderer?.videoId;
+              let d4 = d1[r].playlistPanelVideoWrapperRenderer?.primaryRenderer?.playlistPanelVideoRenderer?.title?.runs[0]?.text;
+              let d5 = d1[r].playlistPanelVideoWrapperRenderer?.primaryRenderer?.playlistPanelVideoRenderer?.shortBylineText?.runs[0]?.text;
               if (!d3) d3 = d1[r].playlistPanelVideoRenderer?.videoId;
-              if (!d3 || recomlist.includes(d3)) continue;
+              if (!d3 || recomlist.includes((!d4 || !d5) ? d3 : delC(d5)+"-"+delC(d4))) continue;
               getvid = d3;
               break;
             }
@@ -82,4 +84,8 @@ async function getData(vid: string, recomlist: string[]) {
       return res({ err: "키를 찾을수 없음1" });
     })
   });
+}
+
+function delC(text: string): string {
+  return text.replace(/[\{\}\[\]\/?.,;:|\)*~`!^\-_+<>@\#$%&\\\=\(\'\"]/gi,"").replace(/ +/g,"").toLowerCase();
 }

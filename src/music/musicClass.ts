@@ -23,7 +23,6 @@ import { getResponse } from "../classes/spotifyResponse";
 import { LoadType } from "lavacord";
 
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
-
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 export interface nowplay {
@@ -262,6 +261,10 @@ export class Music {
     return undefined;
   }
 
+  delC(text: string): string {
+    return text.replace(/[\{\}\[\]\/?.,;:|\)*~`!^\-_+<>@\#$%&\\\=\(\'\"]/gi,"").replace(/ +/g,"").toLowerCase();
+  }
+
   async play(data: { playData?: nowplay, startTime?: number; }) {
     const channel = this.getVoiceChannel();
     if (!channel) return this.errMsg("음성채널을 찾을수 없습니다.");
@@ -281,13 +284,18 @@ export class Music {
         this.errMsg(err || "추천노래를 찾을수 없습니다.");
         return;
       }
-      this.recomlist.push(videoData.id);
+      this.recomlist.push(this.delC(videoData.author)+"-"+this.delC(videoData.title));
       this.nowplaysong = {
         ...videoData,
         player: "자동재생"
       };
     } else {
       this.nowplaysong = undefined;
+    }
+    
+    if (this.nowplaysong) {
+      const recText = this.delC(this.nowplaysong.author)+"-"+this.delC(this.nowplaysong.title);
+      if (!this.recomlist.includes(recText)) this.recomlist.push(recText);
     }
 
     if (this.nowplaysong?.id.startsWith("spotify-")) {
