@@ -21,6 +21,7 @@ import { getThumbnail } from "./getThumbnail";
 import { createReadStream } from "fs";
 import { getResponse } from "../classes/spotifyResponse";
 import { LoadType } from "lavacord";
+import { getSpotifyRecommand } from "./getSpotifyRecommand";
 
 export const BOT_LEAVE_TIME = (process.env.BOT_LEAVE ? Number(process.env.BOT_LEAVE) : 10)*60*1000;
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
@@ -39,7 +40,7 @@ export class Music {
   playing: boolean;
   autoPause: boolean;
   queue: nowplay[];
-  recomlist: string[];
+  recomlist: nowplay[];
   nowplaysong: nowplay | undefined;
   nowResource: AudioResource | undefined;
   nowSubscription: PlayerSubscription | undefined;
@@ -104,12 +105,13 @@ export class Music {
   }
 
   async search(member: GuildMember, text: string, parmas: Parmas): Promise<{ err?: string }> {
-    if (client.spotifyClient && text.match(client.spotifyClient.spotifyPattern)) {
+    if (client.spotifyClient && text.match(client.spotifyClient.spotifyPattern)) { // 스포티파이 링크
       const result = await getResponse.load(client.spotifyManager.nodes.get("main")!, text, client.spotifyClient);
       if (result.loadType === LoadType.LOAD_FAILED || result.loadType === LoadType.NO_MATCHES) {
         return { err: "스포티파이 노래를 찾을수없습니다." };
       }
-      if (result.loadType === LoadType.TRACK_LOADED) {
+      if (result.loadType === LoadType.TRACK_LOADED) { // 스포티파이 곡
+        console.log(result.tracks[0]);
         if (this.playing) {
           if (parmas.first) {
             this.queue.unshift({
@@ -143,7 +145,7 @@ export class Music {
         }
         return {};
       }
-      if (result.loadType === LoadType.PLAYLIST_LOADED) {
+      if (result.loadType === LoadType.PLAYLIST_LOADED) { // 스포티파이 플레이리스트
         let list = result.tracks.map((v) => {
           return {
             title: v.info.title,
@@ -171,7 +173,7 @@ export class Music {
       }
     }
     const { video: checkVideo, list: checkList } = this.checkUrl(text);
-    if (checkVideo !== null) {
+    if (checkVideo !== null) { // 유튜브 | 유튜브 뮤직 곡
       const { videoData, err } = await getVideo({ id: checkVideo[1].replace(/\&.+/g,"").trim() });
       if (!videoData || err) return { err: err };
       if (this.playing) {
@@ -193,7 +195,7 @@ export class Music {
           player: member.id
         } });
       }
-    } else if (checkList !== null) {
+    } else if (checkList !== null) { // 유튜브 | 유튜브 뮤직 플레이리스트
       let { list, err } = await getPlayList(checkList[1].replace(/\&.+/g,"").trim(), member.id);
       if (!list || err) return { err: err || "플레이리스트에 영상이 없음" };
       if (parmas.suffle) list = fshuffle(list);
@@ -209,7 +211,7 @@ export class Music {
         this.play({ playData: first });
         this.queue = this.queue.concat(list.slice(1));
       }
-    } else {
+    } else { // 텍스트
       let id: string | undefined = undefined;
       let { id: getMusicId, err } = await getMusic(text);
       if (getMusicId) {
@@ -261,10 +263,6 @@ export class Music {
     return undefined;
   }
 
-  delC(text: string): string {
-    return text.replace(/[\{\}\[\]\/?.,;:|\)*~`!^\-_+<>@\#$%&\\\=\(\'\"]/gi,"").replace(/ +/g,"").toLowerCase();
-  }
-
   async play(data: { playData?: nowplay, startTime?: number; }) {
     const channel = this.getVoiceChannel();
     if (!channel) return this.errMsg("음성채널을 찾을수 없습니다.");
@@ -277,34 +275,29 @@ export class Music {
     } else if (this.queue.length > 0) {
       this.nowplaysong = this.queue[0];
       this.queue = this.queue.slice(1);
-    } else if (gdb.options.recommend && this.nowplaysong && !this.nowplaysong.id.startsWith("spotify-")) {
+    } else if (this.recomlist.length > 0) {
+      this.nowplaysong = this.recomlist[0];
+      this.recomlist = this.recomlist.slice(1);
+    } else if (gdb.options.recommend && this.nowplaysong?.id) {
       this.setMsg({ waitrecom: true });
-      const { videoData, err } = await getRecommand(this.recomlist, this.nowplaysong?.id || "WdiSosDz4ss");
-      if (!videoData || err) {
+      const { videoList, err } = this.nowplaysong.id.startsWith("spotify-") ? await getSpotifyRecommand(client.spotifyClient, this.nowplaysong.id.replace(/\#.+/g,"") || "spotify-WdiSosDz4ss") : await getRecommand(this.nowplaysong.id || "WdiSosDz4ss");
+      if (!videoList || err) {
         this.errMsg(err || "추천노래를 찾을수 없습니다.");
         return;
       }
-      this.recomlist.push(this.delC(videoData.author)+"-"+this.delC(videoData.title));
-      this.nowplaysong = {
-        ...videoData,
-        player: "자동재생"
-      };
+      this.nowplaysong = videoList[0];
+      this.recomlist = videoList.slice(1);
     } else {
       this.nowplaysong = undefined;
     }
-    
-    if (this.nowplaysong) {
-      const recText = this.delC(this.nowplaysong.author)+"-"+this.delC(this.nowplaysong.title);
-      if (!this.recomlist.includes(recText)) this.recomlist.push(recText);
-    }
 
-    if (this.nowplaysong?.id.startsWith("spotify-")) {
+    if (this.nowplaysong?.id.startsWith("spotify-")) { // 스포티파이 곡 -> 유튜브 뮤직 곡 변경
       let spotify_player = this.nowplaysong.player;
       let id: string | undefined = undefined;
       let spotify_text = `${this.nowplaysong.author} - ${this.nowplaysong.title}`;
       let { id: getMusicId } = await getMusic(`${this.nowplaysong.author} - ${this.nowplaysong.title}`);
       if (getMusicId) {
-        id = getMusicId;
+        id = id + "#" + getMusicId;
       } else {
         id = await ytsr(spotify_text, {
           gl: 'KO',
@@ -323,12 +316,13 @@ export class Music {
       if (!id) {
         this.nowplaysong = undefined;
       } else {
-        const { videoData, err: err2 } = await getVideo({ id: id });
+        const { videoData, err: err2 } = await getVideo({ id: id.replace(/.+\#/g,"") });
         if (!videoData || err2) {
           this.nowplaysong = undefined;
         } else {
           this.nowplaysong = {
             ...videoData,
+            id: id.includes("#") ? id : this.nowplaysong.id + "#" + videoData.id,
             player: spotify_player
           };
         }
@@ -345,7 +339,7 @@ export class Music {
     // ytsource
     let ytsource: internal.Readable | undefined = undefined;
     try {
-      ytsource = ytdl(this.nowplaysong.id, {
+      ytsource = ytdl(this.nowplaysong.id.replace(/.+\#/g,""), {
         filter: this.nowplaysong.duration === "0" ? undefined : "audioonly",
         quality: this.nowplaysong.duration === "0" ? undefined : "highestaudio",
         highWaterMark: 1 << 25,
@@ -362,7 +356,7 @@ export class Music {
         return undefined;
       });
       if (!ytsource) {
-        ytsource = ytdl(this.nowplaysong.id, {
+        ytsource = ytdl(this.nowplaysong.id.replace(/.+\#/g,""), {
           filter: this.nowplaysong.duration === "0" ? undefined : "audioonly",
           quality: this.nowplaysong.duration === "0" ? undefined : "highestaudio",
           highWaterMark: 1 << 20,
@@ -616,6 +610,7 @@ export class Music {
   }
   setTime(time: string | number): string {
     time = Number(time);
+    if (time < 0) return "00:00";
     if (time === 0) return "실시간";
     var list: string[] = [];
     if (time > 3600) {
