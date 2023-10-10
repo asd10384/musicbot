@@ -28,7 +28,7 @@
     "https-proxy-agent": "^7.0.2",
     "lavacord": "^1.1.9",
     "lavasfy": "^2.3.0",
-    "libsodium-wrappers": "^0.7.11",
+    "libsodium-wrappers": "^0.7.13",
     "opusscript": "^0.0.8",
     "path": "^0.12.7",
     "prism-media": "^1.3.5",
@@ -41,6 +41,6 @@
     "ytsr": "^3.8.4"
   },
   "devDependencies": {
-    "@types/fluent-ffmpeg": "^2.1.21"
+    "@types/fluent-ffmpeg": "^2.1.22"
   }
 }

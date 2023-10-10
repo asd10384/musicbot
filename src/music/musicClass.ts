@@ -282,6 +282,7 @@ export class Music {
       this.setMsg({ waitrecom: true });
       const { videoList, err } = this.nowplaysong.id.startsWith("spotify-") ? await getSpotifyRecommand(client.spotifyClient, this.nowplaysong.id.replace(/\#.+/g,"") || "spotify-WdiSosDz4ss") : await getRecommand(this.nowplaysong.id || "WdiSosDz4ss");
       if (!videoList || err) {
+        this.stop({});
         this.errMsg(err || "추천노래를 찾을수 없습니다.");
         return;
       }
