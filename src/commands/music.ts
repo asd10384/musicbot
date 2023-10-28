@@ -44,7 +44,7 @@ export default class implements Command {
         description: "bot join voice channel",
         options: [{
           type: ApplicationCommandOptionType.Channel,
-          channelTypes: [ ChannelType.GuildVoice, ChannelType.GuildStageVoice ],
+          channel_types: [ 2, 13 ], // ChannelType.GuildVoice, ChannelType.GuildStageVoice
           name: "channel",
           description: "set channel",
           required: true

@@ -5,7 +5,6 @@ import { nowplay } from "./musicClass";
 interface Data { queueContextParams: string; continuation: string; videoId: string; playlistSetVideoId: string; playerParams: string; params: string; index: number; };
 
 const KEY = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30";
-const CONTENTCLIENTVERSION = process.env.YOUTUBE_CONTENTCLIENTVERSION;
 const AUTHORIZATION = process.env.YOUTUBE_MUSIC_AUTHORIZATION;
 const COOKIE = process.env.YOUTUBE_MUSIC_COOKIE;
 
@@ -43,7 +42,7 @@ async function getDataFirst(vid: string) {
           "gl": "KR",
           "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36,gzip(gfe)",
           "clientName": "WEB_REMIX",
-          "clientVersion": `${CONTENTCLIENTVERSION}`,
+          "clientVersion": "0.1",
           "clientFormFactor": "UNKNOWN_FORM_FACTOR",
           "timeZone": "Asia/Seoul",
           "acceptHeader": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -146,7 +145,7 @@ async function getDataSecond(vid: string, data: Data) {
           "gl": "KR",
           "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36,gzip(gfe)",
           "clientName": "WEB_REMIX",
-          "clientVersion": `${CONTENTCLIENTVERSION}`,
+          "clientVersion": "0.1",
           "clientFormFactor": "UNKNOWN_FORM_FACTOR",
           "timeZone": "Asia/Seoul",
           "acceptHeader": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
