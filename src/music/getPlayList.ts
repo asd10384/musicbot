@@ -1,15 +1,23 @@
 import "dotenv/config";
 import axios from "axios";
+import crypto from "crypto";
 
+const ORIGIN = "https://music.youtube.com";
 const KEY = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30";
-const AUTHORIZATION = process.env.YOUTUBE_MUSIC_AUTHORIZATION;
 const COOKIE = process.env.YOUTUBE_MUSIC_COOKIE;
+const SAPISID = COOKIE?.split("; ")?.filter(v => v.includes("SAPISID="))[0]?.replace("SAPISID=","") || "";
 
 export const getPlayList = (playlistId: string, userId: string) => new Promise<{
   name?: string;
   list?: any[];
   err?: string;
-}>((res) => {
+}>(async (res) => {
+  const intTime = Math.round(new Date().getTime()/1000.0);
+  const AUTHORIZATION = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(intTime+" "+SAPISID+" "+ORIGIN)).then((strHash) => {
+    return "SAPISIDHASH" + " " + intTime + "_" + Array.from(new Uint8Array(strHash)).map((intByte) => {
+      return intByte.toString(16).padStart(2, '0');
+    }).join("");
+  });
   if (!playlistId.startsWith("VL")) playlistId = "VL" + playlistId;
   axios.post(`https://music.youtube.com/youtubei/v1/browse?key=${KEY}&prettyPrint=false`, {
     "browseId": playlistId,
@@ -30,7 +38,7 @@ export const getPlayList = (playlistId: string, userId: string) => new Promise<{
     headers: {
       "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36",
       "authorization": `${AUTHORIZATION}`,
-      "origin": "https://music.youtube.com",
+      "origin": `${ORIGIN}`,
       "referer": `https://music.youtube.com/search?q=${playlistId}`,
       "cookie": `${COOKIE}`,
       'Accept-Encoding': '*'

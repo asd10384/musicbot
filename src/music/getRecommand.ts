@@ -1,24 +1,32 @@
 import "dotenv/config";
 import axios from "axios";
+import crypto from "crypto";
 import { nowplay } from "./musicClass";
 
 interface Data { queueContextParams: string; continuation: string; videoId: string; playlistSetVideoId: string; playerParams: string; params: string; index: number; };
 
+const ORIGIN = "https://music.youtube.com";
 const KEY = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30";
-const AUTHORIZATION = process.env.YOUTUBE_MUSIC_AUTHORIZATION;
 const COOKIE = process.env.YOUTUBE_MUSIC_COOKIE;
+const SAPISID = COOKIE?.split("; ")?.filter(v => v.includes("SAPISID="))[0]?.replace("SAPISID=","") || "";
 
 export const getRecommand = async (vid: string): Promise<{ videoList?: nowplay[]; err?: string; }> => {
+  const intTime = Math.round(new Date().getTime()/1000.0);
+  const AUTHORIZATION = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(intTime+" "+SAPISID+" "+ORIGIN)).then((strHash) => {
+    return "SAPISIDHASH" + " " + intTime + "_" + Array.from(new Uint8Array(strHash)).map((intByte) => {
+      return intByte.toString(16).padStart(2, '0');
+    }).join("");
+  });
   if (!AUTHORIZATION) return { err: "authorization을 찾을수 없음" };
   let output_list: nowplay[] = [];
-  const { list, data, err } = await getDataFirst(vid);
+  const { list, data, err } = await getDataFirst(vid, AUTHORIZATION);
   if (!list || err) return { err: err || "추천영상을 찾을수 없음4" };
   output_list = list;
   // console.log(id);
   if (!data) return { videoList: output_list };
   let getData: Data | undefined = data;
   for (let i=0; i<4; i++) {
-    const { list: list2, playlistSetVideoId, continuation, index, err: err2 } = await getDataSecond(vid, getData);
+    const { list: list2, playlistSetVideoId, continuation, index, err: err2 } = await getDataSecond(vid, getData, AUTHORIZATION);
     if (err2 || !list2 || !playlistSetVideoId || !continuation || !index) break;
     output_list = output_list.concat(list2);
     getData.playlistSetVideoId = playlistSetVideoId;
@@ -29,7 +37,7 @@ export const getRecommand = async (vid: string): Promise<{ videoList?: nowplay[]
   return { videoList: output_list };
 }
 
-async function getDataFirst(vid: string) {
+async function getDataFirst(vid: string, AUTHORIZATION: string) {
   return new Promise<{ data?: Data; list?: nowplay[]; err?: string; }>((res) => {
     axios.post(`https://music.youtube.com/youtubei/v1/next?key=${KEY}&prettyPrint=false`, {
       "enablePersistentPlaylistPanel": true,
@@ -52,7 +60,7 @@ async function getDataFirst(vid: string) {
     }, {
       headers: {
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36",
-        "origin": "https://music.youtube.com",
+        "origin": `${ORIGIN}`,
         "referer": `https://music.youtube.com/watch?v=${vid}`,
         "cookie": `${COOKIE}`,
         "authorization": `${AUTHORIZATION}`,
@@ -125,7 +133,7 @@ async function getDataFirst(vid: string) {
   });
 }
 
-async function getDataSecond(vid: string, data: Data) {
+async function getDataSecond(vid: string, data: Data, AUTHORIZATION: string) {
   return new Promise<{ list?: nowplay[]; playlistSetVideoId?: string; continuation?: string; index?: number; err?: string; }>((res) => {
     axios.post(`https://music.youtube.com/youtubei/v1/next?key=${KEY}&prettyPrint=false`, {
       "enablePersistentPlaylistPanel": true,
@@ -155,7 +163,7 @@ async function getDataSecond(vid: string, data: Data) {
     }, {
       headers: {
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36",
-        "origin": "https://music.youtube.com",
+        "origin": `${ORIGIN}`,
         "referer": `https://music.youtube.com/watch?v=${data.videoId}&list=RDAMVM${vid}`,
         "cookie": `${COOKIE}`,
         "authorization": `${AUTHORIZATION}`,
