@@ -1,0 +1,31 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// npx prisma migrate dev --name prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  userId    String   @default("") @unique
+  userName  String   @default("")
+  guilds    Guild[]
+}
+
+model Guild {
+  id        Int      @id @default(autoincrement())
+  guildId   String   @default("") @unique
+  guildName String   @default("")
+  channelId String   @default("")
+  msgId     String   @default("")
+  roles     String   @default("")
+  options   Json     @default("{}")
+  users     User[]
+}

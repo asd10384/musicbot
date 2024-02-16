@@ -1,15 +1,14 @@
-import { ButtonInteraction, ChatInputApplicationCommandData, CommandInteraction, Message, StringSelectMenuInteraction } from "discord.js";
+import { AnySelectMenuInteraction, ButtonInteraction, ChatInputApplicationCommandData, CommandInteraction, Message } from "discord.js";
 
 export interface Command {
+  permissions: boolean;
   name: string;
-  visible: boolean;
   description: string;
-  information: string;
-  aliases: string[];
-  metadata: ChatInputApplicationCommandData;
-  msgmetadata?: { name: string, des: string }[];
-  slashRun?: (args: CommandInteraction) => Promise<any>;
-  messageRun?: (message: Message, args: string[]) => Promise<any>;
-  menuRun?: (interaction: StringSelectMenuInteraction, args: string[]) => Promise<any>;
-  buttonRun?: (interaction: ButtonInteraction, args: string[]) => Promise<any>;
+  alias: string[];
+  data: ChatInputApplicationCommandData;
+  msgData: { name: string; des: string; }[];
+  msgRun?: (message: Message, args: string[]) => Promise<any>;
+  btnRun?: (interaction: ButtonInteraction, args: string[]) => Promise<any>;
+  slashRun?: (interaction: CommandInteraction) => Promise<any>;
+  menuRun?: (interaction: AnySelectMenuInteraction, args: string[]) => Promise<any>;
 }

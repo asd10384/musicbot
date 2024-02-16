@@ -1,99 +1,72 @@
-import { client } from "../index";
+import { Bot } from "../index";
+import { ActionRowBuilder, AnySelectMenuInteraction, ChatInputApplicationCommandData, CommandInteraction, EmbedBuilder, Message, StringSelectMenuBuilder } from "discord.js";
 import { Command } from "../interfaces/Command";
-import { ApplicationCommandOptionType, ChatInputApplicationCommandData, CommandInteraction, EmbedBuilder, Guild } from "discord.js";
-import { QDB, guildData } from "../databases/Quickdb";
-
-/**
- * DB
- * let GDB = await MDB.get.guild(interaction);
- * 
- * check permission(role)
- * if (!(await ckper(interaction))) return await interaction.followUp({ embeds: [ emper ] });
- */
+import { embedCreate } from "../utils/embedCreate";
+import { msgDelete } from "../utils/msgDelete";
 
 export default class implements Command {
-  /** 해당 명령어 설명 */
-  name = "queue";
-  visible = true;
-  description = "check queue";
-  information = "queue 확인";
-  aliases: string[] = [  ];
-  metadata: ChatInputApplicationCommandData = {
+  permissions: boolean = false;
+  name: string = "queue";
+  description: string = "music queue";
+  alias: string[] = [ "재생목록" ];
+  data: ChatInputApplicationCommandData = {
     name: this.name,
     description: this.description,
-    options: [{
-      type: ApplicationCommandOptionType.Integer,
-      name: "number",
-      description: "QUEUE 번호",
-      required: false
-    }]
   };
-  msgmetadata?: { name: string; des: string; }[] = undefined;
-
-  /** 실행되는 부분 */
+  msgData: { name: string; des: string; }[] = [];
+  async msgRun(message: Message, _args: string[]) {
+    return message.channel.send(this.getEmbed(message.guild!.id, 1)).then(m => msgDelete(m, 6));
+  }
   async slashRun(interaction: CommandInteraction) {
-    const getnumber = interaction.options.get('number') ? interaction.options.get('number')?.value as number : null;
-    let GDB = await QDB.guild.get(interaction.guild!);
-    return await interaction.followUp({ embeds: [ await this.list(interaction.guild!, GDB, getnumber) ] });
+    return interaction.reply({
+      ...this.getEmbed(interaction.guild!.id, 1),
+      ephemeral: true
+    });
+  }
+  async menuRun(interaction: AnySelectMenuInteraction, args: string[]) {
+    return interaction.reply({
+      ...this.getEmbed(interaction.guild!.id, Number(args[0]) || 1),
+      ephemeral: true
+    });
   }
 
-  help(): EmbedBuilder {
-    return client.help(this.metadata.name, this.metadata, this.msgmetadata)!;
-  }
-
-  async list(guild: Guild, GDB: guildData, getnumber: number | null) {
-    const mc = client.getmc(guild);
-    // const queue = await QDB.guild.queue(guild.id);
-    const queue = mc.queue;
-    if (mc.playing) {
-      var list: { label: string, description: string, value: string }[] = [];
-      const number = Math.ceil(queue.length / client.maxqueue);
-      for (let i=0; i<number; i++) {
-        list.push({ label: `${i+1}번`, description: `${(i*client.maxqueue)+1} ~ ${(i*client.maxqueue)+client.maxqueue}`, value: `${i}` });
-      }
-      if (list && list.length > 0) {
-        if (getnumber) {
-          if (getnumber < 1) return client.mkembed({
-            title: `QUEUE 오류`,
-            description: `번호는 0보다 커야합니다.`,
-            color: "DarkRed"
-          });
-          if (getnumber > list.length) return client.mkembed({
-            title: `QUEUE 오류`,
-            description: `입력한 번호가 너무 큽니다.\n현재 \` 1~${list.length} \` 번까지 입력가능합니다.`,
-            color: "DarkRed"
-          });
-          let options = GDB.options;
-          var list2: string[] = [];
-          queue.forEach((data, i) => {
-            if (!list2[Math.floor(i/client.maxqueue)]) list2[Math.floor(i/client.maxqueue)] = '';
-            list2[Math.floor(i/client.maxqueue)] += `${i+1}. ${data.title} [${data.duration}]${(options.player) ? ` ~ ${data.player}` : ''}\n`;
-          });
-          return client.mkembed({
-            title: `${Number(getnumber)}번째 QUEUE ${((Number(getnumber)-1)*client.maxqueue)+1}~${((Number(getnumber)-1)*30)+30}`,
-            description: list2[Number(getnumber)-1],
-            color: client.embedColor
-          });
-        }
-        return client.mkembed({
-          title: `QUEUE 확인`,
-          description: `확인할 번호를 선택해주세요.\n현재 \` 1~${list.length} \` 번까지 있습니다.\n한번에 ${client.maxqueue}개씩 볼수있습니다.`,
-          footer: { text: `/queue number:[번호] 로선택해주세요.` },
-          color: client.embedColor
-        });
-      } else {
-        return client.mkembed({
-          title: `QUEUE 확인`,
-          description: `QUEUE가 없습니다.\n대기중인 노래가 없습니다.`,
-          color: "DarkRed"
-        });
-      }
-    } else {
-      return client.mkembed({
-        title: `QUEUE 확인`,
-        description: `현재 노래가 재생되고있지 않습니다.`,
-        color: "DarkRed"
-      });
+  getEmbed(guildId: string, count: number): { embeds: EmbedBuilder[]; components?: ActionRowBuilder<StringSelectMenuBuilder>[] } {
+    let mdb = Bot.music.getMDB(guildId);
+    if (!mdb.playing || !mdb.queue) return { embeds: [ embedCreate({
+      title: `\` 재생목록 (1/1) \``,
+      description: `없음`
+    }) ] };
+    let embeds: EmbedBuilder[] = [];
+    for (let i=0; i<mdb.queue.length; i++) {
+      let num = Math.floor(i/20);
+      if (embeds[num]) embeds[num] = embedCreate({ title: `\` 재생목록 (${num*20+1}~/${(num+1)*20}) \``, description: '' });
+      embeds[num].setDescription(
+        (embeds[num].data.description || '')
+        +`${
+          (i+1).toString().padStart(mdb.queue.length.toString().length, '0')
+        }\\. ${
+          mdb.queue[num].author.replace(" - Topic",'')
+        } - ${
+          mdb.queue[num].title
+        } [${
+          Bot.music.setTime(mdb.queue[num].duration)
+        }] ~ ${
+          mdb.queue[num].player === "자동재생" ? mdb.queue[num].player : `<@${mdb.queue[num].player}>`
+        }`
+      );
     }
+    const actionRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId("queue")
+        .setPlaceholder("다음번호를 보시려면 아래에서 선택해주세요.")
+        .addOptions(embeds.map((em, i) => {
+          return {
+            label: `${em.data.title?.replace("재생목록 ",'') || ''}`,
+            description: `이 페이지를 보시려면 선택해주세요.`,
+            value: `${i+1}`
+          };
+        }))
+    );
+    return { embeds: [ embeds[count-1] ], components: [ actionRow ] };
   }
 }

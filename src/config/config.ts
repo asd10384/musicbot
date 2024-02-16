@@ -1,36 +1,20 @@
-import { ActionRowBuilder, ButtonBuilder } from "@discordjs/builders";
-import { ButtonStyle } from "discord.js";
+import { ColorResolvable } from "discord.js";
+import "dotenv/config";
 
-export const makeButton = (color: boolean = true, play_pause: boolean = true, stop: boolean = false, skip: boolean = true, shuffle: boolean = true, recommand: boolean = false): ActionRowBuilder<ButtonBuilder> => {
-  return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder()
-      .setCustomId("music-play_pause")
-      .setEmoji({ name: "⏯️" })
-      .setStyle(color ? ButtonStyle.Primary : ButtonStyle.Success)
-      .setDisabled(play_pause)
-  ).addComponents(
-    new ButtonBuilder()
-      .setCustomId("music-stop")
-      .setEmoji({ name: "⏹️" })
-      .setStyle(ButtonStyle.Danger)
-      .setDisabled(stop)
-  ).addComponents(
-    new ButtonBuilder()
-      .setCustomId("music-skip")
-      .setEmoji({ name: "⏭️" })
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(skip)
-  ).addComponents(
-    new ButtonBuilder()
-      .setCustomId("music-shuffle")
-      .setEmoji({ name: "🔀" })
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(shuffle)
-  ).addComponents(
-    new ButtonBuilder()
-      .setCustomId("music-recommand")
-      .setEmoji({ id: "1035604533532954654", name: "auto" })
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(recommand)
-  );
-}
+export const config = {
+  TOKEN: process.env.TOKEN?.trim() || "",
+  prefix: process.env.PREFIX?.trim() || "p",
+  permissions: (process.env.permissions?.split(',').map(v => v.trim()) || []) as string[],
+  embedColor: (process.env.embedColor?.trim() || "Orange") as ColorResolvable,
+  DEV: process.env.DEV?.trim() === "true",
+  DEBUG: process.env.DEBUG?.trim() === "true",
+  slashCommand: process.env.slashCommand?.trim() === "true",
+  DEV_SERVERID: process.env.DEV_SERVERID?.trim() || "",
+  PROXY: process.env.PROXY?.trim() || "",
+  YOUTUBE_TOKEN: process.env.YOUTUBE_TOKEN?.trim() || "",
+  YOUTUBE_MUSIC: process.env.YOUTUBE_MUSIC?.trim() === "true",
+  YOUTUBE_MUSIC_TOKEN: process.env.YOUTUBE_MUSIC_TOKEN?.trim() || "",
+  SPOTIFY: process.env.SPOTIFY?.trim() === "true",
+  SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID?.trim() || "",
+  SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET?.trim() || "",
+};

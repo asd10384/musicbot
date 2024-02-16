@@ -1,40 +1,24 @@
 import colors from "colors/safe";
-import { Timestamp } from "./Timestamp";
+import { TimeStamp } from "./TimeStamp";
+import { config } from "../config/config";
 
-type logType = "log" | "info" | "warn" | "error" | "debug" | "ready" | "slash";
+const log = (type: string, content: any): void => {
+  const timeStamp = colors.white(`[${TimeStamp()}]`);
 
-export const log = (content: string, type: logType) => {
-  const timestamp = colors.white(`[${Timestamp()}]`);
-
-  switch (type) {
-    case "log":
-      return console.log(`${colors.gray("[LOG]")} ${timestamp} ${content}`);
-      
-    case "info":
-      return console.log(`${colors.cyan("[INFO]")} ${timestamp} ${content}`);
-      
-    case "warn":
-      return console.log(`${colors.yellow("[WARN]")} ${timestamp} ${content}`);
-      
-    case "error":
-      return console.log(`${colors.red("[ERROR]")} ${timestamp} ${content}`);
-      
-    case "debug":
-      return console.log(`${colors.magenta("[DEBUG]")} ${timestamp} ${content}`);
-      
-    case "ready":
-      return console.log(`${colors.green("[READY]")} ${timestamp} ${content}`);
-      
-    default:
-      throw new TypeError("Logger 타입이 올바르지 않습니다.");
-  }
-};
+  if (type === "ready") return console.log(`${colors.green("[READY]")} ${timeStamp} ${content}`);
+  if (type === "info") return console.log(`${colors.cyan("[INFO]")} ${timeStamp} ${content}`);
+  if (type === "log") return console.log(`${colors.gray("[LOG]")} ${timeStamp} ${content}`);
+  if (type === "warn") return console.log(`${colors.yellow("[WARN]")} ${timeStamp} ${content}`);
+  if (type === "error") {
+    console.log(`${colors.red("[ERROR]")} ${timeStamp} ${content}`);
+    if (config.DEBUG) console.error(content)
+  };
+}
 
 export const Logger = {
-  log: (content: string) => log(content, "log"),
-  warn: (content: string) => log(content, "warn"),
-  error: (content: string) => log(content, "error"),
-  debug: (content: string) => log(content, "debug"),
-  info: (content: string) => log(content, "info"),
-  ready: (content: string) => log(content, "ready")
+  ready: (content: any) => log("ready", content),
+  info: (content: any) => log("info", content),
+  log: (content: any) => log("log", content),
+  warn: (content: any) => log("warn", content),
+  error: (content: any) => log("error", content),
 }

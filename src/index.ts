@@ -1,33 +1,13 @@
-import { BotClient } from "./classes/BotClient";
-import { SlashHandler } from "./classes/Handler";
+import { Client, GatewayIntentBits } from "discord.js";
+import { BotClass } from "./structs/Bot";
 
-import { onReady } from "./events/onReady";
-import { onInteractionCreate } from "./events/onInteractionCreate";
-import { onMessageCreate } from "./events/onMessageCreate";
-import { onmessageReactionAdd } from "./events/onmessageReactionAdd";
-import { guildDelete } from "./events/guildDelete";
-import { voiceStateUpdate } from "./events/voiceStateUpdate";
-import { existsSync, mkdirSync, readdirSync, unlinkSync } from "fs";
-
-// 봇 클라이언트 생성
-export const client = new BotClient();
-export const handler = new SlashHandler();
-
-client.onEvent('ready', onReady);
-client.onEvent('interactionCreate', onInteractionCreate);
-client.onEvent('messageCreate', onMessageCreate);
-client.onEvent('messageReactionAdd', onmessageReactionAdd);
-client.onEvent('guildDelete', guildDelete);
-client.onEvent('voiceStateUpdate', voiceStateUpdate);
-
-export const MUSICFOLDER = process.env.MUSICFOLDER ? process.env.MUSICFOLDER.trim().endsWith("/") ? process.env.MUSICFOLDER.trim().slice(0,-1) : process.env.MUSICFOLDER : __dirname + "/music";
-
-try {
-  if (!existsSync(MUSICFOLDER)) {
-    mkdirSync(MUSICFOLDER);
-  } else {
-    readdirSync(MUSICFOLDER).forEach((file) => {
-      unlinkSync(MUSICFOLDER+"/"+file);
-    });
-  }
-} catch {};
+export const Bot = new BotClass(new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.MessageContent,
+    // GatewayIntentBits.DirectMessages
+  ]
+}));
