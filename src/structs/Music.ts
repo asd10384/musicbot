@@ -300,7 +300,7 @@ export class MusicClass {
       msgId: mdb.msgId,
       options: mdb.options
     };
-    const gdb = await this.bot.db.guild.get(guild.id);
+    const gdb = await this.bot.db.guild.set(guild.id, { guildName: guild.name });
     if (!gdb?.channelId) return { channelId: '', msgId: '', options: mdb.options };
     this.setMDB(guild.id, { channelId: gdb.channelId, msgId: gdb.msgId, options: gdb.options as Prisma.JsonObject });
     return { channelId: gdb.channelId, msgId: gdb.msgId, options: gdb.options as Prisma.JsonObject };
