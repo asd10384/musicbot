@@ -88,7 +88,8 @@ export class YoutubeApi {
       return null;
     });
     if (info?.videoDetails.thumbnails && info?.videoDetails.thumbnails.length > 0) {
-      const images = info.videoDetails.thumbnails.toSorted((a, b) => a.height-b.height);
+      let images = info.videoDetails.thumbnails;
+      images.sort((a, b) => a.height-b.height);
       return images[images.length-1].url || defImage;
     }
     return defImage;
